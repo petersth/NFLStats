@@ -1,0 +1,31 @@
+"""Configuration module for application settings."""
+
+# Import from centralized constants
+from .nfl_constants import (
+    # Teams
+    NFL_TEAMS, TEAM_DATA, VALID_TEAMS,
+    
+    # Configuration
+    TOTAL_NFL_TEAMS, NFL_SEASON_START_MONTH, NFL_DATA_START_YEAR,
+    INCOMPLETE_SEASON_WARNING_MONTH, FRESH_DATA_DAYS, SLIGHTLY_OUTDATED_DATA_DAYS,
+    
+    # Scoring
+    TOUCHDOWN_POINTS, EXTRA_POINT_POINTS, TWO_POINT_CONVERSION_POINTS,
+    FIELD_GOAL_POINTS, SAFETY_POINTS,
+    
+    # Field positions
+    RED_ZONE_YARDLINE,
+    
+    # Season types
+    SEASON_TYPES
+)
+
+
+# Re-export everything for backward compatibility
+__all__ = [
+    'NFL_TEAMS', 'TEAM_DATA', 'VALID_TEAMS',
+    'TOTAL_NFL_TEAMS', 'NFL_SEASON_START_MONTH', 'NFL_DATA_START_YEAR',
+    'INCOMPLETE_SEASON_WARNING_MONTH', 'FRESH_DATA_DAYS', 'SLIGHTLY_OUTDATED_DATA_DAYS',
+    'TOUCHDOWN_POINTS', 'EXTRA_POINT_POINTS', 'TWO_POINT_CONVERSION_POINTS',
+    'FIELD_GOAL_POINTS', 'SAFETY_POINTS', 'RED_ZONE_YARDLINE', 'SEASON_TYPES'
+]
