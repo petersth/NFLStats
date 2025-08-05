@@ -6,8 +6,7 @@ from typing import Dict, Any
 
 from .controllers.team_analysis_controller import TeamAnalysisController
 from ...application.dto import TeamAnalysisRequest
-from ...domain.exceptions import DataAccessError, DataNotFoundError, UseCaseError
-from ...infrastructure.factories import get_configured_cache
+from ...domain.exceptions import DataNotFoundError, UseCaseError
 from ...infrastructure.frameworks.streamlit_utils import StreamlitAdapter
 from .components.sidebar_manager import SidebarManager
 from .components.metrics_renderer import MetricsRenderer
@@ -167,33 +166,29 @@ class StreamlitController:
     
     def _perform_analysis_with_progress(self, request: TeamAnalysisRequest):
         """Perform analysis with progress tracking."""
-        # Create controller with injected dependencies
+        # Get or create a persistent orchestrator instance
+        orchestrator_key = "calculation_orchestrator"
+        
+        if request.cache_nfl_data:
+            # Use persistent orchestrator instance when caching is enabled
+            if orchestrator_key not in st.session_state.league_cache_instances:
+                from ...infrastructure.factories import create_calculation_orchestrator
+                st.session_state.league_cache_instances[orchestrator_key] = create_calculation_orchestrator()
+            orchestrator = st.session_state.league_cache_instances[orchestrator_key]
+        else:
+            # Create a fresh orchestrator instance when caching is disabled (forces fresh data)
+            from ...infrastructure.factories import create_calculation_orchestrator
+            orchestrator = create_calculation_orchestrator()
+        
+        # Create controller with the persistent/fresh orchestrator
         try:
-            controller = TeamAnalysisController()
+            controller = TeamAnalysisController(calculation_orchestrator=orchestrator)
                 
         except (ValueError, TypeError) as e:
             logger.error(f"Failed to create TeamAnalysisController via DI: {e}")
             error_message = str(e)
             st.error(f"Failed to initialize analysis components: {error_message}")
             return
-        
-        # Get or create a league cache instance
-        cache_key = "nfl_api"
-        
-        if request.cache_nfl_data:
-            # Use persistent cache instance when caching is enabled
-            if cache_key not in st.session_state.league_cache_instances:
-                st.session_state.league_cache_instances[cache_key] = get_configured_cache()
-            league_cache = st.session_state.league_cache_instances[cache_key]
-        else:
-            # Create a fresh cache instance when caching is disabled (forces fresh data)
-            league_cache = get_configured_cache()
-        
-        # Configure NFL data caching
-        if hasattr(league_cache, 'set_nfl_data_caching') and hasattr(request, 'cache_nfl_data'):
-            league_cache.set_nfl_data_caching(request.cache_nfl_data)
-        
-        controller._orchestrator._league_cache = league_cache
         
         
         # Create progress tracker

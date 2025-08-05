@@ -39,7 +39,12 @@ class PlayFilter:
         # Exclude plays with missing yards_gained
         offensive_mask &= data['yards_gained'].notna()
         
-        return data[offensive_mask].copy()
+        offensive_plays = data[offensive_mask].copy()
+        
+        # Apply configuration-based exclusions
+        offensive_plays = self._apply_offensive_play_exclusions(offensive_plays)
+        
+        return offensive_plays
     
     def get_rushing_plays(self, data: pd.DataFrame) -> pd.DataFrame:
         """Get rushing plays with configuration exclusions."""
@@ -72,11 +77,20 @@ class PlayFilter:
             logger.warning("Missing required columns for passing plays filter")
             return pd.DataFrame()
         
-        return data[
+        passing_plays = data[
             (data['pass_attempt'] == 1) & 
             (data['sack'] == 0) &
             (data['two_point_attempt'] != 1)
         ].copy()
+        
+        # Apply passing-specific exclusions
+        if '_spike_context' in passing_plays.columns:
+            # Exclude spikes when configured to do so
+            passing_plays = passing_plays[
+                ~passing_plays['_spike_context'].isin(['exclude_completion', 'exclude_both'])
+            ]
+        
+        return passing_plays
     
     def get_third_down_attempts(self, data: pd.DataFrame) -> pd.DataFrame:
         """Get third down attempts excluding two-point conversions."""
@@ -97,6 +111,13 @@ class PlayFilter:
         # Apply QB kneel context filtering for efficiency metrics
         if '_qb_kneel_context' in third_downs.columns:
             third_downs = third_downs[third_downs['_qb_kneel_context'] != 'exclude_success_rate']
+        
+        # Apply spike filtering for third down efficiency
+        if '_spike_context' in third_downs.columns:
+            # Exclude spikes when configured for success rate exclusion
+            third_downs = third_downs[
+                ~third_downs['_spike_context'].isin(['exclude_success_rate', 'exclude_both'])
+            ]
         
         return third_downs
     
@@ -141,6 +162,38 @@ class PlayFilter:
         # Apply configuration filtering for success rate stats
         if '_qb_kneel_context' in filtered_data.columns:
             filtered_data = filtered_data[filtered_data['_qb_kneel_context'] != 'exclude_success_rate']
+        
+        # Apply spike filtering for success rate
+        if '_spike_context' in filtered_data.columns:
+            # Exclude spikes when configured to do so
+            filtered_data = filtered_data[
+                ~filtered_data['_spike_context'].isin(['exclude_success_rate', 'exclude_both'])
+            ]
+        
+        return filtered_data
+    
+    def _apply_offensive_play_exclusions(self, data: pd.DataFrame) -> pd.DataFrame:
+        """Apply configuration-based exclusions for general offensive plays (yards per play, total plays)."""
+        if len(data) == 0:
+            return data
+        
+        filtered_data = data.copy()
+        
+        # Apply QB kneel filtering
+        if '_qb_kneel_context' in filtered_data.columns:
+            # For general offensive stats, exclude kneels when they're marked for exclusion from rushing OR success rate
+            # (since yards per play is affected by both rushing and passing efficiency)
+            filtered_data = filtered_data[
+                ~filtered_data['_qb_kneel_context'].isin(['exclude_rushing', 'exclude_success_rate'])
+            ]
+        
+        # Apply spike filtering  
+        if '_spike_context' in filtered_data.columns:
+            # For general offensive stats, exclude spikes when they're marked for exclusion from completion OR success rate
+            # (since yards per play is affected by both passing and overall efficiency)
+            filtered_data = filtered_data[
+                ~filtered_data['_spike_context'].isin(['exclude_completion', 'exclude_success_rate', 'exclude_both'])
+            ]
         
         return filtered_data
     

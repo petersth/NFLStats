@@ -118,7 +118,9 @@ class NFLValidator:
             'include_playoffs', 
             'exclude_kneel_downs', 
             'include_qb_kneels_rushing', 
-            'include_qb_kneels_success_rate'
+            'include_qb_kneels_success_rate',
+            'include_spikes_completion',
+            'include_spikes_success_rate'
         ]
         
         for field in boolean_fields:

@@ -10,21 +10,27 @@ logger = logging.getLogger(__name__)
 CONFIGURATIONS = {
     'nfl_official': {
         'name': 'NFL Official',
-        'description': 'Includes QB kneels (official NFL methodology)',
+        'description': 'Includes QB kneels and spikes (official NFL methodology)',
         'include_qb_kneels_rushing': True,
-        'include_qb_kneels_success_rate': True
+        'include_qb_kneels_success_rate': True,
+        'include_spikes_completion': True,
+        'include_spikes_success_rate': True
     },
     'analytics_clean': {
         'name': 'Analytics (Clean)',
-        'description': 'Excludes QB kneels for pure efficiency metrics',
+        'description': 'Excludes QB kneels and spikes for pure efficiency metrics',
         'include_qb_kneels_rushing': False,
-        'include_qb_kneels_success_rate': False
+        'include_qb_kneels_success_rate': False,
+        'include_spikes_completion': False,
+        'include_spikes_success_rate': False
     },
     'custom': {
         'name': 'Custom',
-        'description': 'User-defined QB kneel settings',
+        'description': 'User-defined QB kneel and spike settings',
         'include_qb_kneels_rushing': True,
-        'include_qb_kneels_success_rate': True
+        'include_qb_kneels_success_rate': True,
+        'include_spikes_completion': True,
+        'include_spikes_success_rate': True
     }
 }
 
@@ -77,5 +83,29 @@ def apply_configuration_to_data(data: pd.DataFrame, config: Dict) -> pd.DataFram
                 filtered_data.loc[qb_kneel_mask, '_qb_kneel_context'] = 'exclude_success_rate'
                 logger.info(f"Marked {qb_kneel_mask.sum()} QB kneel plays to exclude from success rate only")
             # If both are True, keep all QB kneels (no filtering needed)
+    
+    # Apply QB spike filtering based on configuration
+    if 'play_type' in filtered_data.columns:
+        qb_spike_mask = filtered_data['play_type'] == 'qb_spike'
+        qb_spikes_exist = qb_spike_mask.any()
+        
+        if qb_spikes_exist:
+            include_spikes_completion = config.get('include_spikes_completion', True)
+            include_spikes_success_rate = config.get('include_spikes_success_rate', True)
+            
+            # Apply filtering logic for spikes
+            if not include_spikes_completion and not include_spikes_success_rate:
+                # Exclude from both completion % and success rate
+                filtered_data.loc[qb_spike_mask, '_spike_context'] = 'exclude_both'
+                logger.info(f"Marked {qb_spike_mask.sum()} QB spike plays to exclude from both completion % and success rate")
+            elif not include_spikes_completion and include_spikes_success_rate:
+                # Exclude from completion % only
+                filtered_data.loc[qb_spike_mask, '_spike_context'] = 'exclude_completion'
+                logger.info(f"Marked {qb_spike_mask.sum()} QB spike plays to exclude from completion percentage only")
+            elif include_spikes_completion and not include_spikes_success_rate:
+                # Exclude from success rate only
+                filtered_data.loc[qb_spike_mask, '_spike_context'] = 'exclude_success_rate'
+                logger.info(f"Marked {qb_spike_mask.sum()} QB spike plays to exclude from success rate only")
+            # If both are True, keep all QB spikes (no filtering needed)
     
     return filtered_data

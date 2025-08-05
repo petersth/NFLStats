@@ -231,16 +231,19 @@ class NFLStatsCalculator:
             )
             third_down_pct = self._safe_percentage(third_down_conversions, len(third_downs))
         
-        # First downs
+        # First downs - apply exclusion filtering for accuracy
         first_down_cols = ['first_down_rush', 'first_down_pass', 'first_down_penalty']
         if all(col in data.columns for col in first_down_cols):
-            first_downs_rush = self._safe_sum(data['first_down_rush'] == 1)
-            first_downs_pass = self._safe_sum(data['first_down_pass'] == 1)
-            first_downs_penalty = self._safe_sum(data['first_down_penalty'] == 1)
+            # Apply exclusion filtering to first downs data
+            filtered_first_downs_data = self._apply_first_downs_exclusions(data)
+            
+            first_downs_rush = self._safe_sum(filtered_first_downs_data['first_down_rush'] == 1)
+            first_downs_pass = self._safe_sum(filtered_first_downs_data['first_down_pass'] == 1)
+            first_downs_penalty = self._safe_sum(filtered_first_downs_data['first_down_penalty'] == 1)
             first_downs_total = self._safe_sum(
-                (data['first_down_rush'] == 1) | 
-                (data['first_down_pass'] == 1) | 
-                (data['first_down_penalty'] == 1)
+                (filtered_first_downs_data['first_down_rush'] == 1) | 
+                (filtered_first_downs_data['first_down_pass'] == 1) | 
+                (filtered_first_downs_data['first_down_penalty'] == 1)
             )
         else:
             first_downs_rush = first_downs_pass = first_downs_penalty = first_downs_total = 0
@@ -556,6 +559,34 @@ class NFLStatsCalculator:
                 return Location.AWAY
         
         return Location.HOME  # Default fallback
+    
+    def _apply_first_downs_exclusions(self, data: pd.DataFrame) -> pd.DataFrame:
+        """Apply configuration-based exclusions for first downs calculations.
+        
+        First downs can be affected by kneels and spikes since they represent
+        plays that achieved first downs but may be excluded based on configuration.
+        """
+        if len(data) == 0:
+            return data
+        
+        filtered_data = data.copy()
+        
+        # Apply QB kneel filtering - exclude when configured for rushing or success rate exclusion
+        if '_qb_kneel_context' in filtered_data.columns:
+            # First downs from rushing can be affected by kneel exclusions
+            # First downs from passing can be affected by success rate exclusions
+            filtered_data = filtered_data[
+                ~filtered_data['_qb_kneel_context'].isin(['exclude_rushing', 'exclude_success_rate'])
+            ]
+        
+        # Apply spike filtering - exclude when configured for completion or success rate exclusion
+        if '_spike_context' in filtered_data.columns:
+            # First downs from passing can be affected by spike exclusions
+            filtered_data = filtered_data[
+                ~filtered_data['_spike_context'].isin(['exclude_completion', 'exclude_success_rate', 'exclude_both'])
+            ]
+        
+        return filtered_data
     
     def _create_empty_season_stats(self, team: Team, season: Season) -> SeasonStats:
         """Create empty season stats for error cases."""

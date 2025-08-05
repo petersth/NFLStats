@@ -36,12 +36,15 @@ class LeagueStatsCache:
         logger.info("Initialized LeagueStatsCache using NFL API with in-memory caching")
     
     def get_cached_play_data(self, season_year: int, season_type: str = 'ALL', configuration: Dict = None) -> Optional[pd.DataFrame]:
-        """Get cached raw play-by-play data if available."""
+        """Get cached raw play-by-play data if available.
+        
+        Raw play-by-play data is independent of configuration - configuration only affects
+        how the raw data is processed, not what data is fetched.
+        """
         if configuration is None:
             configuration = {}
-        
-        # Always look for the complete dataset first (cached under 'ALL')
-        complete_cache_key = f"raw_data_{season_year}_ALL_{hash(str(configuration))}"
+
+        complete_cache_key = f"raw_data_{season_year}_ALL"
         complete_data = self._raw_data_cache.get(complete_cache_key)
         
         if complete_data is not None:
@@ -52,7 +55,7 @@ class LeagueStatsCache:
                 return complete_data.copy()
         
         # Fallback: try to get the specific season type cache (for backward compatibility)
-        specific_cache_key = f"raw_data_{season_year}_{season_type}_{hash(str(configuration))}"
+        specific_cache_key = f"raw_data_{season_year}_{season_type}"
         return self._raw_data_cache.get(specific_cache_key)
     
     # === Main Interface Methods ===
@@ -176,10 +179,11 @@ class LeagueStatsCache:
                 logger.error("No NFL data repository available for raw data computation")
                 return {}, {}, datetime.now()
             
-            # Always try to get complete dataset first (check if already cached)
-            complete_cache_key = f"raw_data_{season_year}_ALL_{hash(str(configuration))}"
+            complete_cache_key = f"raw_data_{season_year}_ALL"
+            timestamp_cache_key = f"timestamp_{season_year}_ALL"
+            
             pbp_data = self._raw_data_cache.get(complete_cache_key)
-            data_timestamp = None
+            data_timestamp = self._raw_data_cache.get(timestamp_cache_key)
             
             if pbp_data is None:
                 # Fetch complete dataset (regular season + playoffs)
@@ -190,30 +194,36 @@ class LeagueStatsCache:
                     logger.warning(f"No raw data found for season {season_year}")
                     return {}, {}, datetime.now()
                 
-                # Apply configuration filtering to complete dataset
-                if progress_callback:
-                    progress_callback.update(0.7, "Applying filters...")
-                if configuration:
-                    pbp_data = apply_configuration_to_data(pbp_data, configuration)
-                
-                # Cache the complete dataset
+                # Cache both the raw unfiltered dataset and its timestamp
                 self._raw_data_cache[complete_cache_key] = pbp_data
+                self._raw_data_cache[timestamp_cache_key] = data_timestamp
+                
+                # Also ensure the repository's own cache has the timestamp
+                if self._nfl_data_repo and hasattr(self._nfl_data_repo, '_cache'):
+                    repo_cache_key = f"pbp_{season_year}"
+                    self._nfl_data_repo._cache[repo_cache_key] = (pbp_data, data_timestamp)
+                
                 logger.info(f"Cached complete dataset for season {season_year}")
             else:
                 logger.info(f"Using cached complete dataset for season {season_year}")
-                # For cached data, we need a timestamp
-                data_timestamp = datetime.now()
+                # Use the cached timestamp (from original NFL data)
             
-            # Now filter by season type for this specific request
+            # Now filter by season type and apply configuration for this specific request
             if progress_callback:
-                progress_callback.update(0.8, "Processing team statistics...")
+                progress_callback.update(0.7, "Applying filters...")
             filtered_data = pbp_data.copy()
             if season_type and season_type != 'ALL':
                 filtered_data = filtered_data[filtered_data['season_type'] == season_type]
             
-            # Cache the filtered data for this specific request too
-            specific_cache_key = f"raw_data_{season_year}_{season_type}_{hash(str(configuration))}"
-            self._raw_data_cache[specific_cache_key] = filtered_data
+            # Apply configuration filtering to the data before calculating statistics
+            if configuration:
+                filtered_data = apply_configuration_to_data(filtered_data, configuration)
+            
+            if progress_callback:
+                progress_callback.update(0.8, "Processing team statistics...")
+            
+            # Note: We don't cache the filtered data since configuration can change
+            # The raw data is cached above and filtering is fast
             
             # Calculate statistics for all teams in the filtered data
             teams = sorted(filtered_data['posteam'].dropna().unique())

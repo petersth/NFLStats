@@ -136,25 +136,26 @@ class SidebarManager:
         # Always use custom configuration
         configuration = get_configuration('custom')
         
-        # QB Kneel Settings
-        st.markdown("#### QB Kneel Settings")
+        # Play Exclusion Settings
+        st.markdown("#### Play Exclusions")
         
-        # Custom settings - always editable
-        include_qb_kneels_rushing = st.checkbox(
-            "QB kneels in rushing stats",
-            value=configuration.get('include_qb_kneels_rushing', True),
-            help="Include QB kneel downs in rushing yards and attempts"
+        include_qb_kneels = st.checkbox(
+            "Include QB kneels",
+            value=configuration.get('include_qb_kneels_rushing', True) and configuration.get('include_qb_kneels_success_rate', True),
+            help="Include QB kneel downs in all statistics (rushing, efficiency, volume metrics)"
         )
         
-        include_qb_kneels_success_rate = st.checkbox(
-            "QB kneels in efficiency metrics",
-            value=configuration.get('include_qb_kneels_success_rate', True),
-            help="Include QB kneels in success rate calculations"
+        include_qb_spikes = st.checkbox(
+            "Include QB spikes", 
+            value=configuration.get('include_spikes_completion', True) and configuration.get('include_spikes_success_rate', True),
+            help="Include QB spikes (clock-stopping throws) in all statistics (passing, efficiency, volume metrics)"
         )
         
         configuration.update({
-            'include_qb_kneels_rushing': include_qb_kneels_rushing,
-            'include_qb_kneels_success_rate': include_qb_kneels_success_rate
+            'include_qb_kneels_rushing': include_qb_kneels,
+            'include_qb_kneels_success_rate': include_qb_kneels,
+            'include_spikes_completion': include_qb_spikes,
+            'include_spikes_success_rate': include_qb_spikes
         })
         
         return configuration
@@ -207,16 +208,20 @@ class SidebarManager:
             import streamlit as st
             
             # Use the same persistent cache instance that the main app uses
-            cache_key = "nfl_api"
+            cache_key = "calculation_orchestrator"
+            
             if hasattr(st, 'session_state') and hasattr(st.session_state, 'league_cache_instances'):
                 if cache_key in st.session_state.league_cache_instances:
-                    league_cache = st.session_state.league_cache_instances[cache_key]
+                    orchestrator = st.session_state.league_cache_instances[cache_key]
                     
-                    # Try to get timestamp from the cached repository data
-                    if hasattr(league_cache, '_nfl_data_repo') and league_cache._nfl_data_repo:
-                        timestamp = league_cache._nfl_data_repo.get_data_timestamp(season_year)
-                        if timestamp:
-                            return timestamp
+                    # The orchestrator has a league_cache attribute which has the NFL data repository
+                    if hasattr(orchestrator, 'league_cache') and orchestrator.league_cache:
+                        league_cache = orchestrator.league_cache
+                        
+                        if hasattr(league_cache, '_nfl_data_repo') and league_cache._nfl_data_repo:
+                            timestamp = league_cache._nfl_data_repo.get_data_timestamp(season_year)
+                            if timestamp:
+                                return timestamp
             
             # If no cached data available, return None (we don't want to fetch just for timestamp)
             return None

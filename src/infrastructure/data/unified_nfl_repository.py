@@ -28,7 +28,7 @@ class UnifiedNFLRepository:
         'penalty_team', 'drive', 'complete_pass', 'incomplete_pass', 
         'pass_touchdown', 'rush_touchdown', 'passing_yards', 'rushing_yards', 
         'receiving_yards', 'td_team', 'penalty_yards', 'success', 'epa',
-        'qb_kneel', 'posteam_score_post', 'defteam_score_post'
+        'qb_kneel', 'qb_spike', 'posteam_score_post', 'defteam_score_post'
     ]
     
     def __init__(self):
