@@ -101,13 +101,9 @@ class LeagueStatsCache:
     
     def get_team_rankings(self, team_abbr: str, team_stats_dict: Dict) -> Dict:
         """Get pre-computed rankings for a specific team."""
-        # Check if we have pre-computed rankings
-        for rankings in self._rankings_cache.values():
-            if team_abbr in rankings:
-                return rankings[team_abbr]
-        
-        # Fallback to calculating on-demand if not cached
-        logger.info(f"No pre-computed rankings found for {team_abbr}, calculating on-demand")
+        # Always calculate fresh rankings from the current team_stats_dict
+        # to ensure consistency with the displayed statistics
+        logger.info(f"Calculating fresh rankings for {team_abbr} to ensure consistency")
         try:
             return calculate_team_rankings(team_abbr, team_stats_dict)
         except Exception as e:
