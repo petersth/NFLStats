@@ -2,13 +2,7 @@
 
 from typing import Dict, List
 from ..domain.entities import SeasonStats
-
-# Standard NFL metrics extracted for league averages
-AVERAGING_METRICS = [
-    'avg_yards_per_play', 'turnovers_per_game', 'completion_pct', 'rush_ypc',
-    'sacks_per_game', 'third_down_pct', 'success_rate', 'first_downs_per_game',
-    'points_per_drive', 'redzone_td_pct', 'penalty_yards_per_game'
-]
+from .nfl_metrics import AVERAGING_METRICS
 
 
 def extract_stats_for_averaging(season_stats: SeasonStats) -> Dict:

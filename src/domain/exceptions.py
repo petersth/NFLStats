@@ -5,21 +5,13 @@ class NFLStatsException(Exception):
     pass
 
 
-class StatisticsCalculationError(NFLStatsException):
-    """Raised when statistics calculation fails."""
-    
-    def __init__(self, message: str, team_abbr: str = None, season_year: int = None):
-        self.team_abbr = team_abbr
-        self.season_year = season_year
-        super().__init__(message)
-
-
 class CacheError(NFLStatsException):
     """Raised when cache operations fail."""
     
-    def __init__(self, message: str, cache_key: str = None, operation: str = None):
+    def __init__(self, message: str, cache_key: str = None, operation: str = None, cause: Exception = None):
         self.cache_key = cache_key
         self.operation = operation
+        self.cause = cause
         super().__init__(message)
 
 
@@ -33,32 +25,19 @@ class DataAccessError(NFLStatsException):
 
 
 class DataNotFoundError(DataAccessError):
-    """Raised when requested data is not found."""
-    pass
-
-
-class ConfigurationError(NFLStatsException):
-    """Raised when configuration is invalid."""
+    """Raised when requested data is not found.
     
-    def __init__(self, message: str, config_key: str = None):
-        self.config_key = config_key
-        super().__init__(message)
-
-
-
-
-class DatabaseConnectionError(DataAccessError):
-    """Raised when database connection fails."""
+    This is a specific type of DataAccessError for when data doesn't exist,
+    as opposed to general access failures.
+    """
     pass
 
 
-class DatabaseIntegrityError(DataAccessError):
-    """Raised when database integrity checks fail."""
-    pass
-
-
-class DataValidationError(DataAccessError):
-    """Raised when data validation fails."""
+class DataValidationError(NFLStatsException):
+    """Raised when data validation fails.
+    
+    Used for input validation errors, not data access errors.
+    """
     
     def __init__(self, message: str, field_name: str = None, field_value=None):
         self.field_name = field_name
@@ -66,36 +45,13 @@ class DataValidationError(DataAccessError):
         super().__init__(message)
 
 
-class BatchInsertError(DataAccessError):
-    """Raised when batch insert operations fail."""
-    
-    def __init__(self, message: str, batch_number: int = None, total_batches: int = None):
-        self.batch_number = batch_number
-        self.total_batches = total_batches
-        super().__init__(message)
-
-
 class UseCaseError(NFLStatsException):
-    """Raised when use case execution fails."""
+    """Raised when use case execution fails.
+    
+    High-level exception for business logic failures.
+    """
     
     def __init__(self, message: str, operation: str = None, context: dict = None):
         self.operation = operation
         self.context = context or {}
         super().__init__(message)
-
-
-class CalculationError(NFLStatsException):
-    """Raised when statistical calculations fail."""
-    
-    def __init__(self, message: str, metric_name: str = None, team_abbr: str = None):
-        self.metric_name = metric_name
-        self.team_abbr = team_abbr
-        super().__init__(message)
-
-
-class CacheOperationError(CacheError):
-    """Raised when cache operations fail with specific context."""
-    
-    def __init__(self, message: str, cache_key: str = None, operation: str = None, cause: Exception = None):
-        self.cause = cause
-        super().__init__(message, cache_key, operation)

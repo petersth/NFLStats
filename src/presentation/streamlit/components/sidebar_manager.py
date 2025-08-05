@@ -4,10 +4,9 @@ import streamlit as st
 from dataclasses import dataclass
 from typing import Dict
 from ....config import NFL_TEAMS, TEAM_DATA
-from ....domain import SeasonService, ConfigurationService
-from ....infrastructure import CacheConfig, get_configured_cache
-# Note: ApplicationStateInterface removed - using concrete classes
-# Note: NotificationInterface removed - using concrete classes
+from ....utils.season_utils import get_current_nfl_season_info
+from ....utils.configuration_utils import get_configuration
+from ....domain.services import get_data_status
 
 
 @dataclass
@@ -19,15 +18,12 @@ class SidebarState:
     configuration: Dict
     should_analyze: bool
     config_changed: bool = False
-    use_fresh_data: bool = False
     cache_nfl_data: bool = False
     
 class SidebarManager:
     """Manages the sidebar UI and state."""
     
     def __init__(self, app_state, notification_service):
-        self._season_service = SeasonService()
-        self._config_service = ConfigurationService()
         self._app_state = app_state
         self._notification_service = notification_service
     
@@ -44,7 +40,7 @@ class SidebarManager:
             
             self._render_team_info(team_abbreviation)
             
-            season_info = self._season_service.get_current_nfl_season_info()
+            season_info = get_current_nfl_season_info()
             season_year = st.selectbox(
                 "Select Season",
                 options=season_info['available_seasons'],
@@ -69,18 +65,12 @@ class SidebarManager:
             
             configuration = self._render_configuration()
             
-            # Data source options
-            st.markdown("### Data Source")
-            use_fresh_data = st.checkbox(
-                "Force fresh data from NFL library",
-                value=True,
-                help="Override database cache and fetch fresh data directly from NFL API"
-            )
-            
+            st.markdown("#### Cache Settings")
+
             cache_nfl_data = st.checkbox(
                 "Cache NFL data for session",
                 value=True,
-                disabled=not use_fresh_data,
+                disabled=False,
                 help="Cache NFL library data in memory to avoid reloading for each team. Unchecking forces fresh API calls for every analysis."
             )
             
@@ -98,7 +88,6 @@ class SidebarManager:
                 configuration=configuration,
                 should_analyze=should_analyze,
                 config_changed=config_changed,
-                use_fresh_data=use_fresh_data,
                 cache_nfl_data=cache_nfl_data,
             )
     
@@ -145,7 +134,7 @@ class SidebarManager:
         st.markdown("### Statistics Configuration")
         
         # Always use custom configuration
-        configuration = self._config_service.get_configuration('custom')
+        configuration = get_configuration('custom')
         
         # QB Kneel Settings
         st.markdown("#### QB Kneel Settings")
@@ -182,10 +171,6 @@ class SidebarManager:
             st.divider()
             st.subheader("Data Status")
             
-            # Create data status use case - use existing season service since DI might not be fully initialized
-            from ....application import GetDataStatusUseCase
-            data_status_use_case = GetDataStatusUseCase(self._season_service)
-            
             # Get data timestamp from repository instead of trying to parse game dates
             data_timestamp = self._get_data_timestamp(analysis_response.season.year)
             
@@ -197,7 +182,7 @@ class SidebarManager:
                     latest_game_date = latest_game_date.tz_localize(None)
                 
                 # Get data status
-                data_status = data_status_use_case.execute(latest_game_date, analysis_response.season)
+                data_status = get_data_status(latest_game_date, analysis_response.season)
                 
                 # Always show data status in sidebar
                 if data_status.status_type == "success":
@@ -217,18 +202,24 @@ class SidebarManager:
             logging.getLogger(__name__).debug(f"Could not render data status in sidebar: {e}")
     
     def _get_data_timestamp(self, season_year: int):
-        """Get data timestamp from repository."""
+        """Get data timestamp from the shared league cache."""
         try:
-            from ....infrastructure.factories import create_data_repository
-            from ....domain.services import ConfigurationService
+            import streamlit as st
             
-            # Create a unified repository to get data timestamp
-            config_service = ConfigurationService()
-            data_repo = create_data_repository(config_service)
+            # Use the same persistent cache instance that the main app uses
+            cache_key = "nfl_api"
+            if hasattr(st, 'session_state') and hasattr(st.session_state, 'league_cache_instances'):
+                if cache_key in st.session_state.league_cache_instances:
+                    league_cache = st.session_state.league_cache_instances[cache_key]
+                    
+                    # Try to get timestamp from the cached repository data
+                    if hasattr(league_cache, '_nfl_data_repo') and league_cache._nfl_data_repo:
+                        timestamp = league_cache._nfl_data_repo.get_data_timestamp(season_year)
+                        if timestamp:
+                            return timestamp
             
-            # Get play-by-play data which includes timestamp
-            _, timestamp = data_repo.get_play_by_play_data(season_year)
-            return timestamp
+            # If no cached data available, return None (we don't want to fetch just for timestamp)
+            return None
             
         except ImportError as e:
             import logging

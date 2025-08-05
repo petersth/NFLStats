@@ -267,8 +267,8 @@ class StreamlitApplicationStateAdapter:
     
     def _get_config_hash(self, config: Dict) -> str:
         """Generate a stable hash for configuration comparison."""
-        from ...utils.config_hasher import ConfigHasher
-        return ConfigHasher.get_config_hash(config)
+        from ...utils.config_hasher import get_config_hash
+        return get_config_hash(config)
     
     def should_analyze(self, analyze_button: bool, config_changed: bool, 
                       team: str, season: int, season_type: str) -> bool:

@@ -65,9 +65,9 @@ RED_ZONE_YARDLINE = 20
 
 # Season types
 SEASON_TYPES = {
+    'ALL': 'All Games',
     'REG': 'Regular Season',
-    'POST': 'Playoffs',
-    'PRE': 'Preseason'
+    'POST': 'Playoffs'
 }
 
 # Success rate calculation thresholds
@@ -77,3 +77,31 @@ CONVERSION_SUCCESS_THRESHOLD = 1.0
 
 # Valid team abbreviation set (for fast lookup)
 VALID_TEAMS = set(NFL_TEAMS)
+
+# Game count constants
+NFL_REGULAR_SEASON_GAMES = 17  # Since 2021 season
+NFL_REGULAR_SEASON_GAMES_PRE_2021 = 16  # 1978-2020 seasons
+
+# Cache TTL constants (in hours)
+CACHE_TTL_CURRENT_SEASON_HOURS = 24  # 24 hour cache for current season
+CACHE_TTL_HISTORICAL_SEASON_HOURS = 24 * 365  # Essentially permanent for historical data
+
+# Progress tracking milestones
+PROGRESS_MILESTONES = {
+    'validation_start': 0.1,
+    'orchestration_start': 0.3,
+    'data_fetch_start': 0.4,
+    'filter_application': 0.7,
+    'rankings_calculation': 0.7,
+    'statistics_processing': 0.8,
+    'finalization': 0.9,
+    'league_averages': 0.95,
+}
+
+# UI Display constants
+CHART_OPACITY = 0.7  # Opacity for bar charts
+METRIC_FONT_SIZES = {
+    'label': '0.8em',
+    'value': '1.5em', 
+    'rank': '0.75em'
+}

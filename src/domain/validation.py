@@ -1,111 +1,152 @@
-# src/domain/validation.py - Input validation for domain entities and operations
+# src/domain/validation.py - Domain validation rules for NFL data
 
+import re
+from datetime import datetime
 from typing import Any, Optional
+from ..config import NFL_TEAMS, VALID_TEAMS, NFL_DATA_START_YEAR, SEASON_TYPES
 from .exceptions import DataValidationError
-from ..utils.validation import SharedValidator, ValidationError
-from ..config import TOTAL_NFL_TEAMS
 
 
-class InputValidator(SharedValidator):
-    """Domain validation service for input validation across the application."""
+class NFLValidator:
+    """Domain validator for NFL-specific business rules."""
     
-    @classmethod
-    def validate_season_year(cls, season_year: Any, field_name: str = "season_year") -> int:
-        """Validate and convert season year to integer."""
-        try:
-            return super().validate_season_year(season_year, field_name)
-        except ValidationError as e:
-            raise DataValidationError(str(e), field_name, season_year)
-    
-    @classmethod
-    def validate_team_abbreviation(cls, team_abbr: Any, field_name: str = "team_abbreviation") -> str:
-        """Validate NFL team abbreviation."""
-        try:
-            return super().validate_team_abbreviation(team_abbr, field_name)
-        except ValidationError as e:
-            raise DataValidationError(str(e), field_name, team_abbr)
-    
-    @classmethod
-    def validate_season_type(cls, season_type: Any, field_name: str = "season_type") -> str:
-        """Validate season type."""
-        try:
-            return super().validate_season_type(season_type, field_name)
-        except ValidationError as e:
-            raise DataValidationError(str(e), field_name, season_type)
-    
-    @classmethod
-    def validate_positive_integer(cls, value: Any, field_name: str) -> int:
-        """Validate that a value is a positive integer."""
-        try:
-            return super().validate_positive_integer(value, field_name)
-        except ValidationError as e:
-            raise DataValidationError(str(e), field_name, value)
-    
-    @classmethod
-    def validate_percentage(cls, value: Any, field_name: str, allow_none: bool = False) -> Optional[float]:
-        """Validate that a value is a valid percentage (0-100)."""
-        if value is None:
-            if allow_none:
-                return None
-            raise DataValidationError(f"{field_name} cannot be None", field_name, value)
+    @staticmethod
+    def validate_season_year(season_year: Any, field_name: str = "season_year") -> int:
+        """Validate and convert season year to integer.
+        
+        Business rules:
+        - Must be within NFL data availability range
+        - Cannot be more than one year in the future
+        """
+        if season_year is None:
+            raise DataValidationError(f"{field_name} cannot be None", field_name, season_year)
         
         try:
-            float_value = float(value)
+            year = int(season_year)
         except (ValueError, TypeError):
-            raise DataValidationError(f"{field_name} must be a valid number", field_name, value)
+            raise DataValidationError(f"{field_name} must be a valid integer", field_name, season_year)
         
-        if float_value < 0 or float_value > 100:
-            raise DataValidationError(f"{field_name} must be between 0 and 100", field_name, float_value)
+        current_year = datetime.now().year
         
-        return float_value
-    
-    @classmethod
-    def validate_game_id(cls, game_id: Any, field_name: str = "game_id") -> str:
-        """Validate NFL game ID format."""
-        if game_id is None:
-            raise DataValidationError(f"{field_name} cannot be None", field_name, game_id)
-        
-        if not isinstance(game_id, str):
-            raise DataValidationError(f"{field_name} must be a string", field_name, game_id)
-        
-        game_id = game_id.strip()
-        
-        # Basic format validation for NFL game IDs (usually YYYY_XX_TEAM1_TEAM2 or similar)
-        if len(game_id) < 10:
-            raise DataValidationError(f"{field_name} appears to be too short", field_name, game_id)
-        
-        # Check for reasonable characters (alphanumeric, underscore, dash)
-        if not re.match(r'^[A-Za-z0-9_-]+$', game_id):
+        if year < NFL_DATA_START_YEAR:
             raise DataValidationError(
-                f"{field_name} contains invalid characters (only alphanumeric, underscore, dash allowed)", 
-                field_name, game_id
+                f"{field_name} must be {NFL_DATA_START_YEAR} or later (NFL data availability)",
+                field_name, year
             )
         
-        return game_id
+        if year > current_year + 1:
+            raise DataValidationError(
+                f"{field_name} cannot be more than one year in the future",
+                field_name, year
+            )
+        
+        return year
     
-    @classmethod
-    def validate_configuration_dict(cls, config: Any, field_name: str = "configuration") -> dict:
-        """Validate configuration dictionary."""
-        try:
-            validated_config = super().validate_configuration_dict(config, field_name)
-            
-            # Additional domain-specific validation
-            if 'include_playoffs' in validated_config:
-                if not isinstance(validated_config['include_playoffs'], bool):
+    @staticmethod
+    def validate_team_abbreviation(team_abbr: Any, field_name: str = "team_abbreviation") -> str:
+        """Validate NFL team abbreviation.
+        
+        Business rules:
+        - Must be valid NFL team abbreviation
+        - Format: 2-4 uppercase letters
+        """
+        if team_abbr is None:
+            raise DataValidationError(f"{field_name} cannot be None", field_name, team_abbr)
+        
+        if not isinstance(team_abbr, str):
+            raise DataValidationError(f"{field_name} must be a string", field_name, team_abbr)
+        
+        # Normalize: uppercase and strip whitespace
+        normalized = team_abbr.upper().strip()
+        
+        # Format validation: 2-4 uppercase letters only
+        if not re.match(r'^[A-Z]{2,4}$', normalized):
+            raise DataValidationError(f"{field_name} must be 2-4 uppercase letters only", field_name, normalized)
+        
+        # Check against valid NFL teams
+        if normalized not in VALID_TEAMS:
+            sorted_teams = sorted(NFL_TEAMS)
+            raise DataValidationError(
+                f"Invalid team abbreviation: {normalized}. Must be one of: {', '.join(sorted_teams)}",
+                field_name, normalized
+            )
+        
+        return normalized
+    
+    @staticmethod
+    def validate_season_type(season_type: Any, field_name: str = "season_type") -> str:
+        """Validate season type.
+        
+        Business rules:
+        - Must be one of: ALL, REG, POST
+        """
+        if season_type is None:
+            raise DataValidationError(f"{field_name} cannot be None", field_name, season_type)
+        
+        if not isinstance(season_type, str):
+            raise DataValidationError(f"{field_name} must be a string", field_name, season_type)
+        
+        normalized = season_type.upper().strip()
+        
+        if normalized not in SEASON_TYPES:
+            raise DataValidationError(
+                f"Invalid season type: {normalized}. Must be one of: {', '.join(sorted(SEASON_TYPES))}",
+                field_name, normalized
+            )
+        
+        return normalized
+    
+    @staticmethod
+    def validate_configuration(config: Any, field_name: str = "configuration") -> dict:
+        """Validate NFL configuration dictionary.
+        
+        Business rules:
+        - Must contain valid boolean flags for QB kneel handling
+        - Validates known configuration fields
+        """
+        if config is None:
+            raise DataValidationError(f"{field_name} cannot be None", field_name, config)
+        
+        if not isinstance(config, dict):
+            raise DataValidationError(f"{field_name} must be a dictionary", field_name, config)
+        
+        # Basic validation for known configuration fields
+        validated_config = config.copy()
+        
+        # Validate boolean fields
+        boolean_fields = [
+            'include_playoffs', 
+            'exclude_kneel_downs', 
+            'include_qb_kneels_rushing', 
+            'include_qb_kneels_success_rate'
+        ]
+        
+        for field in boolean_fields:
+            if field in validated_config:
+                if not isinstance(validated_config[field], bool):
                     raise DataValidationError(
-                        "include_playoffs must be a boolean", 
-                        "include_playoffs", 
-                        validated_config['include_playoffs']
+                        f"{field} must be a boolean",
+                        field, validated_config[field]
                     )
-            
-            if 'exclude_kneel_downs' in validated_config:
-                if not isinstance(validated_config['exclude_kneel_downs'], bool):
-                    raise DataValidationError(
-                        "exclude_kneel_downs must be a boolean", 
-                        "exclude_kneel_downs", 
-                        validated_config['exclude_kneel_downs']
-                    )
-            
-            return validated_config
-        except ValidationError as e:
-            raise DataValidationError(str(e), field_name, config)
+        
+        return validated_config
+
+
+# Generic validation utilities (not NFL-specific)
+def validate_positive_integer(value: Any, field_name: str) -> int:
+    """Validate that a value is a positive integer.
+    
+    This is a generic validation utility, not NFL-specific.
+    """
+    if value is None:
+        raise DataValidationError(f"{field_name} cannot be None", field_name, value)
+    
+    try:
+        int_value = int(value)
+    except (ValueError, TypeError):
+        raise DataValidationError(f"{field_name} must be a valid integer", field_name, value)
+    
+    if int_value <= 0:
+        raise DataValidationError(f"{field_name} must be positive", field_name, int_value)
+    
+    return int_value

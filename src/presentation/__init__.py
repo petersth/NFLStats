@@ -1,1 +1,0 @@
-"""Presentation layer - UI components and controllers."""

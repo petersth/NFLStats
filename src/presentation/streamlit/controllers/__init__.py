@@ -2,12 +2,10 @@
 
 from .team_analysis_controller import (
     TeamAnalysisController,
-    LeagueStatsController, 
-    DataStatusController
+    LeagueStatsController
 )
 
 __all__ = [
     'TeamAnalysisController',
-    'LeagueStatsController',
-    'DataStatusController'
+    'LeagueStatsController'
 ]

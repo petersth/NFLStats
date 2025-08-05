@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 
 from .entities import Team, Season, SeasonStats, GameStats, TeamRecord
-from .exceptions import StatisticsCalculationError
+# Exceptions removed - using standard Python exceptions for calculation errors
 from .utilities import PlayFilter
 from ..config.nfl_constants import (
     TOUCHDOWN_POINTS, EXTRA_POINT_POINTS, TWO_POINT_CONVERSION_POINTS,
@@ -65,9 +65,6 @@ class NFLStatsCalculator:
             logger.error(f"Error calculating season stats for {team.abbreviation}: {e}")
             return self._create_empty_season_stats(team, season)
     
-    # NOTE: calculate_from_aggregates method removed to prevent confusion.
-    # This orchestrator only uses raw data calculations to ensure identical results
-    # between fresh NFL and database-optimized strategies.
     
     def calculate_game_stats(self, team_data: pd.DataFrame, team: Team) -> List[GameStats]:
         """Calculate game-by-game statistics."""
@@ -139,11 +136,10 @@ class NFLStatsCalculator:
             if len(team_data) == 0 or 'game_id' not in team_data.columns:
                 return None
             
-            # Get unique games and try to determine wins/losses
+            # Get unique games and try to determine wins/losses, separated by season type
             games = team_data['game_id'].unique()
-            wins = 0
-            losses = 0
-            ties = 0
+            reg_wins = reg_losses = reg_ties = 0
+            playoff_wins = playoff_losses = playoff_ties = 0
             
             for game_id in games:
                 game_data = team_data[team_data['game_id'] == game_id]
@@ -153,19 +149,30 @@ class NFLStatsCalculator:
                     final_play = game_data.iloc[-1]  # Last play of game
                     team_score = final_play['posteam_score_post']
                     opp_score = final_play['defteam_score_post']
+                    season_type = final_play.get('season_type', 'REG')
                     
+                    # Determine win/loss/tie
                     if team_score > opp_score:
-                        wins += 1
+                        if season_type == 'POST':
+                            playoff_wins += 1
+                        else:
+                            reg_wins += 1
                     elif team_score < opp_score:
-                        losses += 1
+                        if season_type == 'POST':
+                            playoff_losses += 1
+                        else:
+                            reg_losses += 1
                     else:
-                        ties += 1
+                        if season_type == 'POST':
+                            playoff_ties += 1
+                        else:
+                            reg_ties += 1
             
             return TeamRecord(
-                regular_season_wins=wins, 
-                regular_season_losses=losses,
-                playoff_wins=0,  # We don't have playoff data in this context
-                playoff_losses=0
+                regular_season_wins=reg_wins, 
+                regular_season_losses=reg_losses,
+                playoff_wins=playoff_wins,
+                playoff_losses=playoff_losses
             )
             
         except Exception as e:
@@ -469,8 +476,6 @@ class NFLStatsCalculator:
             total_third_down_pass_conversions=stats.get('third_down_pass_conversions', 0)
         )
     
-    # NOTE: _extract_aggregate_stats method removed to prevent confusion.
-    # This calculator only uses raw play-by-play data to ensure consistent results.
     
     # === Helper Methods ===
     

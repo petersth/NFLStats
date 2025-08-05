@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional, Any
 from enum import Enum
 from ..domain.entities import Team, Season, GameStats, SeasonStats, PerformanceRank, TeamRecord
-from ..utils.validation import SharedValidator
+from ..domain.validation import NFLValidator
 
 
 class ExportFormat(Enum):
@@ -33,25 +33,25 @@ class TeamAnalysisRequest:
     
     def _validate_team_abbreviation(self):
         """Validate team abbreviation format and content."""
-        self.team_abbreviation = SharedValidator.validate_team_abbreviation(
+        self.team_abbreviation = NFLValidator.validate_team_abbreviation(
             self.team_abbreviation, "team_abbreviation"
         )
     
     def _validate_season_year(self):
         """Validate season year is within reasonable bounds."""
-        self.season_year = SharedValidator.validate_season_year(
+        self.season_year = NFLValidator.validate_season_year(
             self.season_year, "season_year"
         )
     
     def _validate_season_type_filter(self):
         """Validate season type filter."""
-        self.season_type_filter = SharedValidator.validate_season_type(
+        self.season_type_filter = NFLValidator.validate_season_type(
             self.season_type_filter, "season_type_filter"
         )
     
     def _validate_configuration(self):
         """Validate configuration dictionary structure."""
-        self.configuration = SharedValidator.validate_configuration_dict(
+        self.configuration = NFLValidator.validate_configuration(
             self.configuration, "configuration"
         )
     

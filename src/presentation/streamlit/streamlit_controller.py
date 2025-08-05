@@ -7,7 +7,6 @@ from typing import Dict, Any
 from .controllers.team_analysis_controller import TeamAnalysisController
 from ...application.dto import TeamAnalysisRequest
 from ...domain.exceptions import DataAccessError, DataNotFoundError, UseCaseError
-from ...infrastructure.cache.cache_config import CacheConfig
 from ...infrastructure.factories import get_configured_cache
 from ...infrastructure.frameworks.streamlit_utils import StreamlitAdapter
 from .components.sidebar_manager import SidebarManager
@@ -62,7 +61,6 @@ class StreamlitController:
     def __init__(self):
         # Create Streamlit adapters
         adapter = StreamlitAdapter()
-        self.cache_manager = adapter.cache
         self.state_manager = adapter.state
         self.notification_service = adapter.notifications
         self.app_state = adapter.app_state
@@ -103,8 +101,6 @@ class StreamlitController:
     def _render_team_analysis_with_sidebar(self, selections) -> None:
         """Render the main team analysis interface with sidebar updates."""
         try:
-            # Get cache configuration
-            cache_config = self._get_cache_config(selections)
             
             # Inject team colors
             inject_team_colors(selections.team_abbreviation)
@@ -118,13 +114,12 @@ class StreamlitController:
                 cache_nfl_data=selections.cache_nfl_data
             )
             
-            # Check for existing analysis (include season type, config hash, and data source in cache key)
+            # Check for existing analysis (include season type and config hash in cache key)
             config_hash = self._get_cache_config_hash(request.configuration)
-            data_source = "fresh" if selections.use_fresh_data else "db"
-            cache_key = f"analysis_{request.team_abbreviation}_{request.season_year}_{request.season_type_filter}_{config_hash}_{data_source}"
+            cache_key = f"analysis_{request.team_abbreviation}_{request.season_year}_{request.season_type_filter}_{config_hash}"
             
             # Skip cache if user wants fresh data
-            analysis_response = None if selections.use_fresh_data else self.state_manager.get(cache_key)
+            analysis_response = None
             
             if analysis_response is None:
                 # Reset analysis state to clear stale UI elements
@@ -135,15 +130,10 @@ class StreamlitController:
                 
                 with main_content.container():
                     # Show appropriate message based on why we're recalculating
-                    if selections.use_fresh_data:
-                        st.info("🔄 Loading fresh data from NFL library...")
-                    elif selections.config_changed:
-                        st.info("🔄 Configuration changed. Recalculating statistics...")
-                    else:
-                        st.info("🔄 Loading team statistics...")
+                    st.info("🔄 Loading team statistics...")
                     
                     # Perform new analysis with progress tracking
-                    analysis_response = self._perform_analysis_with_progress(request, cache_config)
+                    analysis_response = self._perform_analysis_with_progress(request)
                 
                 # Clear the loading message and render results
                 main_content.empty()
@@ -167,30 +157,19 @@ class StreamlitController:
                 # Force re-render sidebar with data status
                 self._rerender_sidebar_with_data_status(analysis_response)
             
-        except DataNotFoundError:
-            self._render_no_data_message(selections)
+        except DataNotFoundError as e:
+            self._render_specific_error_message(str(e), selections)
         except UseCaseError as e:
             st.error(f"Analysis failed: {str(e)}")
         except Exception as e:
             logger.error(f"Unexpected error during analysis: {e}")
             st.error("An unexpected error occurred during analysis.")
     
-    def _perform_analysis_with_progress(self, request: TeamAnalysisRequest, cache_config: CacheConfig):
+    def _perform_analysis_with_progress(self, request: TeamAnalysisRequest):
         """Perform analysis with progress tracking."""
         # Create controller with injected dependencies
         try:
             controller = TeamAnalysisController()
-            
-            # Check if we're using the fallback repository
-            from ...infrastructure.data.unified_nfl_repository import UnifiedNFLRepository, InMemoryStrategy
-            if (isinstance(controller._orchestrator._data_repository, UnifiedNFLRepository) and
-                isinstance(controller._orchestrator._data_repository._storage, InMemoryStrategy)):
-                st.info("""
-                ℹ️ **Using Direct NFL API Mode**
-                
-                Database is unavailable, so data will be fetched directly from the NFL API. 
-                This may be slower and data won't be cached between sessions.
-                """)
                 
         except (ValueError, TypeError) as e:
             logger.error(f"Failed to create TeamAnalysisController via DI: {e}")
@@ -198,17 +177,17 @@ class StreamlitController:
             st.error(f"Failed to initialize analysis components: {error_message}")
             return
         
-        # Get or create a league cache instance based on data source and caching preference
-        cache_key = f"{cache_config.data_source.value}"
+        # Get or create a league cache instance
+        cache_key = "nfl_api"
         
         if request.cache_nfl_data:
             # Use persistent cache instance when caching is enabled
             if cache_key not in st.session_state.league_cache_instances:
-                st.session_state.league_cache_instances[cache_key] = get_configured_cache(cache_config)
+                st.session_state.league_cache_instances[cache_key] = get_configured_cache()
             league_cache = st.session_state.league_cache_instances[cache_key]
         else:
             # Create a fresh cache instance when caching is disabled (forces fresh data)
-            league_cache = get_configured_cache(cache_config)
+            league_cache = get_configured_cache()
         
         # Configure NFL data caching
         if hasattr(league_cache, 'set_nfl_data_caching') and hasattr(request, 'cache_nfl_data'):
@@ -216,7 +195,6 @@ class StreamlitController:
         
         controller._orchestrator._league_cache = league_cache
         
-        # The league cache should handle fresh data vs database internally based on cache_config
         
         # Create progress tracker
         progress_manager = create_data_loading_progress()
@@ -232,14 +210,6 @@ class StreamlitController:
             logger.error(f"Analysis failed: {e}")
             raise
     
-    def _get_cache_config(self, selections) -> CacheConfig:
-        """Get cache configuration based on user selections."""
-        from ...infrastructure.cache.cache_config import DataSource
-        
-        if selections.use_fresh_data:
-            return CacheConfig(data_source=DataSource.NFL_LIBRARY)
-        else:
-            return CacheConfig(data_source=DataSource.DATABASE)
     
     def _get_cache_config_hash(self, configuration: Dict) -> str:
         """Get configuration hash for cache key generation."""
@@ -285,6 +255,21 @@ class StreamlitController:
                 analysis_response=analysis_response
             )
     
+    
+    def _render_specific_error_message(self, error_message: str, selections) -> None:
+        """Render a specific error message, or fall back to generic message."""
+        if "did not make the playoffs" in error_message:
+            # Show specific playoff message with helpful UI
+            st.warning(f"""
+            🏈 **{error_message}**
+            
+            💡 **Quick Fix**: Use the season type selector above to choose:
+            - **Regular Season** - See their regular season performance
+            - **All Games** - See complete season overview
+            """)
+        else:
+            # Fall back to generic no data message
+            self._render_no_data_message(selections)
     
     def _render_no_data_message(self, selections) -> None:
         """Render a message when no data is available."""

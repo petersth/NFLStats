@@ -9,7 +9,6 @@ from ..services.chart_generation_service import ChartGenerationService
 from ..services.export_service import ExportService
 from .methodology_renderer import MethodologyRenderer
 from .progress_manager import ProgressManager
-# Note: ApplicationStateInterface removed - using concrete classes
 
 
 class TabManager:

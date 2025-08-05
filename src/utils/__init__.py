@@ -1,11 +1,6 @@
 # Utils package
 
-from .validation import (
-    SharedValidator, TeamValidationMixin, SeasonValidationMixin, 
-    CommonValidationMixin, ValidationError
-)
+# Generic validation utilities are now available directly from domain.validation
+# NFL-specific validation has been moved to domain.validation.NFLValidator
 
-__all__ = [
-    'SharedValidator', 'TeamValidationMixin', 'SeasonValidationMixin',
-    'CommonValidationMixin', 'ValidationError'
-]
+__all__ = []

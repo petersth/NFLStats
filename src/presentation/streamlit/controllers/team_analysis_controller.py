@@ -8,10 +8,12 @@ import pandas as pd
 from ....domain.entities import Team, Season
 from ....domain.orchestration import CalculationOrchestrator
 from ....utils import ranking_utils
-from ....domain.validation import InputValidator
+from ....domain.validation import NFLValidator
 from ....domain.exceptions import UseCaseError, DataValidationError, CacheError
-from ....application.dto import TeamAnalysisRequest, TeamAnalysisResponse, DataStatusInfo
+from ....application.dto import TeamAnalysisRequest, TeamAnalysisResponse
+from ....domain.services import get_data_status
 from ....infrastructure.factories import create_calculation_orchestrator
+from ....config.nfl_constants import PROGRESS_MILESTONES
 
 logger = logging.getLogger(__name__)
 
@@ -38,14 +40,14 @@ class TeamAnalysisController:
         try:
             # Update progress
             if progress_callback:
-                progress_callback.update(0.1, "Validating request...")
+                progress_callback.update(PROGRESS_MILESTONES['validation_start'], "Validating request...")
             
             # Parse validated inputs
             team = Team.from_abbreviation(request.team_abbreviation)
             season = Season(request.season_year)
             
             if progress_callback:
-                progress_callback.update(0.3, "Orchestrating data sources...")
+                progress_callback.update(PROGRESS_MILESTONES['orchestration_start'], "Orchestrating data sources...")
             
             # Orchestrator handles all the complexity of data source selection
             season_stats, game_stats, team_record = self._orchestrator.calculate_team_analysis(
@@ -57,13 +59,13 @@ class TeamAnalysisController:
             )
             
             if progress_callback:
-                progress_callback.update(0.7, "Calculating rankings...")
+                progress_callback.update(PROGRESS_MILESTONES['rankings_calculation'], "Calculating rankings...")
             
             # Calculate rankings (if we have league data)
             rankings = self._calculate_rankings(team, season, request.season_type_filter, request.configuration)
             
             if progress_callback:
-                progress_callback.update(0.9, "Finalizing analysis...")
+                progress_callback.update(PROGRESS_MILESTONES['finalization'], "Finalizing analysis...")
             
             # Calculate league averages (if available)
             league_averages = self._calculate_league_averages(season, request.season_type_filter, request.configuration)
@@ -93,14 +95,14 @@ class TeamAnalysisController:
         if not request:
             raise DataValidationError("TeamAnalysisRequest cannot be None", "request", request)
         
-        InputValidator.validate_season_year(request.season_year, "season_year")
-        InputValidator.validate_team_abbreviation(request.team_abbreviation, "team_abbreviation")
+        NFLValidator.validate_season_year(request.season_year, "season_year")
+        NFLValidator.validate_team_abbreviation(request.team_abbreviation, "team_abbreviation")
         
         if request.season_type_filter:
-            InputValidator.validate_season_type(request.season_type_filter, "season_type_filter")
+            NFLValidator.validate_season_type(request.season_type_filter, "season_type_filter")
         
         if request.configuration:
-            InputValidator.validate_configuration_dict(request.configuration, "configuration")
+            NFLValidator.validate_configuration(request.configuration, "configuration")
     
     def _calculate_rankings(self, team: Team, season: Season, season_type_filter: Optional[str], configuration: Optional[Dict]) -> Optional[Dict]:
         """Calculate team rankings if league data is available."""
@@ -172,11 +174,11 @@ class LeagueStatsController:
         """Get league-wide statistics using orchestration."""
         
         # Validate inputs
-        InputValidator.validate_season_year(season_year, "season_year")
+        NFLValidator.validate_season_year(season_year, "season_year")
         if season_type_filter:
-            InputValidator.validate_season_type(season_type_filter, "season_type_filter")
+            NFLValidator.validate_season_type(season_type_filter, "season_type_filter")
         if configuration:
-            InputValidator.validate_configuration_dict(configuration, "configuration")
+            NFLValidator.validate_configuration(configuration, "configuration")
         
         try:
             # Use the league cache to get or compute league stats
@@ -201,57 +203,3 @@ class LeagueStatsController:
             })
 
 
-class DataStatusController:
-    """Controller for determining data freshness and status."""
-    
-    def get_data_status(self, latest_game_date: pd.Timestamp, season: Season) -> DataStatusInfo:
-        """Execute data status check."""
-        try:
-            # Convert to datetime if needed
-            if isinstance(latest_game_date, pd.Timestamp):
-                game_date = latest_game_date.to_pydatetime()
-            else:
-                game_date = latest_game_date
-            
-            # Calculate days old
-            now = datetime.now()
-            days_old = (now - game_date).days
-            
-            # Format the date
-            formatted_date = game_date.strftime("%Y-%m-%d")
-            
-            # Determine status based on age
-            if days_old <= 1:
-                status_type = "success"
-                status_message = "Data is current (within 24 hours)"
-                is_current = True
-            elif days_old <= 7:
-                status_type = "info" 
-                status_message = f"Data is {days_old} days old"
-                is_current = True
-            elif days_old <= 14:
-                status_type = "warning"
-                status_message = f"Data is {days_old} days old - may need refresh"
-                is_current = False
-            else:
-                status_type = "warning"
-                status_message = f"Data is {days_old} days old - refresh recommended"
-                is_current = False
-            
-            return DataStatusInfo(
-                latest_game_date=formatted_date,
-                days_old=days_old,
-                is_current=is_current,
-                status_message=status_message,
-                status_type=status_type
-            )
-            
-        except Exception as e:
-            logger.error(f"Failed to determine data status: {e}")
-            return DataStatusInfo(
-                latest_game_date="Unknown",
-                days_old=0,
-                is_current=False,
-                status_message="Unable to determine data status",
-                status_type="error"
-            )
