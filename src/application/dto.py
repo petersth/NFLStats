@@ -56,9 +56,11 @@ class TeamAnalysisRequest:
         )
     
     def _validate_playoff_eligibility(self):
-        """Validate that playoff requests are for teams that made playoffs."""
-        # TODO: Add playoff eligibility validation
-        # For now, playoff validation happens at the data access layer
+        """Validate that playoff requests are for teams that made playoffs.
+        
+        Note: Playoff validation is handled at the data access layer where
+        actual playoff participation can be determined from the dataset.
+        """
         pass
 
 

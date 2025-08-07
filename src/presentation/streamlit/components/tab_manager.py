@@ -22,7 +22,6 @@ class TabManager:
     
     def render_analysis_tabs(self, analysis_response: TeamAnalysisResponse, configuration: dict = None):
         """Render all tabs with their content and configuration."""
-        # Delegate to the main render_tabs method (configuration not currently used)
         self.render_tabs(analysis_response)
     
     def render_tabs(self, analysis_response: TeamAnalysisResponse):
@@ -113,7 +112,6 @@ class TabManager:
         league_avgs = analysis_response.league_averages
         rankings = analysis_response.rankings or {}
         
-        # Use centralized metrics definitions
         metrics_to_compare = [(metric.key, metric.short_name) for metric in NFLMetrics.get_all_metrics() 
                              if metric.key in ['avg_yards_per_play', 'turnovers_per_game', 'completion_pct', 
                                              'rush_ypc', 'sacks_per_game', 'third_down_pct', 'success_rate',

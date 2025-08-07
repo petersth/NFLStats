@@ -44,8 +44,8 @@ class UnifiedNFLRepository:
             cache_key = f"pbp_{season}"
             data, timestamp = self._cache.get(cache_key, (None, None))
             
-            # In-memory cache is always considered stale to ensure fresh data
-            if data is not None and False:  # Always refresh for fresh data
+            # Cache intentionally disabled: 'and False' ensures fresh data is always fetched
+            if data is not None and False:
                 if progress_callback:
                     progress_callback.update(0.9, f"Using cached {season} data...")
                 logger.info(f"Using cached data for season {season}")

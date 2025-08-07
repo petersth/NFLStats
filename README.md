@@ -37,8 +37,5 @@ The application will be available at `http://localhost:8501` in your web browser
 - nfl_data_py - NFL data access
 - plotly - Interactive charts
 - openpyxl - Excel file support
-- psycopg2-binary - PostgreSQL adapter
-- sqlalchemy - Database toolkit
 - requests - HTTP library
 - python-dateutil - Date utilities
-- supabase - Database client

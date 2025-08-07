@@ -48,7 +48,24 @@ def get_available_configurations() -> List[str]:
 
 
 def apply_configuration_to_data(data: pd.DataFrame, config: Dict) -> pd.DataFrame:
-    """Apply configuration filtering to data."""
+    """Apply configuration filtering to NFL play-by-play data.
+    
+    Configuration Filtering Strategy:
+    1. QB Kneels: Can be excluded from rushing stats, success rate, or both
+    2. QB Spikes: Can be excluded from completion %, success rate, or both  
+    3. Context Marking: Uses special columns (_qb_kneel_context, _spike_context)
+       to enable metric-specific exclusions in downstream calculations
+    
+    This approach allows fine-grained control where certain plays can be excluded
+    from some metrics but included in others, matching real NFL analytics practices.
+    
+    Args:
+        data: DataFrame containing NFL play-by-play data
+        config: Configuration dictionary with filtering settings
+        
+    Returns:
+        DataFrame with configuration-based filtering applied and context markers added
+    """
     if len(data) == 0:
         return data
     
@@ -60,6 +77,7 @@ def apply_configuration_to_data(data: pd.DataFrame, config: Dict) -> pd.DataFram
     filtered_data = data.copy()
     
     # Apply QB kneel filtering based on configuration
+    # QB kneels are typically used to run out the clock and may skew rushing statistics
     if 'play_type' in filtered_data.columns:
         qb_kneel_mask = filtered_data['play_type'] == 'qb_kneel'
         qb_kneels_exist = qb_kneel_mask.any()
@@ -68,14 +86,14 @@ def apply_configuration_to_data(data: pd.DataFrame, config: Dict) -> pd.DataFram
             include_rushing = config.get('include_qb_kneels_rushing', True)
             include_success_rate = config.get('include_qb_kneels_success_rate', True)
             
-            # Apply filtering logic
+            # Apply filtering logic based on configuration matrix
             if not include_rushing and not include_success_rate:
+                # Complete exclusion: remove QB kneels entirely
                 filtered_data = filtered_data[~qb_kneel_mask]
                 logger.info(f"Removed {qb_kneel_mask.sum()} QB kneel plays from analysis")
             elif not include_rushing and include_success_rate:
-                # Filter QB kneels from rushing metrics but keep for success rate
-                # This requires context-aware filtering in the statistics calculator
-                # For now, we'll mark these plays for context-aware handling
+                # Partial exclusion: mark for context-aware filtering
+                # QB kneels excluded from rushing metrics but included in success rate
                 filtered_data.loc[qb_kneel_mask, '_qb_kneel_context'] = 'exclude_rushing'
                 logger.info(f"Marked {qb_kneel_mask.sum()} QB kneel plays to exclude from rushing metrics only")
             elif include_rushing and not include_success_rate:

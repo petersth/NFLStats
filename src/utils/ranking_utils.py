@@ -38,12 +38,23 @@ def calculate_all_rankings(team_stats_dict: Dict) -> Dict[str, Dict]:
 def calculate_team_rankings(team_abbr: str, team_stats_dict: Dict) -> Dict:
     """Calculate rankings for a specific team from league statistics dictionary.
     
+    Implements NFL-standard ranking methodology with proper tie handling:
+    - Uses 'min' ranking method: tied teams receive the same (best) rank
+    - Handles directional metrics: higher values rank better for most metrics,
+      lower values rank better for turnovers, sacks allowed, penalties
+    - Provides 1-based ranking (1st = best, 32nd = worst in 32-team league)
+    
     Args:
-        team_abbr: Team abbreviation to calculate rankings for
-        team_stats_dict: Dictionary mapping team abbreviations to their SeasonStats objects
+        team_abbr: Team abbreviation to calculate rankings for (e.g., 'KC', 'BUF')
+        team_stats_dict: Dictionary mapping team abbreviations to SeasonStats objects
         
     Returns:
-        Dictionary mapping metric names to rank positions (1-based)
+        Dictionary mapping metric names to integer rank positions (1-32 scale)
+        Returns empty dict if team not found or no valid metrics
+        
+    Example:
+        rankings = calculate_team_rankings('KC', all_team_stats)
+        # Returns: {'avg_yards_per_play': 3, 'turnovers_per_game': 8, ...}
     """
     if team_abbr not in team_stats_dict:
         logger.warning(f"Team '{team_abbr}' not found in team stats dictionary")
@@ -104,14 +115,29 @@ def _extract_metric_values(team_stats_dict: Dict, metric: str) -> List[Tuple[str
 
 def _calculate_metric_rank(team_abbr: str, team_value: float, 
                           team_values: List[Tuple[str, float]], metric: str) -> int:
-    """Calculate the rank for a team's metric value with proper tie handling."""
+    """Calculate the rank for a team's metric value with proper tie handling.
+    
+    Implements the 'min' ranking method used in sports statistics:
+    - Teams with identical values receive the same rank (the best available rank)
+    - Subsequent ranks are adjusted to account for tied positions
+    - Example: If 3 teams tie for 2nd place, they all get rank 2, next team gets rank 5
+    
+    Args:
+        team_abbr: Team abbreviation to find rank for
+        team_value: The team's value for this metric
+        team_values: List of (team_abbr, value) tuples for all teams
+        metric: Metric name (determines sort direction via LOWER_IS_BETTER_METRICS)
+        
+    Returns:
+        Integer rank position (1-based), or None if team not found
+    """
     try:
         # Sort by value based on whether lower or higher is better
         if metric in LOWER_IS_BETTER_METRICS:
             # Lower is better for turnovers, sacks allowed, penalty yards
             ranked_teams = sorted(team_values, key=lambda x: x[1])
         else:
-            # Higher is better for most offensive metrics
+            # Higher is better for most offensive metrics (yards/play, completion %, etc.)
             ranked_teams = sorted(team_values, key=lambda x: x[1], reverse=True)
         
         # Handle ties using 'min' method - all tied values get the same (minimum) rank

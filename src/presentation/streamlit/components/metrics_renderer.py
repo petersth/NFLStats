@@ -12,7 +12,6 @@ class MetricsRenderer:
     """Renders season metrics with performance indicators."""
     
     def __init__(self):
-        # No longer needs ranking service - uses utility function directly
         pass
     
     def render_team_header(self, team: Team, season: Season, season_type_filter: str = "ALL", team_record: Optional[TeamRecord] = None, game_stats: Optional[List] = None):

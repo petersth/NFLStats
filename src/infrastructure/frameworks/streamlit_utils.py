@@ -266,7 +266,12 @@ class StreamlitApplicationStateAdapter:
         return config_changed
     
     def _get_config_hash(self, config: Dict) -> str:
-        """Generate a stable hash for configuration comparison."""
+        """Generate a stable hash for configuration comparison.
+        
+        Creates a deterministic hash that remains consistent across sessions
+        by normalizing nested dictionaries, sorting keys, and handling data types
+        consistently to enable reliable configuration change detection.
+        """
         from ...utils.config_hasher import get_config_hash
         return get_config_hash(config)
     

@@ -13,8 +13,6 @@ class ChartGenerationService:
     """Service for generating interactive charts."""
     
     def __init__(self):
-        # Get Streamlit theme colors - these might not work directly
-        # Use Plotly's template system instead for better theme integration
         self.use_dark_theme = st.get_option('theme.base') == 'dark'
         
         if self.use_dark_theme:
@@ -229,8 +227,8 @@ class ChartGenerationService:
         if not analysis_response.game_stats:
             return self._create_empty_chart("No game data available")
         
-        # For now, create a simple scatter plot
-        # In a real implementation, you'd factor in opponent defensive rankings
+        # Create scatter plot of performance vs opponent strength
+        # Future enhancement: factor in opponent defensive rankings
         
         games = list(range(1, len(analysis_response.game_stats) + 1))
         yards_per_play = [game.yards_per_play for game in analysis_response.game_stats]

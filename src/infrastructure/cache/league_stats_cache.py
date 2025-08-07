@@ -38,8 +38,20 @@ class LeagueStatsCache:
     def get_cached_play_data(self, season_year: int, season_type: str = 'ALL', configuration: Dict = None) -> Optional[pd.DataFrame]:
         """Get cached raw play-by-play data if available.
         
-        Raw play-by-play data is independent of configuration - configuration only affects
-        how the raw data is processed, not what data is fetched.
+        Cache Strategy:
+        - Raw NFL play-by-play data is cached independently of user configuration
+        - Configuration settings only affect data processing, not data fetching
+        - Uses hierarchical caching: complete season data cached as 'ALL', 
+          then filtered for specific season types on retrieval
+        - Provides significant performance improvement for repeated analyses
+        
+        Args:
+            season_year: NFL season year (e.g., 2023)
+            season_type: 'ALL', 'REG', or 'POST' 
+            configuration: User configuration dict (doesn't affect caching)
+            
+        Returns:
+            Cached DataFrame of play-by-play data or None if not cached
         """
         if configuration is None:
             configuration = {}

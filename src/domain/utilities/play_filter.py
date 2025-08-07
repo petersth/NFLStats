@@ -1,4 +1,4 @@
-# src/infrastructure/statistics/calculators/play_filter.py
+# src/domain/utilities/play_filter.py
 
 import logging
 from typing import List
@@ -47,7 +47,20 @@ class PlayFilter:
         return offensive_plays
     
     def get_rushing_plays(self, data: pd.DataFrame) -> pd.DataFrame:
-        """Get rushing plays with configuration exclusions."""
+        """Get rushing plays with configuration-based exclusions.
+        
+        Filters to official rushing attempts while applying user configuration
+        settings for exclusions (e.g., QB kneels, special situations).
+        
+        Args:
+            data: DataFrame containing NFL play-by-play data
+            
+        Returns:
+            DataFrame containing filtered rushing plays with:
+            - rush_attempt = 1
+            - Non-null yards_gained values
+            - Configuration-based exclusions applied
+        """
         if len(data) == 0:
             return data
         
@@ -68,7 +81,21 @@ class PlayFilter:
         return rushing_plays
     
     def get_passing_plays(self, data: pd.DataFrame) -> pd.DataFrame:
-        """Get passing plays excluding sacks and two-point conversions."""
+        """Get passing plays with proper NFL filtering criteria.
+        
+        Filters to official passing attempts according to NFL statistical rules:
+        - Includes pass attempts (pass_attempt = 1)
+        - Excludes sacks (sack = 0) as they are negative passing plays, not rushing attempts
+        - Excludes two-point conversions (not regular offensive plays)
+        - Applies configuration-based exclusions (e.g., QB spikes)
+        
+        Args:
+            data: DataFrame containing NFL play-by-play data
+            
+        Returns:
+            DataFrame containing filtered passing plays suitable for
+            completion percentage and passing statistics calculations
+        """
         if len(data) == 0:
             return data
         
@@ -93,7 +120,19 @@ class PlayFilter:
         return passing_plays
     
     def get_third_down_attempts(self, data: pd.DataFrame) -> pd.DataFrame:
-        """Get third down attempts excluding two-point conversions."""
+        """Get third down attempts for conversion rate calculations.
+        
+        Filters to plays that occur on third down where conversion success can be 
+        measured. Excludes two-point conversions as they are scoring plays, not 
+        regular down attempts.
+        
+        Args:
+            data: DataFrame containing NFL play-by-play data
+            
+        Returns:
+            DataFrame containing third down plays suitable for calculating
+            third down conversion percentages and success rates
+        """
         if len(data) == 0:
             return data
         

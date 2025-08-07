@@ -38,7 +38,6 @@ class TeamAnalysisController:
         self._validate_request(request)
         
         try:
-            # Update progress
             if progress_callback:
                 progress_callback.update(PROGRESS_MILESTONES['validation_start'], "Validating request...")
             

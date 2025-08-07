@@ -97,11 +97,19 @@ class ExportService:
         return pd.DataFrame(game_data)
     
     def _prepare_game_data(self, analysis_response: TeamAnalysisResponse) -> pd.DataFrame:
-        """Prepare game-by-game data for export."""
+        """Prepare game-by-game data for export.
+        
+        Transforms game stats into a structured DataFrame suitable for export
+        with standardized column names and formatting.
+        """
         return self._prepare_export_data(analysis_response)
     
     def _prepare_season_summary(self, analysis_response: TeamAnalysisResponse) -> pd.DataFrame:
-        """Prepare season summary data."""
+        """Prepare season summary data.
+        
+        Creates a summary DataFrame containing aggregated season statistics
+        using centralized metric definitions for consistent naming.
+        """
         season_stats = analysis_response.season_stats
         
         # Build summary data using centralized metric definitions
@@ -120,7 +128,11 @@ class ExportService:
         return pd.DataFrame(summary_data)
     
     def _prepare_rankings_data(self, analysis_response: TeamAnalysisResponse) -> pd.DataFrame:
-        """Prepare rankings data for export."""
+        """Prepare rankings data for export.
+        
+        Transforms performance rankings into a structured DataFrame with
+        metric names, ranks, and performance descriptions.
+        """
         if not analysis_response.rankings:
             return pd.DataFrame()
         

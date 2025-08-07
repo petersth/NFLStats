@@ -6,7 +6,6 @@ import pandas as pd
 import numpy as np
 
 from .entities import Team, Season, SeasonStats, GameStats, TeamRecord
-# Exceptions removed - using standard Python exceptions for calculation errors
 from .utilities import PlayFilter
 from ..config.nfl_constants import (
     TOUCHDOWN_POINTS, EXTRA_POINT_POINTS, TWO_POINT_CONVERSION_POINTS,
@@ -509,16 +508,33 @@ class NFLStatsCalculator:
     
     
     def _identify_successful_plays(self, plays: pd.DataFrame) -> pd.Series:
-        """Identify which plays meet success criteria by down."""
+        """Identify which plays meet NFL success rate criteria by down.
+        
+        Success rate methodology follows established NFL analytics standards:
+        - 1st down: Gain >= 40% of yards to go (establishes manageable down & distance)
+        - 2nd down: Gain >= 60% of yards to go (puts team in favorable 3rd down position)  
+        - 3rd/4th down: Gain >= 100% of yards to go (achieves conversion)
+        
+        This creates a context-aware success metric that accounts for down and distance
+        situations, providing better insight than raw yards per play.
+        
+        Args:
+            plays: DataFrame containing plays with 'down', 'yards_gained', and 'ydstogo' columns
+            
+        Returns:
+            Series of boolean values indicating whether each play was "successful"
+        """
         if len(plays) == 0:
             return pd.Series([], dtype=bool)
         
+        # Apply down-specific success thresholds using NFL analytics standards
         success_mask = np.where(
             plays['down'] == 1,
             plays['yards_gained'] >= self._constants.FIRST_DOWN_SUCCESS_THRESHOLD * plays['ydstogo'],
             np.where(
                 plays['down'] == 2,
                 plays['yards_gained'] >= self._constants.SECOND_DOWN_SUCCESS_THRESHOLD * plays['ydstogo'],
+                # 3rd/4th down: must achieve conversion (100% of yards needed)
                 plays['yards_gained'] >= self._constants.CONVERSION_SUCCESS_THRESHOLD * plays['ydstogo']
             )
         )

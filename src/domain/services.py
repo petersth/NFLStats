@@ -48,9 +48,3 @@ def get_data_status(latest_game_date: pd.Timestamp, season: Season) -> DataStatu
             status_message="Unable to determine data status",
             status_type="error"
         )
-
-
-# RankingService converted to utility functions in src/utils/ranking_utils.py
-# SeasonFilterService converted to utility functions in src/utils/season_utils.py
-# League stats utilities available in src/utils/league_stats_utils.py
-# NFL metrics constants consolidated in src/utils/nfl_metrics.py

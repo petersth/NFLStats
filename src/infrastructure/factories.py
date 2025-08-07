@@ -14,14 +14,10 @@ def create_calculation_orchestrator():
     """Create calculation orchestrator with all dependencies."""
     from ..domain.orchestration import CalculationOrchestrator
     
-    # Create core services
     stats_calculator = NFLStatsCalculator()
     
-    # Create data repository (direct NFL API with in-memory caching)
     logger.info("Using in-memory storage strategy (direct NFL API)")
     data_repository = UnifiedNFLRepository()
-    
-    # Create league cache
     league_cache = LeagueStatsCache(
         nfl_data_repo=data_repository,
         statistics_calculator=stats_calculator
@@ -45,7 +41,6 @@ def get_configured_cache() -> LeagueStatsCache:
     """Get a configured cache instance using NFL API."""
     stats_calculator = NFLStatsCalculator()
     
-    # Create data repository (direct NFL API with in-memory caching)
     logger.info("Using in-memory storage strategy (direct NFL API)")
     data_repository = UnifiedNFLRepository()
     

@@ -86,9 +86,10 @@ def apply_season_type_filter(data, season_type_filter: str):
         # Return only playoffs
         filtered_data = data[data['season_type'] == 'POST']
         
-        # Log warning if no playoff data found
+        # Handle case where team didn't make playoffs
         if len(filtered_data) == 0 and len(data) > 0:
-            # Check if this team had any games at all
+            # Extract team identifiers from multiple possible columns to provide context
+            # Different datasets may use different column names for team identification
             teams_in_data = set()
             if 'posteam' in data.columns:
                 teams_in_data.update(data['posteam'].dropna().unique())

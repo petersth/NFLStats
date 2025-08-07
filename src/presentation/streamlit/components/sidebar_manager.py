@@ -94,12 +94,16 @@ class SidebarManager:
     def _should_analyze_fixed(self, config_changed: bool, 
                              team: str, season: int, season_type: str) -> bool:
         """Auto-trigger analysis when selections or configuration changes."""
-        # Check if team, season, or season type has changed
         selections_changed = self._check_selections_changed(team, season, season_type)
         return config_changed or selections_changed
     
     def _check_selections_changed(self, team: str, season: int, season_type: str) -> bool:
-        """Check if team, season, or season type has changed since last analysis."""
+        """Check if team, season, or season type has changed since last analysis.
+        
+        This method implements a comparison system that tracks the last successfully
+        analyzed selections and determines if any core selection (team, season, or 
+        season type) has changed, requiring a new analysis to be performed.
+        """
         if not self._app_state.is_analysis_complete():
             return False
             
