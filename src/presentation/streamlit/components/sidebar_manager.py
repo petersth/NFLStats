@@ -30,6 +30,10 @@ class SidebarManager:
     def render(self) -> SidebarState:
         """Render sidebar and return state."""
         with st.sidebar:
+            # Session status at the top
+            from .session_monitor import render_session_cleanup_status
+            render_session_cleanup_status()
+            
             st.subheader("Team & Season")
             
             team_abbreviation = st.selectbox(

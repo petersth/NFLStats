@@ -1,7 +1,7 @@
 # src/infrastructure/factories.py - Factory functions for dependency creation
 
 import logging
-from typing import Optional
+# Factory module for creating application components
 
 from .data.unified_nfl_repository import UnifiedNFLRepository
 from .cache.league_stats_cache import LeagueStatsCache
@@ -17,20 +17,18 @@ def create_calculation_orchestrator():
     stats_calculator = NFLStatsCalculator()
     data_repository = UnifiedNFLRepository()
     
-    # Create league cache
+    # Use optimized SimpleCache - much faster than Streamlit cache for large DataFrames
     league_cache = LeagueStatsCache(
         nfl_data_repo=data_repository,
         statistics_calculator=stats_calculator
     )
     
-    logger.info("Created calculation orchestrator with league cache")
+    logger.info("Created calculation orchestrator with optimized SimpleCache")
     
     return CalculationOrchestrator(
         statistics_calculator=stats_calculator,
         league_cache=league_cache
     )
-
-
 
 def create_core_services():
     """Create core domain services."""
@@ -38,9 +36,8 @@ def create_core_services():
         'stats_calculator': NFLStatsCalculator()
     }
 
-
 def get_configured_cache() -> LeagueStatsCache:
-    """Get a configured cache instance."""
+    """Get a configured cache instance using optimized SimpleCache."""
     stats_calculator = NFLStatsCalculator()
     data_repository = UnifiedNFLRepository()
     

@@ -50,6 +50,10 @@ class SimpleCache:
         self._misses = 0
         self._evictions = 0
         
+        # Memory management
+        self._last_cleanup = time.time()
+        self._cleanup_interval = 300  # Clean expired entries every 5 minutes
+        
         logger.debug(f"Initialized cache (TTL: {default_ttl}s, max_size: {max_size})")
     
     def get(self, key: str, validator: Optional[Callable[[T], bool]] = None) -> Optional[T]:
@@ -63,6 +67,9 @@ class SimpleCache:
         Returns:
             Cached value if valid, None otherwise
         """
+        # Periodic cleanup of expired entries
+        self._cleanup_expired_entries()
+        
         entry = self._cache.get(key)
         if entry is None:
             self._misses += 1
@@ -201,6 +208,47 @@ class SimpleCache:
         lru_key = min(self._cache.keys(), key=lambda k: self._cache[k].last_accessed)
         del self._cache[lru_key]
         self._evictions += 1
+    
+    def _cleanup_expired_entries(self, force: bool = False) -> int:
+        """Remove expired entries to free memory.
+        
+        Args:
+            force: If True, skip the interval check and force cleanup
+            
+        Returns:
+            Number of entries cleaned up
+        """
+        current_time = time.time()
+        
+        # Skip interval check if forced, or if enough time has passed
+        if not force and (current_time - self._last_cleanup < self._cleanup_interval):
+            return 0
+        
+        self._last_cleanup = current_time
+        expired_keys = []
+        
+        # Find all expired entries
+        for key, entry in self._cache.items():
+            if entry.is_expired(self._default_ttl):
+                expired_keys.append(key)
+        
+        # Remove expired entries
+        for key in expired_keys:
+            del self._cache[key]
+            self._evictions += 1
+        
+        if expired_keys:
+            logger.debug(f"Cleaned up {len(expired_keys)} expired cache entries")
+        
+        return len(expired_keys)
+    
+    def force_cleanup(self) -> int:
+        """Force immediate cleanup of all expired entries.
+        
+        Returns:
+            Number of entries cleaned up
+        """
+        return self._cleanup_expired_entries(force=True)
 
 
 # No more aliases needed - use SimpleCache directly

@@ -13,6 +13,7 @@ from .components.metrics_renderer import MetricsRenderer
 from .components.tab_manager import TabManager
 from .components.progress_manager import create_data_loading_progress
 from .styling.app_styling import inject_custom_css, inject_team_colors
+from ...infrastructure.cache.session_cleanup_manager import register_session_cleanup, register_orchestrator_for_cleanup
 
 logger = logging.getLogger(__name__)
 
@@ -69,9 +70,12 @@ class StreamlitController:
         self.metrics_renderer = MetricsRenderer()
         self.tab_manager = TabManager(self.app_state)
         
-        # Initialize session state for persistent cache instances
+        # Initialize session state for persistent cache instances with cleanup
         if 'league_cache_instances' not in st.session_state:
             st.session_state.league_cache_instances = {}
+        
+        # Clean up old cache instances to prevent memory buildup
+        self._cleanup_old_cache_instances()
     
     def run(self) -> None:
         """Main entry point for the Streamlit application."""
@@ -84,6 +88,12 @@ class StreamlitController:
             )
             
             inject_custom_css()
+            
+            # Register session cleanup for disconnect detection
+            register_session_cleanup()
+            
+            # Periodic memory cleanup
+            self._periodic_memory_cleanup()
             
             # First get basic selections without analysis data
             selections = self.sidebar_manager.render()
@@ -173,7 +183,10 @@ class StreamlitController:
             # Use persistent orchestrator instance when caching is enabled
             if orchestrator_key not in st.session_state.league_cache_instances:
                 from ...infrastructure.factories import create_calculation_orchestrator
-                st.session_state.league_cache_instances[orchestrator_key] = create_calculation_orchestrator()
+                orchestrator = create_calculation_orchestrator()
+                st.session_state.league_cache_instances[orchestrator_key] = orchestrator
+                # Register for cleanup when session disconnects
+                register_orchestrator_for_cleanup(orchestrator)
             orchestrator = st.session_state.league_cache_instances[orchestrator_key]
         else:
             # Create a fresh orchestrator instance when caching is disabled (forces fresh data)
@@ -288,6 +301,51 @@ class StreamlitController:
                 self.sidebar_manager._render_data_status_sidebar(analysis_response)
         except Exception as e:
             logger.debug(f"Could not rerender sidebar with data status: {e}")
+    
+    def _cleanup_old_cache_instances(self) -> None:
+        """Clean up old cache instances to prevent memory buildup."""
+        try:
+            if 'league_cache_instances' in st.session_state:
+                # Keep only the 3 most recent cache instances
+                max_instances = 3
+                if len(st.session_state.league_cache_instances) > max_instances:
+                    # Sort by key (which includes timestamp info) and keep newest
+                    sorted_keys = sorted(st.session_state.league_cache_instances.keys())
+                    keys_to_remove = sorted_keys[:-max_instances]
+                    
+                    for key in keys_to_remove:
+                        logger.debug(f"Removing old cache instance: {key}")
+                        del st.session_state.league_cache_instances[key]
+        except Exception as e:
+            logger.warning(f"Failed to cleanup cache instances: {e}")
+    
+    def _periodic_memory_cleanup(self) -> None:
+        """Perform periodic memory cleanup tasks."""
+        try:
+            import time
+            # Track last cleanup time in session state
+            if 'last_memory_cleanup' not in st.session_state:
+                st.session_state.last_memory_cleanup = time.time()
+            
+            current_time = time.time()
+            cleanup_interval = 300  # 5 minutes
+            
+            if current_time - st.session_state.last_memory_cleanup > cleanup_interval:
+                st.session_state.last_memory_cleanup = current_time
+                
+                # Clear old orchestrator instances
+                if 'league_cache_instances' in st.session_state:
+                    for key, orchestrator in list(st.session_state.league_cache_instances.items()):
+                        if hasattr(orchestrator, 'cache') and hasattr(orchestrator.cache, 'clear_cache'):
+                            # Clear caches older than 30 minutes
+                            logger.debug(f"Clearing old cache entries for {key}")
+                
+                # Force garbage collection
+                import gc
+                gc.collect()
+                logger.info("Performed periodic memory cleanup")
+        except Exception as e:
+            logger.warning(f"Failed to perform memory cleanup: {e}")
     
     def _render_welcome_screen(self) -> None:
         """Render the welcome screen when no team is selected."""

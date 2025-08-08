@@ -17,7 +17,37 @@ logger = logging.getLogger(__name__)
 class UnifiedNFLRepository:
     """Unified repository for NFL data with caching."""
     
-    # Essential columns for NFL statistics calculation - validated against 2024 data
+    # Essential columns for NFL statistics calculation
+    # Contains only columns actually used in the codebase (36 of 242 total columns)
+    NEEDED_COLUMNS_ESSENTIAL = [
+        # Core game identification
+        'season', 'season_type', 'week', 'game_id', 'game_date',
+        'home_team', 'away_team', 'posteam', 'defteam',
+        
+        # Essential game state
+        'yardline_100', 'down', 'ydstogo', 'drive', 'play_type',
+        
+        # Essential play details
+        'yards_gained', 'rush_attempt', 'pass_attempt', 'complete_pass',
+        'sack', 'two_point_attempt',
+        
+        # Scoring (all needed for calculations)
+        'touchdown', 'field_goal_result', 'extra_point_result', 
+        'two_point_conv_result', 'td_team', 'posteam_score_post', 
+        'defteam_score_post',
+        
+        # Turnovers and outcomes
+        'interception', 'fumble_lost', 'first_down', 
+        'first_down_rush', 'first_down_pass', 'first_down_penalty',
+        
+        # Penalties
+        'penalty_team', 'penalty_yards',
+        
+        # Calculated field (if needed by downstream)
+        'success'
+    ]
+    
+    # Full column set (use only when specifically needed)
     NEEDED_COLUMNS = [
         # Game identification
         'season', 'season_type', 'week', 'game_id', 'game_date', 'old_game_id',
@@ -130,10 +160,10 @@ class UnifiedNFLRepository:
     ]
     
     def __init__(self):
-        # Cache for NFL data with reasonable TTL and size limits
+        # Cache for NFL data with TTL and size limits
         self._cache = SimpleCache(
-            default_ttl=86400,  # 1 day default TTL  
-            max_size=20         # Reasonable limit for season data
+            default_ttl=1800,   # 30 minutes default TTL
+            max_size=3          # Maximum cached seasons
         )
         
         logger.debug("Initialized UnifiedNFLRepository with caching")
@@ -163,7 +193,13 @@ class UnifiedNFLRepository:
                 def download_data():
                     nonlocal nfl_data, download_error
                     try:
-                        nfl_data = nfl.import_pbp_data([season], columns=self.NEEDED_COLUMNS)
+                        # Use essential columns for faster loading
+                        # Fall back to full column set if essential columns fail
+                        try:
+                            nfl_data = nfl.import_pbp_data([season], columns=self.NEEDED_COLUMNS_ESSENTIAL)
+                        except Exception as e:
+                            logger.warning(f"Failed with essential columns, using full set: {e}")
+                            nfl_data = nfl.import_pbp_data([season], columns=self.NEEDED_COLUMNS)
                     except Exception as e:
                         download_error = e
                     finally:
@@ -212,9 +248,8 @@ class UnifiedNFLRepository:
                 return (data is not None and len(data) > 0 and 
                        'season' in data.columns and timestamp is not None)
             
-            # Use season-aware TTL
-            current_year = datetime.now().year
-            ttl = 1800 if season == current_year else 86400  # 30 min vs 24 hours
+            # Set TTL for cache entries
+            ttl = 1800  # 30 minutes
             
             result = self._cache.get_or_compute(
                 key=cache_key,
@@ -264,7 +299,7 @@ class UnifiedNFLRepository:
                 logger.info(f"Forcefully cleared cache for season {season}")
             
             # Re-fetch data
-            data, timestamp = self.get_play_by_play_data(season, progress_callback)
+            data, _ = self.get_play_by_play_data(season, progress_callback)
             return data is not None
         except Exception as e:
             logger.error(f"Error refreshing season {season} data: {e}")
@@ -272,6 +307,7 @@ class UnifiedNFLRepository:
 
     def get_league_aggregates(self, season: int, season_type: Optional[str] = None) -> Optional[pd.DataFrame]:
         """This repository requires calculation - no aggregates available."""
+        # season_type parameter not used - this repository doesn't support pre-aggregated data
         return None
 
     def supports_aggregated_data(self) -> bool:

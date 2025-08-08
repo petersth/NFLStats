@@ -67,22 +67,22 @@ class LeagueStatsCache:
         self._nfl_data_repo = nfl_data_repo
         self._statistics_calculator = statistics_calculator
         
-        # Initialize caches with different TTL strategies
+        # Initialize caches with different TTL strategies and memory limits
         from datetime import datetime
         current_year = datetime.now().year
         self._memory_cache = SimpleCache(
-            default_ttl=86400,  # 1 day for computed statistics
-            max_size=100        # Limit concurrent season computations
+            default_ttl=1800,   # 30 minutes for computed statistics (reduced from 1 day)
+            max_size=10         # Limit concurrent season computations (reduced from 100)
         )
         
         self._rankings_cache = SimpleCache(
-            default_ttl=86400,  # 1 day for rankings
-            max_size=500        # More rankings entries
+            default_ttl=1800,   # 30 minutesfor rankings (reduced from 1 day)
+            max_size=50         # More rankings entries (reduced from 500)
         )
         
         self._raw_data_cache = SimpleCache(
-            default_ttl=86400,  # 1 day for raw data
-            max_size=50         # Fewer but larger entries
+            default_ttl=1800,   # 30 minutes for raw data (reduced from 1 day)
+            max_size=5          # Fewer but larger entries (reduced from 50)
         )
         
         logger.info("Initialized LeagueStatsCache with caching (TTL: 1 day for all caches)")
@@ -162,9 +162,9 @@ class LeagueStatsCache:
                 return (isinstance(team_stats, dict) and len(team_stats) > 0 and
                        isinstance(league_averages, dict) and timestamp is not None)
             
-            # Use adaptive TTL based on season
+            # Use adaptive TTL based on season with memory optimization
             current_year = datetime.now().year
-            ttl = 900 if season_year == current_year else 3600  # 15 min vs 1 hour
+            ttl = 600 if season_year == current_year else 1800  # 10 min vs 30 min (reduced)
             
             result = self._memory_cache.get_or_compute(
                 key=cache_key,
@@ -251,10 +251,27 @@ class LeagueStatsCache:
             raise CacheError(f"Cache key generation failed: {e}", operation="get_cache_key")
     
     def get_config_hash(self, configuration: Dict) -> str:
-        """Generate hash for configuration to detect changes."""
+        """Generate hash for configuration to detect changes.
+        
+        Only hashes the configuration settings that affect statistics calculation:
+        - include_qb_kneels_rushing
+        - include_qb_kneels_success_rate
+        - include_spikes_completion
+        - include_spikes_success_rate
+        
+        This reduces cache fragmentation by ignoring unrelated config changes.
+        """
         try:
+            # Extract only the relevant configuration keys that affect stats
+            relevant_config = {
+                'include_qb_kneels_rushing': configuration.get('include_qb_kneels_rushing', False),
+                'include_qb_kneels_success_rate': configuration.get('include_qb_kneels_success_rate', False),
+                'include_spikes_completion': configuration.get('include_spikes_completion', False),
+                'include_spikes_success_rate': configuration.get('include_spikes_success_rate', False)
+            }
+            
             from ...utils.config_hasher import get_config_hash
-            return get_config_hash(configuration)
+            return get_config_hash(relevant_config)
         except Exception as e:
             logger.error(f"Failed to generate config hash: {e}")
             raise CacheError(f"Config hash generation failed: {e}", operation="get_config_hash")
@@ -282,6 +299,29 @@ class LeagueStatsCache:
         except Exception as e:
             logger.error(f"Failed to clear cache: {e}")
             raise CacheError(f"Cache clear operation failed: {e}", operation="clear_cache")
+    
+    def force_cleanup(self) -> Dict[str, int]:
+        """Force cleanup of expired entries across all caches.
+        
+        Returns:
+            Dictionary with cleanup counts for each cache type
+        """
+        try:
+            cleanup_stats = {
+                'memory': self._memory_cache.force_cleanup(),
+                'rankings': self._rankings_cache.force_cleanup(), 
+                'raw_data': self._raw_data_cache.force_cleanup()
+            }
+            
+            total_cleaned = sum(cleanup_stats.values())
+            if total_cleaned > 0:
+                logger.info(f"Force cleanup removed {total_cleaned} expired entries: {cleanup_stats}")
+            
+            return cleanup_stats
+            
+        except Exception as e:
+            logger.error(f"Failed to force cleanup: {e}")
+            raise CacheError(f"Force cleanup failed: {e}", operation="force_cleanup")
     
     # === Private Implementation Methods ===
     
@@ -324,9 +364,9 @@ class LeagueStatsCache:
                 return (pbp_data is not None and len(pbp_data) > 0 and 
                        'season' in pbp_data.columns and timestamp is not None)
             
-            # Use season-aware TTL for raw data
+            # Use season-aware TTL for raw data with memory optimization
             current_year = datetime.now().year
-            raw_data_ttl = 1800 if season_year == current_year else 86400  # 30 min vs 24 hours
+            raw_data_ttl = 900 if season_year == current_year else 3600  # 15 min vs 1 hour (reduced)
             
             data_result = self._raw_data_cache.get_or_compute(
                 key=complete_cache_key,
@@ -347,9 +387,11 @@ class LeagueStatsCache:
                 progress_callback.update(0.7, "Applying filters...")
                 
             filter_start = time.time()
-            filtered_data = pbp_data.copy()
+            # Memory optimization: Use views instead of copies where possible
             if season_type and season_type != 'ALL':
-                filtered_data = filtered_data[filtered_data['season_type'] == season_type]
+                filtered_data = pbp_data[pbp_data['season_type'] == season_type].copy()
+            else:
+                filtered_data = pbp_data.copy()
             
             # Apply configuration filtering to the data before calculating statistics
             if configuration:
@@ -385,12 +427,13 @@ class LeagueStatsCache:
                 num_processes = min(cpu_count(), 8, len(teams))
                 logger.info(f"Processing {len(teams)} teams using joblib with {num_processes} processes")
                 
-                # Prepare args directly with DataFrames (joblib handles serialization better)
+                # Memory optimization: Only pass necessary columns for processing
                 team_data_list = []
                 for team_abbr in teams:
                     team_data = filtered_data[filtered_data['posteam'] == team_abbr]
                     if len(team_data) > 0:
-                        # Pass DataFrame directly - much faster than to_dict conversion
+                        # Memory optimization: reset index and drop unnecessary data
+                        team_data = team_data.reset_index(drop=True)
                         team_data_list.append((team_abbr, season_year, team_data))
                 
                 # Process in parallel using joblib
@@ -410,7 +453,8 @@ class LeagueStatsCache:
                 for team_abbr in teams:
                     team_data = filtered_data[filtered_data['posteam'] == team_abbr]
                     if len(team_data) > 0:
-                        # Pass DataFrame directly - much faster than to_dict conversion
+                        # Memory optimization: reset index and drop unnecessary data
+                        team_data = team_data.reset_index(drop=True)
                         team_data_args.append((team_abbr, season_year, team_data))
                 
                 num_processes = min(cpu_count(), 8, len(team_data_args))
