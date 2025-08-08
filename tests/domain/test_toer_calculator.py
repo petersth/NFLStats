@@ -122,6 +122,69 @@ class TestYardsPerPlayScoring:
         assert TOERCalculator.calculate_yards_per_play_score(5.05) == 0
         assert TOERCalculator.calculate_yards_per_play_score(4.0) == 0
         assert TOERCalculator.calculate_yards_per_play_score(0.0) == 0
+    
+    def test_critical_boundary_precision_issues(self):
+        """Test the exact boundary precision issue that was discovered with Arizona Cardinals."""
+        # This is the EXACT value that failed - 5.509090909090909
+        # It should score 10 points (> 5.5 threshold) but was falling through gaps
+        assert TOERCalculator.calculate_yards_per_play_score(5.509090909090909) == 10
+        
+        # Test other potential precision edge cases
+        # Note: Due to floating point representation, values extremely close to 5.5 may be treated as 5.5
+        assert TOERCalculator.calculate_yards_per_play_score(5.50001) == 10  # Clearly above 5.5
+        assert TOERCalculator.calculate_yards_per_play_score(5.5000) == 9  # Exactly 5.5
+        assert TOERCalculator.calculate_yards_per_play_score(5.4999) == 8  # Clearly below 5.5
+        
+        # Test all critical boundaries with floating point precision
+        boundaries = [
+            (5.51, 10),  # > 5.5
+            (5.50, 9),   # 5.5
+            (5.49, 8),   # 5.45-5.49
+            (5.45, 8),
+            (5.44, 7),   # 5.40-5.44
+            (5.40, 7),
+            (5.39, 6),   # 5.35-5.39
+            (5.35, 6),
+            (5.34, 5),   # 5.30-5.34
+            (5.30, 5),
+            (5.29, 4),   # 5.25-5.29
+            (5.25, 4),
+            (5.24, 3),   # 5.20-5.24
+            (5.20, 3),
+            (5.19, 2),   # 5.15-5.19
+            (5.15, 2),
+            (5.14, 1),   # 5.10-5.14
+            (5.10, 1),
+            (5.09, 0),   # < 5.10
+        ]
+        
+        for value, expected_score in boundaries:
+            assert TOERCalculator.calculate_yards_per_play_score(value) == expected_score, \
+                f"YPP {value} should score {expected_score}"
+    
+    def test_real_world_ypp_values(self):
+        """Test with actual YPP values that could occur in real games."""
+        # These are realistic YPP values from actual games
+        real_values = [
+            (121 / 22, 9),    # 5.5 exactly (121 yards on 22 plays) - scores 9
+            (385 / 70, 9),    # 5.5 exactly (385 yards on 70 plays) - scores 9
+            (484 / 88, 9),    # 5.5 exactly (484 yards on 88 plays) - scores 9
+            (606 / 110, 10),  # 5.509090909090909 - The Arizona Cardinals case! - scores 10
+            (371 / 68, 8),    # 5.455882352941177
+            (299 / 55, 7),    # 5.436363636363636
+            (412 / 76, 7),    # 5.421052631578947
+            (287 / 53, 7),    # 5.415094339622641
+            (325 / 61, 5),    # 5.327868852459016
+            (380 / 72, 4),    # 5.277777777777778
+            (295 / 57, 2),    # 5.175438596491228
+            (301 / 59, 1),    # 5.101694915254237
+        ]
+        
+        for yards_plays_tuple, expected_score in real_values:
+            ypp = yards_plays_tuple
+            actual_score = TOERCalculator.calculate_yards_per_play_score(ypp)
+            assert actual_score == expected_score, \
+                f"YPP {ypp:.15f} should score {expected_score}, got {actual_score}"
 
 
 class TestTurnoverScoring:
