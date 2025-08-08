@@ -1,0 +1,135 @@
+# TOER Scoring Configuration
+
+yards_per_play:
+  thresholds:
+    - {condition: "ypp > 5.5", score: 10}
+    - {condition: "ypp == 5.5", score: 9}
+    - {condition: "5.45 <= ypp <= 5.49", score: 8}
+    - {condition: "5.40 <= ypp <= 5.44", score: 7}
+    - {condition: "5.35 <= ypp <= 5.39", score: 6}
+    - {condition: "5.30 <= ypp <= 5.34", score: 5}
+    - {condition: "5.25 <= ypp <= 5.29", score: 4}
+    - {condition: "5.20 <= ypp <= 5.24", score: 3}
+    - {condition: "5.15 <= ypp <= 5.19", score: 2}
+    - {condition: "5.10 <= ypp <= 5.14", score: 1}
+    - {condition: "default", score: 0}
+
+turnovers:
+  exact_values:
+    - {value: 0, score: 10}
+    - {value: 1, score: 5}
+    - {value: 2, score: 0}
+    - {value: 3, score: -3}
+    - {value: 4, score: -4}
+  default_score: -5
+
+completion_percentage:
+  thresholds:
+    - {condition: "comp_pct >= 67.5", score: 10}
+    - {condition: "67.0 <= comp_pct <= 67.49", score: 9}
+    - {condition: "66.5 <= comp_pct <= 66.99", score: 8}
+    - {condition: "66.0 <= comp_pct <= 66.49", score: 7}
+    - {condition: "65.5 <= comp_pct <= 65.99", score: 6}
+    - {condition: "65.0 <= comp_pct <= 65.49", score: 5}
+    - {condition: "64.5 <= comp_pct <= 64.99", score: 4}
+    - {condition: "64.0 <= comp_pct <= 64.49", score: 3}
+    - {condition: "63.5 <= comp_pct <= 63.99", score: 2}
+    - {condition: "63.0 <= comp_pct <= 63.49", score: 1}
+    - {condition: "default", score: 0}
+
+rush_yards_per_carry:
+  thresholds:
+    - {condition: "ypc >= 4.7", score: 10}
+    - {condition: "4.65 <= ypc <= 4.69", score: 9}
+    - {condition: "4.60 <= ypc <= 4.64", score: 8}
+    - {condition: "4.55 <= ypc <= 4.59", score: 7}
+    - {condition: "4.50 <= ypc <= 4.54", score: 6}
+    - {condition: "4.45 <= ypc <= 4.49", score: 5}
+    - {condition: "4.40 <= ypc <= 4.44", score: 4}
+    - {condition: "4.35 <= ypc <= 4.39", score: 3}
+    - {condition: "4.30 <= ypc <= 4.34", score: 2}
+    - {condition: "4.20 <= ypc <= 4.29", score: 1}
+    - {condition: "default", score: 0}
+
+sacks:
+  exact_values:
+    - {value: 0, score: 10}
+    - {value: 1, score: 8}
+    - {value: 2, score: 5}
+    - {value: 3, score: 0}
+    - {value: 4, score: -1}
+  default_score: -3
+
+third_down_percentage:
+  thresholds:
+    - {condition: "third_down_pct >= 43.0", score: 10}
+    - {condition: "42.0 <= third_down_pct <= 42.99", score: 9}
+    - {condition: "41.0 <= third_down_pct <= 41.99", score: 8}
+    - {condition: "40.0 <= third_down_pct <= 40.99", score: 7}
+    - {condition: "39.0 <= third_down_pct <= 39.99", score: 6}
+    - {condition: "38.0 <= third_down_pct <= 38.99", score: 5}
+    - {condition: "37.0 <= third_down_pct <= 37.99", score: 4}
+    - {condition: "36.0 <= third_down_pct <= 36.99", score: 3}
+    - {condition: "35.0 <= third_down_pct <= 35.99", score: 2}
+    - {condition: "33.0 <= third_down_pct <= 34.99", score: 1}
+    - {condition: "default", score: 0}
+
+success_rate:
+  thresholds:
+    - {condition: "success_rate >= 47.0", score: 10}
+    - {condition: "46.0 <= success_rate <= 46.99", score: 9}
+    - {condition: "45.0 <= success_rate <= 45.99", score: 8}
+    - {condition: "44.0 <= success_rate <= 44.99", score: 7}
+    - {condition: "43.0 <= success_rate <= 43.99", score: 6}
+    - {condition: "42.0 <= success_rate <= 42.99", score: 5}
+    - {condition: "41.0 <= success_rate <= 41.99", score: 4}
+    - {condition: "40.0 <= success_rate <= 40.99", score: 3}
+    - {condition: "default", score: 0}
+
+first_downs:
+  thresholds:
+    - {condition: "first_downs >= 22", score: 10}
+    - {condition: "first_downs >= 21", score: 9}
+    - {condition: "first_downs >= 20", score: 8}
+    - {condition: "first_downs >= 19", score: 7}
+    - {condition: "first_downs >= 18", score: 6}
+    - {condition: "first_downs >= 17", score: 5}
+    - {condition: "default", score: 0}
+
+points_per_drive:
+  thresholds:
+    - {condition: "ppd >= 2.4", score: 10}
+    - {condition: "2.35 <= ppd <= 2.39", score: 9}
+    - {condition: "2.30 <= ppd <= 2.34", score: 8}
+    - {condition: "2.25 <= ppd <= 2.29", score: 7}
+    - {condition: "2.20 <= ppd <= 2.24", score: 6}
+    - {condition: "2.10 <= ppd <= 2.19", score: 5}
+    - {condition: "2.00 <= ppd <= 2.09", score: 4}
+    - {condition: "1.90 <= ppd <= 1.99", score: 3}
+    - {condition: "1.85 <= ppd <= 1.89", score: 2}
+    - {condition: "1.80 <= ppd <= 1.84", score: 1}
+    - {condition: "default", score: 0}
+
+redzone_td_percentage:
+  thresholds:
+    - {condition: "redzone_td_pct >= 63.0", score: 10}
+    - {condition: "61.0 <= redzone_td_pct <= 62.99", score: 9}
+    - {condition: "60.0 <= redzone_td_pct <= 60.99", score: 8}
+    - {condition: "59.0 <= redzone_td_pct <= 59.99", score: 7}
+    - {condition: "58.0 <= redzone_td_pct <= 58.99", score: 6}
+    - {condition: "57.0 <= redzone_td_pct <= 57.99", score: 5}
+    - {condition: "default", score: 0}
+
+penalty_yards:
+  thresholds:
+    - {condition: "penalty_yards == 0", score: 5}
+    - {condition: "1 <= penalty_yards <= 10", score: 3}
+    - {condition: "11 <= penalty_yards <= 20", score: 1}
+    - {condition: "21 <= penalty_yards <= 30", score: 0}
+    - {condition: "31 <= penalty_yards <= 40", score: -2}
+    - {condition: "41 <= penalty_yards <= 50", score: -4}
+    - {condition: "51 <= penalty_yards <= 60", score: -5}
+    - {condition: "61 <= penalty_yards <= 70", score: -6}
+    - {condition: "71 <= penalty_yards <= 80", score: -8}
+    - {condition: "81 <= penalty_yards <= 90", score: -9}
+    - {condition: "default", score: -10}

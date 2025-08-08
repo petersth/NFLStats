@@ -15,6 +15,47 @@ from ...utils.ranking_utils import calculate_team_rankings, calculate_all_rankin
 logger = logging.getLogger(__name__)
 
 
+def _process_team_parallel(args):
+    """Process a single team's statistics (for multiprocessing)."""
+    team_abbr, season_year, team_data_dict = args
+    try:
+        # Import inside the function for multiprocessing
+        from src.domain.entities import Team, Season
+        from src.domain.nfl_stats_calculator import NFLStatsCalculator
+        from src.utils.league_stats_utils import extract_stats_for_averaging
+        import pandas as pd
+        
+        # Recreate team data from the dict
+        if isinstance(team_data_dict, dict) and 'data' in team_data_dict:
+            team_data = pd.DataFrame(team_data_dict['data'])
+        else:
+            team_data = pd.DataFrame(team_data_dict)
+        
+        if len(team_data) == 0:
+            return None
+        
+        team = Team.from_abbreviation(team_abbr)
+        season = Season(season_year)
+        
+        # Create a fresh calculator instance for this process
+        calculator = NFLStatsCalculator()
+        
+        # Calculate season stats
+        season_stats = calculator.calculate_season_stats(
+            team_data, team, season, pre_calculated=None
+        )
+        
+        if season_stats:
+            stats_for_avg = extract_stats_for_averaging(season_stats)
+            return (team_abbr, season_stats, stats_for_avg)
+        return None
+            
+    except Exception as e:
+        import logging
+        logging.error(f"Failed to process team {team_abbr}: {e}")
+        return None
+
+
 class LeagueStatsCache:
     """
     Single concrete league statistics cache class using NFL API data.
@@ -195,9 +236,13 @@ class LeagueStatsCache:
             
             if pbp_data is None:
                 # Fetch complete dataset (regular season + playoffs)
+                import time
+                fetch_start = time.time()
                 if progress_callback:
                     progress_callback.update(0.4, "Fetching NFL data from API...")
                 pbp_data, data_timestamp = self._nfl_data_repo.get_play_by_play_data(season_year, progress_callback)
+                fetch_end = time.time()
+                logger.info(f"NFL data fetch took {fetch_end - fetch_start:.2f}s")
                 if pbp_data is None or len(pbp_data) == 0:
                     logger.warning(f"No raw data found for season {season_year}")
                     return {}, {}, datetime.now()
@@ -219,6 +264,8 @@ class LeagueStatsCache:
             # Now filter by season type and apply configuration for this specific request
             if progress_callback:
                 progress_callback.update(0.7, "Applying filters...")
+                
+            filter_start = time.time()
             filtered_data = pbp_data.copy()
             if season_type and season_type != 'ALL':
                 filtered_data = filtered_data[filtered_data['season_type'] == season_type]
@@ -226,6 +273,8 @@ class LeagueStatsCache:
             # Apply configuration filtering to the data before calculating statistics
             if configuration:
                 filtered_data = apply_configuration_to_data(filtered_data, configuration)
+            filter_end = time.time()
+            logger.info(f"Data filtering took {filter_end - filter_start:.2f}s")
             
             if progress_callback:
                 progress_callback.update(0.8, "Processing team statistics...")
@@ -238,28 +287,74 @@ class LeagueStatsCache:
             team_stats_dict = {}
             all_stats_for_averaging = []
             
-            for team_abbr in teams:
-                try:
-                    team = Team.from_abbreviation(team_abbr)
-                    season = Season(season_year)
-                    
-                    # Get team-specific data from filtered dataset
-                    team_data = filtered_data[filtered_data['posteam'] == team_abbr].copy()
-                    if len(team_data) == 0:
-                        continue
-                    
-                    # Calculate season stats
-                    season_stats = self._statistics_calculator.calculate_season_stats(
-                        team_data, team, season, pre_calculated=None
-                    )
-                    
-                    if season_stats:
+            import time
+            try:
+                from joblib import Parallel, delayed
+                use_joblib = True
+                backend = 'loky'  # Better for CPU-bound tasks
+            except ImportError:
+                from concurrent.futures import ProcessPoolExecutor, as_completed
+                from multiprocessing import cpu_count
+                use_joblib = False
+            
+            start_team_processing = time.time()
+            
+            if use_joblib:
+                # Use joblib for efficient parallel processing
+                from multiprocessing import cpu_count
+                num_processes = min(cpu_count(), 8, len(teams))
+                logger.info(f"Processing {len(teams)} teams using joblib with {num_processes} processes")
+                
+                # Prepare args directly with DataFrames (joblib handles serialization better)
+                team_data_list = []
+                for team_abbr in teams:
+                    team_data = filtered_data[filtered_data['posteam'] == team_abbr]
+                    if len(team_data) > 0:
+                        # joblib can handle DataFrames directly more efficiently
+                        team_data_list.append((team_abbr, season_year, team_data.to_dict('records')))
+                
+                # Process in parallel using joblib
+                results = Parallel(n_jobs=num_processes, backend=backend)(
+                    delayed(_process_team_parallel)(args) for args in team_data_list
+                )
+                
+                # Collect results
+                for result in results:
+                    if result:
+                        team_abbr, season_stats, stats_for_avg = result
                         team_stats_dict[team_abbr] = season_stats
-                        all_stats_for_averaging.append(extract_stats_for_averaging(season_stats))
-                        
-                except Exception as e:
-                    logger.error(f"Failed to process team {team_abbr}: {e}")
-                    continue
+                        all_stats_for_averaging.append(stats_for_avg)
+            else:
+                # Fallback to ProcessPoolExecutor
+                team_data_args = []
+                for team_abbr in teams:
+                    team_data = filtered_data[filtered_data['posteam'] == team_abbr]
+                    if len(team_data) > 0:
+                        team_data_dict = team_data.to_dict('records')
+                        team_data_args.append((team_abbr, season_year, team_data_dict))
+                
+                num_processes = min(cpu_count(), 8, len(team_data_args))
+                logger.info(f"Processing {len(team_data_args)} teams using {num_processes} processes")
+                
+                with ProcessPoolExecutor(max_workers=num_processes) as executor:
+                    future_to_team = {
+                        executor.submit(_process_team_parallel, args): args[0] 
+                        for args in team_data_args
+                    }
+                    
+                    for future in as_completed(future_to_team):
+                        try:
+                            result = future.result(timeout=10)
+                            if result:
+                                team_abbr, season_stats, stats_for_avg = result
+                                team_stats_dict[team_abbr] = season_stats
+                                all_stats_for_averaging.append(stats_for_avg)
+                        except Exception as e:
+                            team_abbr = future_to_team[future]
+                            logger.error(f"Failed to process team {team_abbr}: {e}")
+            
+            end_team_processing = time.time()
+            logger.info(f"Team processing took {end_team_processing - start_team_processing:.2f}s for {len(teams)} teams (parallel)")
             
             if progress_callback:
                 progress_callback.update(0.95, "Computing league averages...")
