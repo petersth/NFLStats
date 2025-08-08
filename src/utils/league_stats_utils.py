@@ -25,7 +25,8 @@ def extract_stats_for_averaging(season_stats: SeasonStats) -> Dict:
         'first_downs_per_game': season_stats.first_downs_per_game,
         'points_per_drive': season_stats.points_per_drive,
         'redzone_td_pct': season_stats.redzone_td_pct,
-        'penalty_yards_per_game': season_stats.penalty_yards_per_game
+        'penalty_yards_per_game': season_stats.penalty_yards_per_game,
+        'toer': season_stats.toer
     }
 
 

@@ -7,6 +7,7 @@ import numpy as np
 
 from .entities import Team, Season, SeasonStats, GameStats, TeamRecord
 from .utilities import PlayFilter
+from .toer_calculator import TOERCalculator
 from ..config.nfl_constants import (
     TOUCHDOWN_POINTS, EXTRA_POINT_POINTS, TWO_POINT_CONVERSION_POINTS,
     FIELD_GOAL_POINTS, RED_ZONE_YARDLINE, FIRST_DOWN_SUCCESS_THRESHOLD,
@@ -58,6 +59,15 @@ class NFLStatsCalculator:
             
             # Calculate all stats in one pass
             stats = self._calculate_all_stats(team_data, team.abbreviation)
+            
+            # Calculate average TOER from individual game TOER scores
+            game_stats_list = self.calculate_game_stats(team_data, team)
+            if game_stats_list:
+                avg_toer = sum(game_stat.toer for game_stat in game_stats_list) / len(game_stats_list)
+                stats['avg_toer'] = avg_toer
+            else:
+                stats['avg_toer'] = 0.0
+            
             return self._build_season_stats(team, season, games_played, stats)
             
         except Exception as e:
@@ -97,6 +107,21 @@ class NFLStatsCalculator:
                 points_per_drive = game_stats_dict.get('points_per_drive', 0.0)
                 redzone_td_pct = game_stats_dict.get('redzone_td_pct', 0.0)
                 
+                # Calculate TOER for this game
+                toer_score = TOERCalculator.calculate_toer(
+                    avg_yards_per_play=yards_per_play,
+                    turnovers=int(turnovers),
+                    completion_pct=completion_pct,
+                    rush_ypc=rush_ypc,
+                    sacks=int(sacks_allowed),
+                    third_down_pct=third_down_pct,
+                    success_rate=success_rate,
+                    first_downs=float(first_downs),
+                    points_per_drive=points_per_drive,
+                    redzone_td_pct=redzone_td_pct,
+                    penalty_yards=int(penalty_yards)
+                )
+                
                 # Determine opponent
                 opponent = self._get_opponent_from_game_data(game_data, team.abbreviation)
                 opponent_team = Team.from_abbreviation(opponent) if opponent != "Unknown" else team
@@ -120,6 +145,7 @@ class NFLStatsCalculator:
                     points_per_drive=points_per_drive,
                     redzone_td_pct=redzone_td_pct,
                     penalty_yards=penalty_yards,
+                    toer=toer_score
                 )
                 game_stats.append(game_stat)
             
@@ -429,6 +455,9 @@ class NFLStatsCalculator:
         """Build SeasonStats object from calculated statistics."""
         per_game = lambda x: x / games_played if games_played > 0 else 0.0
         
+        # Calculate TOER score as average of individual game TOER scores
+        toer_score = stats.get('avg_toer', 0.0)
+        
         return SeasonStats(
             team=team, season=season, games_played=games_played,
             total_plays=stats['total_plays'], total_yards=stats['total_yards'],
@@ -468,6 +497,7 @@ class NFLStatsCalculator:
             total_redzone_field_goals=stats.get('redzone_field_goals', 0),
             total_redzone_failed=stats.get('redzone_failed', 0),
             redzone_td_pct=stats.get('redzone_td_pct', 0.0),
+            toer=toer_score,
             first_down_successful_plays=stats.get('first_down_successful', 0),
             first_down_total_plays=stats.get('first_down_total', 0),
             second_down_successful_plays=stats.get('second_down_successful', 0),
@@ -622,5 +652,6 @@ class NFLStatsCalculator:
             first_downs_per_game=0.0,
             points_per_drive=0.0,
             redzone_td_pct=0.0,
-            penalty_yards_per_game=0.0
+            penalty_yards_per_game=0.0,
+            toer=0.0
         )

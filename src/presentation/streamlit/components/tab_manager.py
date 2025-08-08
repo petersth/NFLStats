@@ -5,6 +5,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from ....application.dto import TeamAnalysisResponse
 from ....domain.metrics import NFLMetrics
+from ....domain.toer_calculator import TOERCalculator
 from ..services.chart_generation_service import ChartGenerationService
 from ..services.export_service import ExportService
 from .methodology_renderer import MethodologyRenderer
@@ -26,7 +27,7 @@ class TabManager:
     
     def render_tabs(self, analysis_response: TeamAnalysisResponse):
         """Render all tabs with their content."""
-        tab1, tab2, tab3, tab4 = st.tabs(["Game Log", "League Comparison", "Methodology", "Export Data"])
+        tab1, tab2, tab3, tab4, tab5 = st.tabs(["Game Log", "TOER Breakdown", "League Comparison", "Methodology", "Export Data"])
         
         with tab1:
             if not self._app_state.is_tab_loaded('game_log'):
@@ -36,6 +37,13 @@ class TabManager:
             self._render_game_log_tab(analysis_response)
         
         with tab2:
+            if not self._app_state.is_tab_loaded('toer_breakdown'):
+                with st.spinner("Loading TOER breakdown..."):
+                    self._app_state.set_tab_loaded('toer_breakdown')
+            
+            self._render_toer_breakdown_tab(analysis_response)
+        
+        with tab3:
             if not self._app_state.is_tab_loaded('league'):
                 with ProgressManager().track_progress(100, "Preparing league comparison") as pm:
                     pm.update(25, "Loading comparison data...")
@@ -46,14 +54,14 @@ class TabManager:
             
             self._render_league_comparison_tab(analysis_response)
         
-        with tab3:
+        with tab4:
             if not self._app_state.is_tab_loaded('methodology'):
                 with st.spinner("Loading methodology documentation..."):
                     self._app_state.set_tab_loaded('methodology')
             
             self._render_methodology_tab(analysis_response)
         
-        with tab4:
+        with tab5:
             if not self._app_state.is_tab_loaded('export'):
                 with st.spinner("Preparing export options..."):
                     self._app_state.set_tab_loaded('export')
@@ -84,7 +92,8 @@ class TabManager:
                 '1st Downs': game_stat.first_downs,
                 'Pts/Drive': f"{game_stat.points_per_drive:.2f}",
                 'RZ TD%': f"{game_stat.redzone_td_pct:.2f}",
-                'Pen Yards': game_stat.penalty_yards
+                'Pen Yards': game_stat.penalty_yards,
+                'TOER': f"{game_stat.toer:.1f}"
             })
         
         display_df = pd.DataFrame(game_data)
@@ -330,6 +339,59 @@ class TabManager:
             if not rankings_data.empty:
                 st.dataframe(rankings_data, use_container_width=True)
     
+    def _render_toer_breakdown_tab(self, analysis_response: TeamAnalysisResponse):
+        """Render the TOER breakdown showing component scores for each game."""
+        st.subheader("TOER Component Breakdown")
+        
+        if not analysis_response.game_stats:
+            st.info("No game data available for TOER breakdown.")
+            return
+
+        # Build breakdown data
+        breakdown_data = []
+        
+        for i, game_stat in enumerate(analysis_response.game_stats, 1):
+            # Calculate individual component scores for this game
+            ypp_score = TOERCalculator.calculate_yards_per_play_score(game_stat.yards_per_play)
+            turnovers_score = TOERCalculator.calculate_turnovers_score(float(game_stat.turnovers))
+            completion_score = TOERCalculator.calculate_completion_pct_score(game_stat.completion_pct)
+            rush_ypc_score = TOERCalculator.calculate_rush_ypc_score(game_stat.rush_ypc)
+            sacks_score = TOERCalculator.calculate_sacks_score(float(game_stat.sacks_allowed))
+            third_down_score = TOERCalculator.calculate_third_down_score(game_stat.third_down_pct)
+            success_rate_score = TOERCalculator.calculate_success_rate_score(game_stat.success_rate)
+            first_downs_score = TOERCalculator.calculate_first_downs_score(float(game_stat.first_downs))
+            ppd_score = TOERCalculator.calculate_ppd_score(game_stat.points_per_drive)
+            redzone_score = TOERCalculator.calculate_redzone_score(game_stat.redzone_td_pct)
+            penalty_score = TOERCalculator.calculate_penalty_yards_adjustment(float(game_stat.penalty_yards))
+            
+            breakdown_data.append({
+                'Game': i,
+                'Opponent': game_stat.opponent.abbreviation,
+                'Location': game_stat.location.value,
+                'Yds/Play': ypp_score,
+                'Turnovers': turnovers_score,
+                'Pass Comp%': completion_score,
+                'Rush YPC': rush_ypc_score,
+                'Sacks': sacks_score,
+                '3rd Down%': third_down_score,
+                'Success%': success_rate_score,
+                '1st Downs': first_downs_score,
+                'Pts/Drive': ppd_score,
+                'RZ TD%': redzone_score,
+                'Pen Yards': penalty_score,
+                'TOER': f"{game_stat.toer:.1f}"
+            })
+        
+        # Create DataFrame
+        breakdown_df = pd.DataFrame(breakdown_data)
+        
+        st.dataframe(
+            breakdown_df,
+            use_container_width=True,
+            hide_index=True,
+            height=len(breakdown_df) * 35 + 38
+        )
+
     def _render_methodology_tab(self, analysis_response: TeamAnalysisResponse):
         """Render the methodology documentation tab."""
         self._methodology_renderer.render_methodology_page(analysis_response)

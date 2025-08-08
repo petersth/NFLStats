@@ -162,7 +162,8 @@ class ExportService:
             'first_downs_per_game': season_stats.first_downs_per_game,
             'points_per_drive': season_stats.points_per_drive,
             'redzone_td_pct': season_stats.redzone_td_pct,
-            'penalty_yards_per_game': season_stats.penalty_yards_per_game
+            'penalty_yards_per_game': season_stats.penalty_yards_per_game,
+            'toer': season_stats.toer
         }
     
     def _game_stats_to_dict(self, game_stats: GameStats) -> Dict[str, Any]:
@@ -182,7 +183,8 @@ class ExportService:
             'first_downs': game_stats.first_downs,
             'points_per_drive': game_stats.points_per_drive,
             'redzone_td_pct': game_stats.redzone_td_pct,
-            'penalty_yards': game_stats.penalty_yards
+            'penalty_yards': game_stats.penalty_yards,
+            'toer': game_stats.toer
         }
     
     def _rankings_to_dict(self, rankings: Dict) -> Dict[str, Any]:

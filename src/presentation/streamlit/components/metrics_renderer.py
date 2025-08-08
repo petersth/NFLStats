@@ -2,10 +2,13 @@
 
 import streamlit as st
 import html
+import logging
 from typing import Optional, Dict, List
 from ....application import TeamAnalysisResponse
 from ....domain import Team, Season, SeasonStats, PerformanceRank, TeamRecord, NFLMetrics
 from ....utils import ranking_utils
+
+logger = logging.getLogger(__name__)
 
 
 class MetricsRenderer:
@@ -14,7 +17,9 @@ class MetricsRenderer:
     def __init__(self):
         pass
     
-    def render_team_header(self, team: Team, season: Season, season_type_filter: str = "ALL", team_record: Optional[TeamRecord] = None, game_stats: Optional[List] = None):
+    def render_team_header(self, team: Team, season: Season, season_type_filter: str = "ALL", 
+                          team_record: Optional[TeamRecord] = None, game_stats: Optional[List] = None,
+                          season_stats: Optional['SeasonStats'] = None):
         """Render team header with branding and record information."""
         # Get season type display text
         season_type_text = {
@@ -58,6 +63,33 @@ class MetricsRenderer:
         safe_name = html.escape(str(team.name))
         safe_season_text = html.escape(str(season_type_text))
         
+        # Add TOER display if available
+        toer_display = ""
+        if season_stats and hasattr(season_stats, 'toer'):
+            toer_value = season_stats.toer
+            safe_toer_value = html.escape(f"{toer_value:.1f}")
+            
+            toer_display = f"""<div style="margin-left: auto; text-align: center; padding: 0 20px;">
+                    <div style="
+                        background: rgba(0,0,0,0.4); 
+                        border: 3px solid rgba(255,255,255,0.4);
+                        border-radius: 50%; 
+                        width: 95px;
+                        height: 95px;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        backdrop-filter: blur(5px);
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                    ">
+                        <div style="font-size: 0.65em; opacity: 0.9; margin-bottom: 2px; letter-spacing: 1px;">AVG TOER</div>
+                        <div style="font-size: 2.0em; font-weight: 900; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); line-height: 1;">
+                            {safe_toer_value}
+                        </div>
+                    </div>
+                </div>"""
+        
         header_html = f"""
         <div style="background: linear-gradient(135deg, {primary_color}, {secondary_color}); 
                     padding: 15px; 
@@ -67,10 +99,11 @@ class MetricsRenderer:
                     box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
             <div style="display: flex; align-items: center; gap: 15px;">
                 <div style="font-size: 2em;">{safe_logo}</div>
-                <div>
+                <div style="flex-grow: 1;">
                     <h2 style="margin: 0; font-size: 1.5em;">{safe_name} {season.year}{safe_season_text}</h2>
                     {record_text}
                 </div>
+                {toer_display}
             </div>
         </div>
         """

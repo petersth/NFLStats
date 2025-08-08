@@ -233,7 +233,8 @@ class StreamlitController:
             analysis_response.season,
             season_type_filter=selections.season_type_filter,
             team_record=analysis_response.team_record,
-            game_stats=analysis_response.game_stats
+            game_stats=analysis_response.game_stats,
+            season_stats=analysis_response.season_stats
         )
         
         # Create container for season metrics that can be cleared

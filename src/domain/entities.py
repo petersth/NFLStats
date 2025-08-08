@@ -84,6 +84,7 @@ class GameStats:
     points_per_drive: float
     redzone_td_pct: float
     penalty_yards: int
+    toer: float  # Total Offensive Efficiency Rating (0-100)
 
 
 @dataclass
@@ -105,6 +106,7 @@ class SeasonStats:
     points_per_drive: float
     redzone_td_pct: float
     penalty_yards_per_game: float
+    toer: float  # Total Offensive Efficiency Rating (0-100)
     
     # Raw input data for methodology display
     total_rush_yards: int = 0

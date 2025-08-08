@@ -149,7 +149,8 @@ class CalculationOrchestrator:
             first_downs_per_game=0.0,
             points_per_drive=0.0,
             redzone_td_pct=0.0,
-            penalty_yards_per_game=0.0
+            penalty_yards_per_game=0.0,
+            toer=0.0
         )
         
         return empty_season_stats, [], None

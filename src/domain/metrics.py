@@ -166,6 +166,18 @@ class NFLMetrics:
         description='Average penalty yards assessed per game'
     )
     
+    # Composite metrics
+    TOER = MetricDefinition(
+        key='toer',
+        display_name='Total Offensive Efficiency Rating',
+        short_name='TOER',
+        export_name='TOER',
+        unit='rating',
+        higher_is_better=True,
+        metric_type=MetricType.EFFICIENCY,
+        description='Composite offensive efficiency score (0-100) based on 11 key offensive metrics'
+    )
+    
     # Volume metrics
     TOTAL_YARDS = MetricDefinition(
         key='total_yards',
@@ -216,6 +228,7 @@ class NFLMetrics:
             cls.POINTS_PER_DRIVE,
             cls.REDZONE_TD_PCT,
             cls.PENALTY_YARDS_PER_GAME,
+            cls.TOER,
             cls.TOTAL_YARDS,
             cls.TOTAL_PLAYS,
             cls.GAMES_PLAYED

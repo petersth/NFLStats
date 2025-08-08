@@ -284,7 +284,8 @@ class ChartGenerationService:
             ('points_per_drive', 'Points/Drive'),
             ('completion_pct', 'Completion %'),
             ('third_down_pct', '3rd Down %'),
-            ('redzone_td_pct', 'Red Zone TD%')
+            ('redzone_td_pct', 'Red Zone TD%'),
+            ('toer', 'TOER')
         ]
         
         for metric_key, display_name in ranking_metrics:
