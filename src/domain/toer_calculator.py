@@ -8,6 +8,7 @@ Calculates a composite offensive efficiency score from 0-100 based on 11 key met
 import logging
 import yaml
 import re
+import threading
 from pathlib import Path
 from typing import Optional, Dict, Any, List, Callable, Tuple
 
@@ -20,19 +21,41 @@ class TOERValidationError(ValueError):
 
 
 class TOERCalculator:
-    """Calculates Total Offensive Efficiency Rating (TOER) from offensive metrics."""
+    """
+    Calculates Total Offensive Efficiency Rating (TOER) from offensive metrics.
     
-    _config = None
-    _scorers = None
+    This class uses thread-safe caching for configuration and scorer functions.
+    Configuration is loaded from YAML file once and cached for performance.
+    Scoring functions are built once and cached for subsequent calculations.
+    
+    The caching implementation uses the double-checked locking pattern with
+    threading.RLock to ensure thread safety in multi-threaded environments.
+    """
+    
+    _config: Optional[Dict[str, Any]] = None
+    _scorers: Optional[Dict[str, Callable]] = None
+    _config_lock = threading.RLock()
+    _scorers_lock = threading.RLock()
     
     @classmethod
     def _load_config(cls) -> Dict[str, Any]:
-        """Load scoring configuration from YAML file."""
-        if cls._config is None:
-            config_path = Path(__file__).parent.parent / "config" / "toer_scoring_config.yaml"
-            with open(config_path, 'r') as f:
-                cls._config = yaml.safe_load(f)
-            logger.debug("Loaded TOER configuration from YAML file")
+        """Load scoring configuration from YAML file with thread-safe caching."""
+        # First check without lock for performance
+        if cls._config is not None:
+            return cls._config
+        
+        # Double-checked locking pattern for thread safety
+        with cls._config_lock:
+            if cls._config is None:
+                config_path = Path(__file__).parent.parent / "config" / "toer_scoring_config.yaml"
+                try:
+                    with open(config_path, 'r') as f:
+                        cls._config = yaml.safe_load(f)
+                    logger.debug("Loaded TOER configuration from YAML file")
+                except (FileNotFoundError, yaml.YAMLError) as e:
+                    logger.error(f"Failed to load TOER configuration: {e}")
+                    raise
+        
         return cls._config
     
     @classmethod
@@ -108,47 +131,66 @@ class TOERCalculator:
     
     @classmethod
     def _build_scorers(cls) -> Dict[str, Callable]:
-        """Build scoring functions for each metric."""
+        """Build scoring functions for each metric with thread-safe caching."""
+        # First check without lock for performance
         if cls._scorers is not None:
             return cls._scorers
         
-        config = cls._load_config()
-        scorers = {}
-        
-        for metric_name, metric_config in config.items():
-            if 'thresholds' in metric_config:
-                rules = []
-                default_score = 0
-                
-                for threshold in metric_config['thresholds']:
-                    condition = threshold['condition']
-                    score = threshold['score']
+        # Double-checked locking pattern for thread safety
+        with cls._scorers_lock:
+            if cls._scorers is None:
+                try:
+                    config = cls._load_config()
+                    scorers = {}
                     
-                    if condition == 'default':
-                        default_score = score
-                    else:
-                        parsed = cls._parse_condition(condition)
-                        if parsed:
-                            rules.append((parsed, score))
-                
-                scorers[metric_name] = cls._create_threshold_scorer(
-                    rules, default_score, 
-                    first_match=(metric_name == 'penalty_yards')
-                )
-            
-            elif 'exact_values' in metric_config:
-                exact_dict = {}
-                for item in metric_config['exact_values']:
-                    exact_dict[item['value']] = item['score']
-                
-                default = metric_config['default_score']
-                scorers[metric_name] = lambda v, lookup=exact_dict, default_score=default: (
-                    lookup.get(int(v) if isinstance(v, float) and v.is_integer() else v, default_score)
-                )
+                    for metric_name, metric_config in config.items():
+                        if 'thresholds' in metric_config:
+                            rules = []
+                            default_score = 0
+                            
+                            for threshold in metric_config['thresholds']:
+                                condition = threshold['condition']
+                                score = threshold['score']
+                                
+                                if condition == 'default':
+                                    default_score = score
+                                else:
+                                    parsed = cls._parse_condition(condition)
+                                    if parsed:
+                                        rules.append((parsed, score))
+                            
+                            scorers[metric_name] = cls._create_threshold_scorer(
+                                rules, default_score, 
+                                first_match=(metric_name == 'penalty_yards')
+                            )
+                        
+                        elif 'exact_values' in metric_config:
+                            exact_dict = {}
+                            for item in metric_config['exact_values']:
+                                exact_dict[item['value']] = item['score']
+                            
+                            default = metric_config['default_score']
+                            scorers[metric_name] = lambda v, lookup=exact_dict, default_score=default: (
+                                lookup.get(int(v) if isinstance(v, float) and v.is_integer() else v, default_score)
+                            )
+                    
+                    cls._scorers = scorers
+                    logger.debug("Built scoring functions")
+                    
+                except Exception as e:
+                    logger.error(f"Failed to build TOER scorers: {e}")
+                    raise
         
-        cls._scorers = scorers
-        logger.debug("Built scoring functions")
-        return scorers
+        return cls._scorers
+    
+    @classmethod
+    def _clear_cache(cls) -> None:
+        """Clear cached configuration and scorers. Primarily for testing."""
+        with cls._config_lock:
+            with cls._scorers_lock:
+                cls._config = None
+                cls._scorers = None
+                logger.debug("Cleared TOER cache")
     
     @staticmethod
     def _validate_non_negative(value: float, param_name: str, max_reasonable: Optional[float] = None) -> None:

@@ -108,6 +108,7 @@ class TeamAnalysisController:
         try:
             # Get league-wide stats from cache for ranking calculation
             config_hash = self._orchestrator.league_cache.get_config_hash(configuration or {})
+            cache_key = self._orchestrator.league_cache.get_cache_key(season.year, season_type_filter, config_hash)
             team_stats_dict, _, _ = self._orchestrator.league_cache.get_or_compute_league_stats(
                 season.year, season_type_filter, config_hash,
                 None, self._orchestrator.statistics_calculator, configuration or {}
@@ -115,7 +116,7 @@ class TeamAnalysisController:
             
             if team_stats_dict and team.abbreviation in team_stats_dict:
                 # Use the cache's get_team_rankings method which uses pre-computed rankings
-                raw_rankings = self._orchestrator.league_cache.get_team_rankings(team.abbreviation, team_stats_dict)
+                raw_rankings = self._orchestrator.league_cache.get_team_rankings(team.abbreviation, team_stats_dict, cache_key)
                 
                 # Convert integer ranks to PerformanceRank objects
                 rankings = {}

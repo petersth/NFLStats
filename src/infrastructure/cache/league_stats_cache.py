@@ -1,7 +1,8 @@
-# src/infrastructure/cache/league_stats_cache.py - Simplified single concrete cache class
+# src/infrastructure/cache/league_stats_cache.py - League statistics cache
 
 import json
 import logging
+import time
 from datetime import datetime
 from typing import Dict, Tuple, Optional
 import pandas as pd
@@ -11,13 +12,14 @@ from ...domain.entities import Team, Season
 from ...utils.league_stats_utils import extract_stats_for_averaging, calculate_league_averages
 from ...utils.configuration_utils import apply_configuration_to_data
 from ...utils.ranking_utils import calculate_team_rankings, calculate_all_rankings
+from .simple_cache import SimpleCache
 
 logger = logging.getLogger(__name__)
 
 
 def _process_team_parallel(args):
     """Process a single team's statistics (for multiprocessing)."""
-    team_abbr, season_year, team_data_dict = args
+    team_abbr, season_year, team_data = args
     try:
         # Import inside the function for multiprocessing
         from src.domain.entities import Team, Season
@@ -25,11 +27,7 @@ def _process_team_parallel(args):
         from src.utils.league_stats_utils import extract_stats_for_averaging
         import pandas as pd
         
-        # Recreate team data from the dict
-        if isinstance(team_data_dict, dict) and 'data' in team_data_dict:
-            team_data = pd.DataFrame(team_data_dict['data'])
-        else:
-            team_data = pd.DataFrame(team_data_dict)
+        # team_data is already a DataFrame - no conversion needed!
         
         if len(team_data) == 0:
             return None
@@ -69,12 +67,25 @@ class LeagueStatsCache:
         self._nfl_data_repo = nfl_data_repo
         self._statistics_calculator = statistics_calculator
         
-        # Simple in-memory caches
-        self._memory_cache = {}
-        self._rankings_cache = {}
-        self._raw_data_cache = {}  # Cache for raw play-by-play data
+        # Initialize caches with different TTL strategies
+        from datetime import datetime
+        current_year = datetime.now().year
+        self._memory_cache = SimpleCache(
+            default_ttl=86400,  # 1 day for computed statistics
+            max_size=100        # Limit concurrent season computations
+        )
         
-        logger.info("Initialized LeagueStatsCache using NFL API with in-memory caching")
+        self._rankings_cache = SimpleCache(
+            default_ttl=86400,  # 1 day for rankings
+            max_size=500        # More rankings entries
+        )
+        
+        self._raw_data_cache = SimpleCache(
+            default_ttl=86400,  # 1 day for raw data
+            max_size=50         # Fewer but larger entries
+        )
+        
+        logger.info("Initialized LeagueStatsCache with caching (TTL: 1 day for all caches)")
     
     def get_cached_play_data(self, season_year: int, season_type: str = 'ALL', configuration: Dict = None) -> Optional[pd.DataFrame]:
         """Get cached raw play-by-play data if available.
@@ -98,7 +109,22 @@ class LeagueStatsCache:
             configuration = {}
 
         complete_cache_key = f"raw_data_{season_year}_ALL"
-        complete_data = self._raw_data_cache.get(complete_cache_key)
+        
+        def validate_data(data_tuple):
+            """Validate cached play-by-play data tuple."""
+            if not isinstance(data_tuple, tuple) or len(data_tuple) != 2:
+                return False
+            pbp_data, timestamp = data_tuple
+            return (pbp_data is not None and len(pbp_data) > 0 and 
+                   'season_type' in pbp_data.columns and timestamp is not None)
+        
+        cached_result = self._raw_data_cache.get(complete_cache_key, validator=validate_data)
+        
+        if cached_result is None:
+            return None
+        
+        # Extract DataFrame from tuple
+        complete_data, _ = cached_result
         
         if complete_data is not None:
             # Filter the complete data by season type if needed
@@ -109,7 +135,7 @@ class LeagueStatsCache:
         
         # Fallback: try to get the specific season type cache (for backward compatibility)
         specific_cache_key = f"raw_data_{season_year}_{season_type}"
-        return self._raw_data_cache.get(specific_cache_key)
+        return self._raw_data_cache.get(specific_cache_key, validator=validate_data)
     
     # === Main Interface Methods ===
     
@@ -120,57 +146,90 @@ class LeagueStatsCache:
         cache_key = self.get_cache_key(season_year, season_type, config_hash)
         
         try:
-            # Check memory cache first
-            cached_result = self._get_cached_data(cache_key, season_year)
-            if cached_result:
-                self._ensure_rankings_cached(cache_key, cached_result[0])
-                return cached_result
+            # Use get_or_compute for main statistics
+            def compute_stats():
+                if self._nfl_data_repo:
+                    return self._compute_from_raw_data(
+                        season_year, season_type, _configuration, progress_callback
+                    )
+                else:
+                    logger.error("No NFL data repository available")
+                    return {}, {}, datetime.now()
             
-            # Compute league statistics
-            logger.info(f"Computing league statistics for {season_year} {season_type}")
+            def validate_stats(result):
+                """Validate computed statistics."""
+                team_stats, league_averages, timestamp = result
+                return (isinstance(team_stats, dict) and len(team_stats) > 0 and
+                       isinstance(league_averages, dict) and timestamp is not None)
             
-            if self._nfl_data_repo:
-                team_stats_dict, league_averages, data_timestamp = self._compute_from_raw_data(
-                    season_year, season_type, _configuration, progress_callback
-                )
-            else:
-                logger.error("No NFL data repository available")
-                return {}, {}, datetime.now()
+            # Use adaptive TTL based on season
+            current_year = datetime.now().year
+            ttl = 900 if season_year == current_year else 3600  # 15 min vs 1 hour
+            
+            result = self._memory_cache.get_or_compute(
+                key=cache_key,
+                compute_func=compute_stats,
+                validator=validate_stats,
+                ttl=ttl
+            )
+            
+            team_stats_dict, league_averages, data_timestamp = result
             
             if not team_stats_dict:
                 logger.warning(f"No statistics computed for season {season_year}")
                 return {}, {}, datetime.now()
             
-            # Cache rankings and results
+            # Ensure rankings are cached
             self._ensure_rankings_cached(cache_key, team_stats_dict)
-            self._cache_results(cache_key, team_stats_dict, league_averages, data_timestamp, season_year)
             
-            logger.info(f"Computed and cached statistics for {len(team_stats_dict)} teams")
+            logger.info(f"Retrieved statistics for {len(team_stats_dict)} teams (cached: {cache_key in self._memory_cache._cache})")
             return team_stats_dict, league_averages, data_timestamp
             
         except Exception as e:
             logger.error(f"Failed to get/compute league stats for {season_year}: {e}")
             raise CacheError(f"League stats computation failed: {e}", cache_key, "get_or_compute_league_stats")
     
-    def get_team_rankings(self, team_abbr: str, team_stats_dict: Dict) -> Dict:
-        """Get pre-computed rankings for a specific team."""
-        # Always calculate fresh rankings from the current team_stats_dict
-        # to ensure consistency with the displayed statistics
-        logger.info(f"Calculating fresh rankings for {team_abbr} to ensure consistency")
+    def get_team_rankings(self, team_abbr: str, team_stats_dict: Dict, cache_key: str = None) -> Dict:
+        """Get pre-computed rankings for a specific team from cache."""
         try:
+            # If no cache_key provided, create one from team_stats_dict
+            if not cache_key and team_stats_dict:
+                first_team_stats = list(team_stats_dict.values())[0]
+                cache_key = self.get_cache_key(
+                    first_team_stats.season.year,
+                    'ALL',  # Default season type
+                    'default'  # Default config hash
+                )
+            
+            if cache_key:
+                # Try to get cached rankings using the same key as _ensure_rankings_cached
+                all_rankings = self._rankings_cache.get(cache_key)
+                
+                if all_rankings and team_abbr in all_rankings:
+                    logger.debug(f"Retrieved cached rankings for {team_abbr}")
+                    return all_rankings[team_abbr]
+            
+            # Fallback to fresh calculation if not in cache
+            logger.info(f"Calculating fresh rankings for {team_abbr} (not found in cache)")
             return calculate_team_rankings(team_abbr, team_stats_dict)
+                
         except Exception as e:
-            logger.error(f"Failed to calculate team rankings for {team_abbr}: {e}")
-            raise CacheError(f"Team rankings calculation failed: {e}", operation="get_team_rankings")
+            logger.error(f"Failed to get team rankings for {team_abbr}: {e}")
+            # Fallback to fresh calculation
+            return calculate_team_rankings(team_abbr, team_stats_dict)
     
     def get_cache_info(self) -> Dict:
-        """Get information about current cache state."""
+        """Get comprehensive information about current cache state."""
         return {
-            'cache_type': 'league_stats',
-            'description': 'Simplified league statistics cache',
-            'cached_items': len(self._memory_cache),
-            'rankings_cached_items': len(self._rankings_cache),
-            'data_source': 'nfl_library'
+            'cache_type': 'league_stats_simple',
+            'description': 'League statistics cache with TTL and validation',
+            'memory_cache': self._memory_cache.get_stats(),
+            'rankings_cache': self._rankings_cache.get_stats(),
+            'raw_data_cache': self._raw_data_cache.get_stats(),
+            'data_source': 'nfl_library',
+            'total_entries': (self._memory_cache.get_stats()['size'] + 
+                            self._rankings_cache.get_stats()['size'] + 
+                            self._raw_data_cache.get_stats()['size'])
         }
     
     # === Utility Methods (formerly in base class) ===
@@ -200,21 +259,26 @@ class LeagueStatsCache:
             logger.error(f"Failed to generate config hash: {e}")
             raise CacheError(f"Config hash generation failed: {e}", operation="get_config_hash")
     
-    def clear_cache(self, season_year: Optional[int] = None) -> None:
+    def clear_cache(self, season_year: Optional[int] = None) -> Dict[str, int]:
         """Clear cached league statistics."""
         try:
+            cleared_stats = {}
+            
             if season_year:
-                # Remove only caches for specific season
-                keys_to_remove = [k for k, v in self._memory_cache.items() 
-                                if v.get('season_year') == season_year]
-                for key in keys_to_remove:
-                    del self._memory_cache[key]
-                logger.info(f"Cleared cache for season {season_year}")
+                # Pattern-based clearing for specific season
+                pattern = f"_{season_year}_"
+                cleared_stats['memory'] = self._memory_cache.clear(pattern)
+                cleared_stats['rankings'] = self._rankings_cache.clear(pattern)
+                cleared_stats['raw_data'] = self._raw_data_cache.clear(pattern)
+                logger.info(f"Cleared cache for season {season_year}: {cleared_stats}")
             else:
                 # Clear all cached data
-                self._memory_cache.clear()
-                self._rankings_cache.clear()
-                logger.info("Cleared all cached league statistics")
+                cleared_stats['memory'] = self._memory_cache.clear()
+                cleared_stats['rankings'] = self._rankings_cache.clear()
+                cleared_stats['raw_data'] = self._raw_data_cache.clear()
+                logger.info(f"Cleared all cached league statistics: {cleared_stats}")
+                
+            return cleared_stats
         except Exception as e:
             logger.error(f"Failed to clear cache: {e}")
             raise CacheError(f"Cache clear operation failed: {e}", operation="clear_cache")
@@ -228,38 +292,55 @@ class LeagueStatsCache:
                 logger.error("No NFL data repository available for raw data computation")
                 return {}, {}, datetime.now()
             
+            # Use caching for raw play-by-play data
             complete_cache_key = f"raw_data_{season_year}_ALL"
-            timestamp_cache_key = f"timestamp_{season_year}_ALL"
             
-            pbp_data = self._raw_data_cache.get(complete_cache_key)
-            data_timestamp = self._raw_data_cache.get(timestamp_cache_key)
-            
-            if pbp_data is None:
-                # Fetch complete dataset (regular season + playoffs)
-                import time
+            def fetch_pbp_data():
+                """Fetch play-by-play data from repository."""
                 fetch_start = time.time()
                 if progress_callback:
                     progress_callback.update(0.4, "Fetching NFL data from API...")
                 pbp_data, data_timestamp = self._nfl_data_repo.get_play_by_play_data(season_year, progress_callback)
                 fetch_end = time.time()
                 logger.info(f"NFL data fetch took {fetch_end - fetch_start:.2f}s")
+                
                 if pbp_data is None or len(pbp_data) == 0:
                     logger.warning(f"No raw data found for season {season_year}")
-                    return {}, {}, datetime.now()
+                    return None, datetime.now()
                 
-                # Cache both the raw unfiltered dataset and its timestamp
-                self._raw_data_cache[complete_cache_key] = pbp_data
-                self._raw_data_cache[timestamp_cache_key] = data_timestamp
-                
-                # Also ensure the repository's own cache has the timestamp
+                # Also ensure the repository's own cache has the data
                 if self._nfl_data_repo and hasattr(self._nfl_data_repo, '_cache'):
                     repo_cache_key = f"pbp_{season_year}"
-                    self._nfl_data_repo._cache[repo_cache_key] = (pbp_data, data_timestamp)
+                    # Cache the data in the repository
+                    self._nfl_data_repo._cache.set(repo_cache_key, (pbp_data, data_timestamp))
                 
-                logger.info(f"Cached complete dataset for season {season_year}")
-            else:
-                logger.info(f"Using cached complete dataset for season {season_year}")
-                # Use the cached timestamp (from original NFL data)
+                return (pbp_data, data_timestamp)
+            
+            def validate_pbp_data(data_tuple):
+                """Validate cached play-by-play data."""
+                if not isinstance(data_tuple, tuple) or len(data_tuple) != 2:
+                    return False
+                pbp_data, timestamp = data_tuple
+                return (pbp_data is not None and len(pbp_data) > 0 and 
+                       'season' in pbp_data.columns and timestamp is not None)
+            
+            # Use season-aware TTL for raw data
+            current_year = datetime.now().year
+            raw_data_ttl = 1800 if season_year == current_year else 86400  # 30 min vs 24 hours
+            
+            data_result = self._raw_data_cache.get_or_compute(
+                key=complete_cache_key,
+                compute_func=fetch_pbp_data,
+                validator=validate_pbp_data,
+                ttl=raw_data_ttl
+            )
+            
+            if data_result is None or data_result[0] is None:
+                logger.warning(f"Failed to fetch raw data for season {season_year}")
+                return {}, {}, datetime.now()
+            
+            pbp_data, data_timestamp = data_result
+            logger.info(f"Retrieved complete dataset for season {season_year} ({len(pbp_data)} plays)")
             
             # Now filter by season type and apply configuration for this specific request
             if progress_callback:
@@ -287,7 +368,6 @@ class LeagueStatsCache:
             team_stats_dict = {}
             all_stats_for_averaging = []
             
-            import time
             try:
                 from joblib import Parallel, delayed
                 use_joblib = True
@@ -310,8 +390,8 @@ class LeagueStatsCache:
                 for team_abbr in teams:
                     team_data = filtered_data[filtered_data['posteam'] == team_abbr]
                     if len(team_data) > 0:
-                        # joblib can handle DataFrames directly more efficiently
-                        team_data_list.append((team_abbr, season_year, team_data.to_dict('records')))
+                        # Pass DataFrame directly - much faster than to_dict conversion
+                        team_data_list.append((team_abbr, season_year, team_data))
                 
                 # Process in parallel using joblib
                 results = Parallel(n_jobs=num_processes, backend=backend)(
@@ -330,8 +410,8 @@ class LeagueStatsCache:
                 for team_abbr in teams:
                     team_data = filtered_data[filtered_data['posteam'] == team_abbr]
                     if len(team_data) > 0:
-                        team_data_dict = team_data.to_dict('records')
-                        team_data_args.append((team_abbr, season_year, team_data_dict))
+                        # Pass DataFrame directly - much faster than to_dict conversion
+                        team_data_args.append((team_abbr, season_year, team_data))
                 
                 num_processes = min(cpu_count(), 8, len(team_data_args))
                 logger.info(f"Processing {len(team_data_args)} teams using {num_processes} processes")
@@ -369,41 +449,27 @@ class LeagueStatsCache:
     
     def _ensure_rankings_cached(self, cache_key: str, team_stats_dict: Dict) -> None:
         """Ensure rankings are computed and cached."""
-        if cache_key not in self._rankings_cache and team_stats_dict:
+        if not team_stats_dict:
+            return
+            
+        def compute_rankings():
+            """Compute rankings for all teams."""
             logger.info(f"Computing rankings for all {len(team_stats_dict)} teams...")
             all_rankings = calculate_all_rankings(team_stats_dict)
-            self._rankings_cache[cache_key] = all_rankings
             logger.info(f"Pre-computed rankings for {len(all_rankings)} teams")
+            return all_rankings
+        
+        def validate_rankings(rankings):
+            """Validate computed rankings."""
+            return (isinstance(rankings, dict) and len(rankings) > 0 and 
+                   all(isinstance(team_ranking, dict) for team_ranking in rankings.values()))
+        
+        self._rankings_cache.get_or_compute(
+            key=cache_key,
+            compute_func=compute_rankings,
+            validator=validate_rankings
+        )
     
-    def _cache_results(self, cache_key: str, team_stats: Dict, 
-                      league_averages: Dict, timestamp: datetime, season_year: int) -> None:
-        """Cache the results in memory."""
-        try:
-            self._memory_cache[cache_key] = {
-                'team_stats': team_stats,
-                'league_averages': league_averages,
-                'timestamp': timestamp,
-                'computed_at': datetime.now(),
-                'season_year': season_year
-            }
-        except Exception as e:
-            logger.warning(f"Failed to cache results: {e}")
-    
-    def _get_cached_data(self, cache_key: str, season_year: int) -> Optional[Tuple[Dict, Dict, datetime]]:
-        """Get data from memory cache if valid."""
-        try:
-            if cache_key in self._memory_cache:
-                cached_data = self._memory_cache[cache_key]
-                if self._is_cache_valid_for_season(cached_data, season_year):
-                    logger.info(f"Using cached league statistics for season {season_year}")
-                    return cached_data['team_stats'], cached_data['league_averages'], cached_data['timestamp']
-                else:
-                    # Remove stale cache
-                    del self._memory_cache[cache_key]
-            return None
-        except Exception as e:
-            logger.warning(f"Failed to retrieve cached data: {e}")
-            return None
     
     def _is_cache_valid_for_season(self, cached_data: Dict, season_year: int) -> bool:
         """Check if cached data is still valid for a season."""

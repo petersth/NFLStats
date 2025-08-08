@@ -85,7 +85,6 @@ class CalculationOrchestrator:
                 if season_type_filter == 'POST':
                     from ...config.nfl_constants import TEAM_DATA
                     team_name = TEAM_DATA.get(team.abbreviation, {}).get('name', team.abbreviation)
-                    from ..exceptions import DataNotFoundError
                     raise DataNotFoundError(
                         f"{team_name} did not make the playoffs in {season.year}. "
                         f"Try selecting 'Regular Season' or 'All Games' instead."

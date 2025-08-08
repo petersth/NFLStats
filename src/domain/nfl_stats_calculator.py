@@ -13,6 +13,7 @@ from ..config.nfl_constants import (
     FIELD_GOAL_POINTS, RED_ZONE_YARDLINE, FIRST_DOWN_SUCCESS_THRESHOLD,
     SECOND_DOWN_SUCCESS_THRESHOLD, CONVERSION_SUCCESS_THRESHOLD
 )
+from ..infrastructure.cache.simple_cache import SimpleCache
 
 logger = logging.getLogger(__name__)
 
@@ -31,8 +32,14 @@ class NFLStatsCalculator:
             'CONVERSION_SUCCESS_THRESHOLD': CONVERSION_SUCCESS_THRESHOLD
         })()
         self._play_filter = PlayFilter()
-        # Cache for game stats to avoid redundant calculations
-        self._game_stats_cache = {}
+        
+        # Cache for game stats with reasonable TTL and size limits
+        self._game_stats_cache = SimpleCache(
+            default_ttl=86400,  # 1 day TTL for game stats
+            max_size=1000       # Reasonable limit for game stats
+        )
+        
+        logger.debug("Initialized NFLStatsCalculator with game stats caching")
     
     def _safe_sum(self, series, default=0):
         """Safely sum a pandas series with default."""
@@ -127,92 +134,111 @@ class NFLStatsCalculator:
             
             # Create a cache key based on team and data characteristics
             import hashlib
-            cache_key = f"{team.abbreviation}_{len(team_data)}_{team_data.index.min()}_{team_data.index.max()}"
-            cache_key = hashlib.md5(cache_key.encode()).hexdigest()
+            data_hash = f"{team.abbreviation}_{len(team_data)}_{team_data.index.min()}_{team_data.index.max()}"
+            cache_key = hashlib.md5(data_hash.encode()).hexdigest()
             
-            # Check cache
-            if cache_key in self._game_stats_cache:
-                logger.debug(f"Using cached game stats for {team.abbreviation}")
-                return self._game_stats_cache[cache_key]
+            def compute_game_stats():
+                """Compute game statistics for the team."""
+                return self._compute_all_game_stats(team_data, team)
             
-            game_stats = []
-            for game_id in team_data['game_id'].unique():
-                game_data = team_data[team_data['game_id'] == game_id]
-                
-                # Calculate actual game statistics
-                offensive_plays = self._play_filter.get_offensive_plays(game_data)
-                
-                # Basic stats
-                total_yards = int(offensive_plays['yards_gained'].sum()) if len(offensive_plays) > 0 else 0
-                total_plays = len(offensive_plays)
-                yards_per_play = total_yards / total_plays if total_plays > 0 else 0.0
-                
-                game_stats_dict = self._calculate_all_stats(game_data, team.abbreviation)
-                
-                # Extract the specific stats needed for GameStats
-                turnovers = game_stats_dict.get('total_turnovers', 0)
-                completion_pct = game_stats_dict.get('completion_pct', 0.0)
-                rush_ypc = game_stats_dict.get('rush_ypc', 0.0)
-                sacks_allowed = game_stats_dict.get('sacks', 0)
-                third_down_pct = game_stats_dict.get('third_down_pct', 0.0)
-                success_rate = game_stats_dict.get('success_rate', 0.0)
-                first_downs = game_stats_dict.get('first_downs_total', 0)
-                penalty_yards = game_stats_dict.get('penalty_yards', 0)
-                points_per_drive = game_stats_dict.get('points_per_drive', 0.0)
-                redzone_td_pct = game_stats_dict.get('redzone_td_pct', 0.0)
-                
-                # Calculate TOER for this game
-                toer_score = TOERCalculator.calculate_toer(
-                    avg_yards_per_play=yards_per_play,
-                    turnovers=int(turnovers),
-                    completion_pct=completion_pct,
-                    rush_ypc=rush_ypc,
-                    sacks=int(sacks_allowed),
-                    third_down_pct=third_down_pct,
-                    success_rate=success_rate,
-                    first_downs=float(first_downs),
-                    points_per_drive=points_per_drive,
-                    redzone_td_pct=redzone_td_pct,
-                    penalty_yards=int(penalty_yards)
-                )
-                
-                # Determine opponent
-                opponent = self._get_opponent_from_game_data(game_data, team.abbreviation)
-                opponent_team = Team.from_abbreviation(opponent) if opponent != "Unknown" else team
-                
-                # Create game stats object
-                game_stat = GameStats(
-                    game=None,  # Game entity not needed for stats display
-                    team=team,
-                    opponent=opponent_team,
-                    location=self._determine_location(game_data, team.abbreviation),
-                    yards_per_play=yards_per_play,
-                    total_yards=total_yards,
-                    total_plays=total_plays,
-                    turnovers=turnovers,
-                    completion_pct=completion_pct,
-                    rush_ypc=rush_ypc,
-                    sacks_allowed=sacks_allowed,
-                    third_down_pct=third_down_pct,
-                    success_rate=success_rate,
-                    first_downs=first_downs,
-                    points_per_drive=points_per_drive,
-                    redzone_td_pct=redzone_td_pct,
-                    penalty_yards=penalty_yards,
-                    toer=toer_score
-                )
-                game_stats.append(game_stat)
+            def validate_game_stats(stats):
+                """Validate computed game statistics."""
+                return (isinstance(stats, list) and 
+                       all(isinstance(stat, GameStats) for stat in stats))
             
-            # Cache the results
-            self._game_stats_cache[cache_key] = game_stats
-            logger.debug(f"Cached game stats for {team.abbreviation}")
-            
-            return game_stats
+            # Use cached computation
+            return self._game_stats_cache.get_or_compute(
+                key=cache_key,
+                compute_func=compute_game_stats,
+                validator=validate_game_stats
+            )
             
         except Exception as e:
             logger.error(f"Error calculating game stats for {team.abbreviation}: {e}")
             return []
     
+    def _compute_all_game_stats(self, team_data: pd.DataFrame, team: Team) -> List[GameStats]:
+        """Compute game statistics without caching (used by cache)."""
+        game_stats = []
+        
+        for game_id in team_data['game_id'].unique():
+            game_data = team_data[team_data['game_id'] == game_id]
+            
+            # Calculate actual game statistics
+            offensive_plays = self._play_filter.get_offensive_plays(game_data)
+            
+            # Basic stats
+            total_yards = int(offensive_plays['yards_gained'].sum()) if len(offensive_plays) > 0 else 0
+            total_plays = len(offensive_plays)
+            yards_per_play = total_yards / total_plays if total_plays > 0 else 0.0
+            
+            game_stats_dict = self._calculate_all_stats(game_data, team.abbreviation)
+            
+            # Extract the specific stats needed for GameStats
+            turnovers = game_stats_dict.get('total_turnovers', 0)
+            completion_pct = game_stats_dict.get('completion_pct', 0.0)
+            rush_ypc = game_stats_dict.get('rush_ypc', 0.0)
+            sacks_allowed = game_stats_dict.get('sacks', 0)
+            third_down_pct = game_stats_dict.get('third_down_pct', 0.0)
+            success_rate = game_stats_dict.get('success_rate', 0.0)
+            first_downs = game_stats_dict.get('first_downs_total', 0)
+            penalty_yards = game_stats_dict.get('penalty_yards', 0)
+            points_per_drive = game_stats_dict.get('points_per_drive', 0.0)
+            redzone_td_pct = game_stats_dict.get('redzone_td_pct', 0.0)
+            
+            # Calculate TOER for this game
+            toer_score = TOERCalculator.calculate_toer(
+                avg_yards_per_play=yards_per_play,
+                turnovers=int(turnovers),
+                completion_pct=completion_pct,
+                rush_ypc=rush_ypc,
+                sacks=int(sacks_allowed),
+                third_down_pct=third_down_pct,
+                success_rate=success_rate,
+                first_downs=float(first_downs),
+                points_per_drive=points_per_drive,
+                redzone_td_pct=redzone_td_pct,
+                penalty_yards=int(penalty_yards)
+            )
+            
+            # Determine opponent
+            opponent = self._get_opponent_from_game_data(game_data, team.abbreviation)
+            opponent_team = Team.from_abbreviation(opponent) if opponent != "Unknown" else team
+            
+            # Create game stats object
+            game_stat = GameStats(
+                game=None,  # Game entity not needed for stats display
+                team=team,
+                opponent=opponent_team,
+                location=self._determine_location(game_data, team.abbreviation),
+                yards_per_play=yards_per_play,
+                total_yards=total_yards,
+                total_plays=total_plays,
+                turnovers=turnovers,
+                completion_pct=completion_pct,
+                rush_ypc=rush_ypc,
+                sacks_allowed=sacks_allowed,
+                third_down_pct=third_down_pct,
+                success_rate=success_rate,
+                first_downs=first_downs,
+                points_per_drive=points_per_drive,
+                redzone_td_pct=redzone_td_pct,
+                penalty_yards=penalty_yards,
+                toer=toer_score
+            )
+            game_stats.append(game_stat)
+        
+        logger.debug(f"Computed game stats for {team.abbreviation}: {len(game_stats)} games")
+        return game_stats
+    
+    def get_cache_stats(self) -> Dict:
+        """Get game stats cache statistics."""
+        return {
+            'cache_type': 'nfl_stats_game_cache',
+            'description': 'Game statistics cache with TTL validation',
+            'stats': self._game_stats_cache.get_stats()
+        }
+
     def calculate_team_record(self, team_data: pd.DataFrame, team_abbreviation: str) -> Optional[TeamRecord]:
         """Calculate team's win-loss record."""
         try:
@@ -292,11 +318,6 @@ class NFLStatsCalculator:
             **self._calculate_team_specific_stats(data, team_abbr)
         }
     
-    def _get_success_eligible_plays(self, offensive_plays: pd.DataFrame) -> pd.DataFrame:
-        """Get plays eligible for success rate calculation."""
-        eligible_plays = offensive_plays[offensive_plays['ydstogo'].notna()].copy()
-        return self._play_filter.apply_success_rate_exclusions(eligible_plays)
-    
     def _calculate_passing_rushing_stats_optimized(self, passing_plays: pd.DataFrame, rushing_plays: pd.DataFrame) -> Dict:
         """Calculate passing and rushing stats using pre-filtered data."""
         return {
@@ -362,93 +383,6 @@ class NFLStatsCalculator:
             'third_down_total': len(third_downs)
         }
 
-    def _calculate_passing_rushing_stats_cached(self, cached_data: dict) -> Dict:
-        """Calculate passing and rushing stats using cached filtered data."""
-        pass_plays = cached_data['passing_plays']
-        rush_plays = cached_data['rushing_plays']
-        
-        return {
-            'pass_attempts': len(pass_plays),
-            'pass_completions': self._safe_sum(pass_plays.get('complete_pass', pd.Series(dtype='int64'))),
-            'completion_pct': self._safe_percentage(
-                self._safe_sum(pass_plays.get('complete_pass', pd.Series(dtype='int64'))), len(pass_plays)
-            ),
-            'rush_attempts': len(rush_plays),
-            'rush_yards': self._safe_sum(rush_plays['yards_gained']),
-            'rush_ypc': self._safe_mean(rush_plays['yards_gained'])
-        }
-    
-    def _calculate_down_stats_cached(self, cached_data: dict) -> Dict:
-        """Calculate down-specific statistics using cached data."""
-        third_downs = cached_data['third_down_attempts']
-        required_cols = ['first_down', 'touchdown']
-        
-        if not all(col in third_downs.columns for col in required_cols):
-            third_down_conversions = 0
-            third_down_pct = 0.0
-        else:
-            third_down_conversions = self._safe_sum(
-                (third_downs['first_down'] == 1) | (third_downs['touchdown'] == 1)
-            )
-            third_down_pct = self._safe_percentage(third_down_conversions, len(third_downs))
-        
-        return {
-            'third_down_conversions': third_down_conversions,
-            'third_down_attempts': len(third_downs),
-            'third_down_pct': third_down_pct
-        }
-    
-    def _calculate_success_stats_cached(self, cached_data: dict) -> Dict:
-        """Calculate success rate statistics using cached data."""
-        eligible_plays = cached_data['success_eligible_plays']
-        
-        if len(eligible_plays) == 0:
-            return {
-                'success_rate': 0.0,
-                'first_down_successful': 0, 'first_down_total': 0,
-                'second_down_successful': 0, 'second_down_total': 0,
-                'third_down_successful': 0, 'third_down_total': 0
-            }
-        
-        # Calculate success for each play
-        eligible_plays = eligible_plays.copy()
-        eligible_plays['success'] = self._identify_successful_plays(eligible_plays)
-        
-        # Overall success rate
-        successful_plays = self._safe_sum(eligible_plays['success'])
-        success_rate = self._safe_percentage(successful_plays, len(eligible_plays))
-        
-        # Down-specific success rates
-        first_downs = eligible_plays[eligible_plays['down'] == 1]
-        second_downs = eligible_plays[eligible_plays['down'] == 2]
-        third_downs = eligible_plays[eligible_plays['down'] == 3]
-        
-        return {
-            'success_rate': success_rate,
-            'first_down_successful': self._safe_sum(first_downs['success']),
-            'first_down_total': len(first_downs),
-            'second_down_successful': self._safe_sum(second_downs['success']),
-            'second_down_total': len(second_downs),
-            'third_down_successful': self._safe_sum(third_downs['success']),
-            'third_down_total': len(third_downs)
-        }
-    
-    def _calculate_passing_rushing_stats(self, data: pd.DataFrame) -> Dict:
-        """Calculate passing and rushing stats together."""
-        pass_plays = self._play_filter.get_passing_plays(data)
-        rush_plays = self._play_filter.get_rushing_plays(data)
-        
-        return {
-            'pass_attempts': len(pass_plays),
-            'pass_completions': self._safe_sum(pass_plays.get('complete_pass', pd.Series(dtype='int64'))),
-            'completion_pct': self._safe_percentage(
-                self._safe_sum(pass_plays.get('complete_pass', pd.Series(dtype='int64'))), len(pass_plays)
-            ),
-            'rush_attempts': len(rush_plays),
-            'rush_yards': self._safe_sum(rush_plays['yards_gained']),
-            'rush_ypc': self._safe_mean(rush_plays['yards_gained'])
-        }
-    
     def _calculate_down_stats(self, data: pd.DataFrame) -> Dict:
         """Calculate down-specific statistics."""
         third_downs = self._play_filter.get_third_down_attempts(data)
@@ -507,39 +441,6 @@ class NFLStatsCalculator:
             'first_downs_pass': first_downs_pass,
             'first_downs_penalty': first_downs_penalty,
             'first_downs_total': first_downs_total
-        }
-    
-    def _calculate_success_stats(self, data: pd.DataFrame) -> Dict:
-        """Calculate success rate statistics."""
-        plays = self._play_filter.get_offensive_plays(data)
-        eligible_plays = plays[plays['ydstogo'].notna()].copy()
-        eligible_plays = self._play_filter.apply_success_rate_exclusions(eligible_plays)
-        
-        if len(eligible_plays) == 0:
-            return {
-                'success_rate': 0.0,
-                'first_down_successful': 0, 'first_down_total': 0,
-                'second_down_successful': 0, 'second_down_total': 0,
-                'third_down_successful': 0, 'third_down_total': 0
-            }
-        
-        # Calculate success for each play
-        eligible_plays['success'] = self._identify_successful_plays(eligible_plays)
-        overall_success_rate = self._safe_percentage(eligible_plays['success'].sum(), len(eligible_plays))
-        
-        # Group by down
-        first_down_plays = eligible_plays[eligible_plays['down'] == 1]
-        second_down_plays = eligible_plays[eligible_plays['down'] == 2]
-        third_down_plays = eligible_plays[eligible_plays['down'] >= 3]
-        
-        return {
-            'success_rate': overall_success_rate,
-            'first_down_successful': self._safe_sum(first_down_plays['success']),
-            'first_down_total': len(first_down_plays),
-            'second_down_successful': self._safe_sum(second_down_plays['success']),
-            'second_down_total': len(second_down_plays),
-            'third_down_successful': self._safe_sum(third_down_plays['success']),
-            'third_down_total': len(third_down_plays)
         }
     
     def _calculate_team_specific_stats(self, data: pd.DataFrame, team_abbr: str) -> Dict:

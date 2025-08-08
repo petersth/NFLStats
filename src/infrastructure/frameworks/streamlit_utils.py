@@ -22,6 +22,7 @@ class StreamlitAdapter:
         self.state = StreamlitStateAdapter() 
         self.notifications = StreamlitNotificationAdapter()
         self.app_state = StreamlitApplicationStateAdapter(self.state)
+        self.monitoring = StreamlitCacheMonitoringAdapter()
         
         # Initialize application state
         self.app_state.init()
@@ -363,5 +364,78 @@ class StreamlitProgressStage:
             self.update(1.0, "Complete")
         else:
             self.update(1.0, "Failed")
+
+
+class StreamlitCacheMonitoringAdapter:
+    """Streamlit cache monitoring and diagnostics."""
+    
+    def render_cache_stats(self, show_details: bool = False) -> None:
+        """Render simple cache statistics in Streamlit UI."""
+        try:
+            # Try to get cache stats from session state
+            if 'league_cache_instances' in st.session_state:
+                orchestrator = st.session_state.league_cache_instances.get('calculation_orchestrator')
+                if orchestrator and hasattr(orchestrator, 'league_cache'):
+                    cache = orchestrator.league_cache
+                    if hasattr(cache, 'get_cache_statistics'):
+                        stats = cache.get_cache_statistics()
+                        
+                        st.markdown("### 📊 Cache Performance")
+                        with st.expander("🔧 League Stats Cache", expanded=show_details):
+                            if isinstance(stats, dict) and stats:
+                                for key, value in stats.items():
+                                    if isinstance(value, (int, float)):
+                                        if 'rate' in key.lower() or 'percent' in key.lower():
+                                            st.metric(key.replace('_', ' ').title(), f"{value:.1f}%")
+                                        else:
+                                            st.metric(key.replace('_', ' ').title(), f"{value:,}")
+                                    else:
+                                        st.text(f"{key}: {value}")
+                            else:
+                                st.info("Cache statistics not available")
+                        return
+            
+            st.info("No active cache instances found")
+                
+        except Exception as e:
+            st.error(f"Cache stats unavailable: {str(e)}")
+    
+    def render_cache_controls(self) -> None:
+        """Render cache control buttons."""
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            if st.button("🔄 Refresh Cache Stats"):
+                st.rerun()
+        
+        with col2:
+            if st.button("🗑️ Clear Cache"):
+                try:
+                    # Clear cache from session state
+                    if 'league_cache_instances' in st.session_state:
+                        orchestrator = st.session_state.league_cache_instances.get('calculation_orchestrator')
+                        if orchestrator and hasattr(orchestrator, 'league_cache'):
+                            cache = orchestrator.league_cache
+                            if hasattr(cache, 'clear_cache'):
+                                cleared_count = cache.clear_cache()
+                                st.success(f"Cleared {cleared_count:,} cache entries")
+                                st.rerun()
+                            else:
+                                st.success("Cache cleared")
+                                st.rerun()
+                    else:
+                        st.info("No active cache to clear")
+                    
+                except Exception as e:
+                    st.error(f"Failed to clear cache: {e}")
+    
+    def add_debug_info_expander(self) -> None:
+        """Add debug information expander to sidebar."""
+        with st.expander("🐛 Debug Info"):
+            st.markdown("**Cache Statistics**")
+            self.render_cache_stats(show_details=False)
+            
+            st.markdown("**Cache Controls**")
+            self.render_cache_controls()
 
 
