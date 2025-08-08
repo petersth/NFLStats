@@ -205,6 +205,43 @@ class UnifiedNFLRepository:
                     finally:
                         download_complete.set()
                 
+                # Optimize data types for memory efficiency after loading
+                def optimize_data_types(df):
+                    """Optimize DataFrame memory usage by converting data types."""
+                    if df is None or len(df) == 0:
+                        return df
+                    
+                    # Convert boolean-like float columns to actual booleans
+                    boolean_cols = ['rush_attempt', 'pass_attempt', 'complete_pass', 'sack', 
+                                   'two_point_attempt', 'touchdown', 'interception', 'fumble_lost',
+                                   'first_down', 'first_down_rush', 'first_down_pass', 'first_down_penalty', 'success']
+                    
+                    for col in boolean_cols:
+                        if col in df.columns:
+                            df[col] = df[col].fillna(0).astype(bool)
+                    
+                    # Convert team columns to categories (huge memory savings for repeated values)
+                    team_cols = ['home_team', 'away_team', 'posteam', 'defteam', 'td_team', 'penalty_team']
+                    for col in team_cols:
+                        if col in df.columns:
+                            df[col] = df[col].astype('category')
+                    
+                    # Convert play_type to category
+                    if 'play_type' in df.columns:
+                        df['play_type'] = df['play_type'].astype('category')
+                    
+                    # Convert result columns to categories (limited values)
+                    result_cols = ['field_goal_result', 'extra_point_result', 'two_point_conv_result']
+                    for col in result_cols:
+                        if col in df.columns:
+                            df[col] = df[col].astype('category')
+                    
+                    # Convert small integer columns to smaller dtypes
+                    if 'week' in df.columns:
+                        df['week'] = df['week'].astype('int8')  # Weeks are 1-22
+                    
+                    return df
+                
                 # Start download
                 download_thread = threading.Thread(target=download_data)
                 download_thread.start()
@@ -224,6 +261,11 @@ class UnifiedNFLRepository:
                 
                 if nfl_data is None or len(nfl_data) == 0:
                     raise DataNotFoundError(f"No NFL data found for season {season}")
+                
+                # Optimize memory usage of loaded data
+                if progress_callback:
+                    progress_callback.update(0.9, "Optimizing data types...")
+                nfl_data = optimize_data_types(nfl_data)
                 
                 # Get the latest game date from the actual data (represents when NFL data was last updated)
                 if 'game_date' in nfl_data.columns:
