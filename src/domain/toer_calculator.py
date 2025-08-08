@@ -168,8 +168,10 @@ class TOERCalculator:
     def calculate_yards_per_play_score(cls, ypp: float) -> int:
         """Calculate YPP component score (0-10 points)."""
         cls._validate_non_negative(ypp, "yards_per_play", 20.0)
+        # Round to display precision to ensure consistency between displayed and scored values
+        rounded_ypp = round(ypp, 2)
         scorers = cls._build_scorers()
-        return scorers['yards_per_play'](ypp)
+        return scorers['yards_per_play'](rounded_ypp)
     
     @classmethod
     def calculate_turnovers_score(cls, turnovers: int) -> int:
@@ -185,15 +187,19 @@ class TOERCalculator:
     def calculate_completion_pct_score(cls, comp_pct: float) -> int:
         """Calculate completion percentage component score (0-10 points)."""
         cls._validate_percentage(comp_pct, "completion_percentage")
+        # Round to display precision to ensure consistency
+        rounded_comp_pct = round(comp_pct, 2)
         scorers = cls._build_scorers()
-        return scorers['completion_percentage'](comp_pct)
+        return scorers['completion_percentage'](rounded_comp_pct)
     
     @classmethod
     def calculate_rush_ypc_score(cls, ypc: float) -> int:
         """Calculate rushing YPC component score (0-10 points)."""
         cls._validate_non_negative(ypc, "rush_yards_per_carry", 15.0)
+        # Round to display precision to ensure consistency
+        rounded_ypc = round(ypc, 2)
         scorers = cls._build_scorers()
-        return scorers['rush_yards_per_carry'](ypc)
+        return scorers['rush_yards_per_carry'](rounded_ypc)
     
     @classmethod
     def calculate_sacks_score(cls, sacks: int) -> int:
@@ -209,36 +215,46 @@ class TOERCalculator:
     def calculate_third_down_score(cls, third_down_pct: float) -> int:
         """Calculate third down conversion component score (0-10 points)."""
         cls._validate_percentage(third_down_pct, "third_down_percentage")
+        # Round to display precision to ensure consistency
+        rounded_third_down_pct = round(third_down_pct, 2)
         scorers = cls._build_scorers()
-        return scorers['third_down_percentage'](third_down_pct)
+        return scorers['third_down_percentage'](rounded_third_down_pct)
     
     @classmethod
     def calculate_success_rate_score(cls, success_rate: float) -> int:
         """Calculate play success rate component score (0-10 points)."""
         cls._validate_percentage(success_rate, "success_rate")
+        # Round to display precision to ensure consistency
+        rounded_success_rate = round(success_rate, 2)
         scorers = cls._build_scorers()
-        return scorers['success_rate'](success_rate)
+        return scorers['success_rate'](rounded_success_rate)
     
     @classmethod
     def calculate_first_downs_score(cls, first_downs: float) -> int:
         """Calculate first downs component score (0-10 points)."""
         cls._validate_non_negative(first_downs, "first_downs", 50.0)
+        # Round to display precision to ensure consistency
+        rounded_first_downs = round(first_downs, 2)
         scorers = cls._build_scorers()
-        return scorers['first_downs'](first_downs)
+        return scorers['first_downs'](rounded_first_downs)
     
     @classmethod
     def calculate_ppd_score(cls, ppd: float) -> int:
         """Calculate points per drive component score (0-10 points)."""
         cls._validate_non_negative(ppd, "points_per_drive", 8.0)
+        # Round to display precision to ensure consistency
+        rounded_ppd = round(ppd, 2)
         scorers = cls._build_scorers()
-        return scorers['points_per_drive'](ppd)
+        return scorers['points_per_drive'](rounded_ppd)
     
     @classmethod
     def calculate_redzone_score(cls, redzone_td_pct: float) -> int:
         """Calculate red zone TD percentage component score (0-10 points)."""
         cls._validate_percentage(redzone_td_pct, "redzone_td_percentage")
+        # Round to display precision to ensure consistency
+        rounded_redzone_td_pct = round(redzone_td_pct, 2)
         scorers = cls._build_scorers()
-        return scorers['redzone_td_percentage'](redzone_td_pct)
+        return scorers['redzone_td_percentage'](rounded_redzone_td_pct)
     
     @classmethod
     def calculate_penalty_yards_adjustment(cls, penalty_yards: int) -> int:

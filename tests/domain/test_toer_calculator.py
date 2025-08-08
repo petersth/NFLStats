@@ -126,14 +126,18 @@ class TestYardsPerPlayScoring:
     def test_critical_boundary_precision_issues(self):
         """Test the exact boundary precision issue that was discovered with Arizona Cardinals."""
         # This is the EXACT value that failed - 5.509090909090909
-        # It should score 10 points (> 5.5 threshold) but was falling through gaps
+        # After rounding fix: rounds to 5.51 and should score 10 points
         assert TOERCalculator.calculate_yards_per_play_score(5.509090909090909) == 10
         
-        # Test other potential precision edge cases
-        # Note: Due to floating point representation, values extremely close to 5.5 may be treated as 5.5
-        assert TOERCalculator.calculate_yards_per_play_score(5.50001) == 10  # Clearly above 5.5
-        assert TOERCalculator.calculate_yards_per_play_score(5.5000) == 9  # Exactly 5.5
-        assert TOERCalculator.calculate_yards_per_play_score(5.4999) == 8  # Clearly below 5.5
+        # Test display consistency - values that display the same should score the same
+        # All these round to 5.50 when displayed, so should have same score
+        assert TOERCalculator.calculate_yards_per_play_score(5.504) == 9   # rounds to 5.50
+        assert TOERCalculator.calculate_yards_per_play_score(5.500) == 9   # exactly 5.50
+        assert TOERCalculator.calculate_yards_per_play_score(5.496) == 9   # rounds to 5.50
+        
+        # Values that round to different displays should potentially score differently
+        assert TOERCalculator.calculate_yards_per_play_score(5.51) == 10   # displays as 5.51
+        assert TOERCalculator.calculate_yards_per_play_score(5.49) == 8    # displays as 5.49
         
         # Test all critical boundaries with floating point precision
         boundaries = [
