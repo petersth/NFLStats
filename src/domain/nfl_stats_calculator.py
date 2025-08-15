@@ -205,9 +205,29 @@ class NFLStatsCalculator:
             opponent = self._get_opponent_from_game_data(game_data, team.abbreviation)
             opponent_team = Team.from_abbreviation(opponent) if opponent != "Unknown" else team
             
+            # Extract game information from data
+            week = int(game_data['week'].iloc[0]) if 'week' in game_data.columns else 0
+            season_year = int(game_data['season'].iloc[0]) if 'season' in game_data.columns else 0
+            game_date = str(game_data['game_date'].iloc[0]) if 'game_date' in game_data.columns else ""
+            season_type = str(game_data['season_type'].iloc[0]) if 'season_type' in game_data.columns else "REG"
+            home_team_abbr = str(game_data['home_team'].iloc[0]) if 'home_team' in game_data.columns else ""
+            away_team_abbr = str(game_data['away_team'].iloc[0]) if 'away_team' in game_data.columns else ""
+            
+            # Create Game object
+            from .entities import Game, Season, GameType
+            game_obj = Game(
+                game_id=game_id,
+                season=Season(season_year),
+                week=week,
+                game_date=game_date,
+                home_team=Team.from_abbreviation(home_team_abbr) if home_team_abbr else team,
+                away_team=Team.from_abbreviation(away_team_abbr) if away_team_abbr else opponent_team,
+                game_type=GameType.PLAYOFF if season_type == "POST" else GameType.REGULAR
+            )
+            
             # Create game stats object
             game_stat = GameStats(
-                game=None,  # Game entity not needed for stats display
+                game=game_obj,
                 team=team,
                 opponent=opponent_team,
                 location=self._determine_location(game_data, team.abbreviation),
@@ -227,6 +247,9 @@ class NFLStatsCalculator:
                 toer=toer_score
             )
             game_stats.append(game_stat)
+        
+        # Sort games by week number
+        game_stats.sort(key=lambda x: x.game.week if x.game else 0)
         
         logger.debug(f"Computed game stats for {team.abbreviation}: {len(game_stats)} games")
         return game_stats

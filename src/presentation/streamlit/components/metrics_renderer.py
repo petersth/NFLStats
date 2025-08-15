@@ -7,6 +7,7 @@ from typing import Optional, Dict, List
 from ....application import TeamAnalysisResponse
 from ....domain import Team, Season, SeasonStats, PerformanceRank, TeamRecord, NFLMetrics
 from ....utils import ranking_utils
+from ....utils.season_utils import get_regular_season_games
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +40,13 @@ class MetricsRenderer:
             
             # Always show regular season record if it exists
             if team_record.regular_season_wins + team_record.regular_season_losses > 0:
+                total_reg_games = team_record.regular_season_wins + team_record.regular_season_losses
                 record_content += f"{team_record.regular_season_wins}-{team_record.regular_season_losses} Regular Season"
+                
+                # Add note if incomplete data (less than expected games)
+                expected_games = get_regular_season_games(season.year)
+                if total_reg_games < expected_games:
+                    record_content += f" ({total_reg_games} of {expected_games} games)"
             
             # Always show playoff record if they made playoffs
             if team_record.playoff_wins + team_record.playoff_losses > 0:

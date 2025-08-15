@@ -36,20 +36,23 @@ class SidebarManager:
             
             st.subheader("Team & Season")
             
-            team_abbreviation = st.selectbox(
-                "Select Team",
-                options=NFL_TEAMS,
-                index=NFL_TEAMS.index('ARI')
-            )
-            
-            self._render_team_info(team_abbreviation)
-            
+            # Select season first so we can show correct team names
             season_info = get_current_nfl_season_info()
             season_year = st.selectbox(
                 "Select Season",
                 options=season_info['available_seasons'],
                 index=0
             )
+            
+            team_options = self._get_team_options(season_year)
+            team_abbreviation = st.selectbox(
+                "Select Team",
+                options=list(team_options.keys()),
+                format_func=lambda x: team_options[x],
+                index=0
+            )
+            
+            self._render_team_info(team_abbreviation, season_year)
             
             season_type_options = {
                 "Regular Season": "REG", 
@@ -117,12 +120,31 @@ class SidebarManager:
                 season != analyzed_season or 
                 season_type != analyzed_season_type)
     
-    def _render_team_info(self, team_abbreviation: str):
+    def _get_team_options(self, season_year: int) -> dict:
+        """Get team options with appropriate names for the selected year."""
+        from ....utils.team_code_mapper import get_team_display_name
+        
+        team_options = {}
+        for team_abbr in NFL_TEAMS:
+            # Get the historically accurate team name for this year
+            display_name = get_team_display_name(team_abbr, season_year)
+            team_options[team_abbr] = display_name
+        
+        # Sort by team name for better UX
+        sorted_options = dict(sorted(team_options.items(), key=lambda x: x[1]))
+        return sorted_options
+    
+    def _render_team_info(self, team_abbreviation: str, season_year: int):
         """Render team information display."""
+        from ....utils.team_code_mapper import get_team_display_name
+        
         if team_abbreviation and team_abbreviation in TEAM_DATA:
             team_info = TEAM_DATA[team_abbreviation]
             primary_color = team_info['colors'][0]
             secondary_color = team_info['colors'][1] if len(team_info['colors']) > 1 else primary_color
+            
+            # Get the historically accurate team name
+            display_name = get_team_display_name(team_abbreviation, season_year)
             
             st.markdown(f"""
             <div style="text-align: center; 
@@ -133,7 +155,7 @@ class SidebarManager:
                         color: white;
                         box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
                 <div style="font-size: 1.8em; margin-bottom: 8px;">{team_info['logo']}</div>
-                <div style="font-size: 1.1em; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);">{team_info['name']}</div>
+                <div style="font-size: 1.1em; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);">{display_name}</div>
             </div>
             """, unsafe_allow_html=True)
     

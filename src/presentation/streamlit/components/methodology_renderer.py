@@ -366,7 +366,7 @@ class MethodologyRenderer:
         st.markdown("### Data Filtering")
         st.markdown("""
         **Season Type Options:**
-        - **Regular Season:** `season_type = 'REG'` (17 games)
+        - **Regular Season:** `season_type = 'REG'` (varies by era: 17 games since 2021, 16 games 1978-2020)
         - **Playoffs:** `season_type = 'POST'` (varies by team)
         - **Combined:** Both regular season and playoffs
         

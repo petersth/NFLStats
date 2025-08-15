@@ -25,7 +25,8 @@ def get_current_nfl_season_info() -> Dict:
         current_season = current_year - 1
         season_status = "completed"
 
-    expected_games = NFL_REGULAR_SEASON_GAMES
+    # Get the expected games based on the current season year
+    expected_games = get_regular_season_games(current_season)
 
     if season_status == "completed":
         data_complete = True
@@ -64,6 +65,57 @@ def get_season_context_message(season: Season, actual_games: Optional[int] = Non
         return {'message': f"{season.year} season hasn't started yet", 'type': 'warning'}
     else:
         return {'message': f"{season.year} season: Historical data", 'type': 'success'}
+
+
+def get_regular_season_weeks(season_year: int) -> int:
+    """Get the number of regular season weeks for a given NFL season.
+    
+    Args:
+        season_year: The NFL season year
+        
+    Returns:
+        Number of regular season weeks (last week of regular season)
+    """
+    if season_year >= 2021:
+        return 18  # 17-game regular season (weeks 1-18)
+    elif season_year >= 1990:
+        return 17  # 16-game regular season (weeks 1-17)
+    else:
+        # Pre-1990 seasons varied, defaulting to 16 weeks
+        # This covers most cases from 1978-1989
+        return 16
+
+
+def get_regular_season_games(season_year: int) -> int:
+    """Get the number of regular season games for a given NFL season.
+    
+    Args:
+        season_year: The NFL season year
+        
+    Returns:
+        Number of regular season games per team
+    """
+    if season_year >= 2021:
+        return 17  # 17-game regular season
+    elif season_year >= 1978:
+        return 16  # 16-game regular season
+    else:
+        # Pre-1978 seasons varied (14 games, 12 games, etc.)
+        return 14  # Most common pre-1978
+
+
+def is_playoff_week(week: int, season_year: int) -> bool:
+    """Determine if a given week is a playoff week for the season.
+    
+    Args:
+        week: The week number
+        season_year: The NFL season year
+        
+    Returns:
+        True if the week is a playoff week, False otherwise
+    """
+    regular_season_weeks = get_regular_season_weeks(season_year)
+    return week > regular_season_weeks
 
 
 def apply_season_type_filter(data, season_type_filter: str):

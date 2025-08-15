@@ -12,6 +12,7 @@ except ImportError:
     EXCEL_AVAILABLE = False
 from ....application import TeamAnalysisResponse
 from ....domain import GameStats, SeasonStats, NFLMetrics
+from ....utils.season_utils import is_playoff_week, get_regular_season_weeks
 
 
 class ExportService:
@@ -74,9 +75,22 @@ class ExportService:
             return pd.DataFrame()
         
         game_data = []
+        season_year = analysis_response.season.year
+        regular_season_weeks = get_regular_season_weeks(season_year)
+        
         for i, game_stat in enumerate(analysis_response.game_stats, 1):
+            # Use actual week number if available, otherwise use game number
+            if game_stat.game is not None:
+                if game_stat.game.week > regular_season_weeks:
+                    # Calculate playoff round based on season year
+                    playoff_round = game_stat.game.week - regular_season_weeks
+                    week_display = f"P{playoff_round}"
+                else:
+                    week_display = str(game_stat.game.week)
+            else:
+                week_display = str(i)  # Fallback to game number
             game_data.append({
-                'Game': i,
+                'Week': week_display,
                 'Opponent': game_stat.opponent.abbreviation,
                 'Location': game_stat.location.value,
                 'Yards_Per_Play': game_stat.yards_per_play,

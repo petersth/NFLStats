@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 from ....application.dto import TeamAnalysisResponse
 from ....domain.metrics import NFLMetrics
 from ....domain.toer_calculator import TOERCalculator
+from ....utils.season_utils import get_regular_season_weeks
 from ..services.chart_generation_service import ChartGenerationService
 from ..services.export_service import ExportService
 from .methodology_renderer import MethodologyRenderer
@@ -76,30 +77,153 @@ class TabManager:
             st.info("No game data available.")
             return
         
+        # Get all weeks that have games (handle None game objects)
+        weeks_with_games = {game.game.week for game in analysis_response.game_stats if game.game is not None}
+        regular_season_weeks_cutoff = get_regular_season_weeks(analysis_response.season.year)
+        regular_weeks = [w for w in weeks_with_games if w <= regular_season_weeks_cutoff]
+        
+        # If no valid game objects, fall back to simple display
+        if not weeks_with_games:
+            # Simple fallback - just enumerate games
+            game_data = []
+            for i, game_stat in enumerate(analysis_response.game_stats, 1):
+                game_data.append({
+                    'Game': i,
+                    'Opponent': game_stat.opponent.abbreviation,
+                    'Location': game_stat.location.value,
+                    'Yds/Play': game_stat.yards_per_play,
+                    'Turnovers': game_stat.turnovers,
+                    'Pass Comp%': game_stat.completion_pct,
+                    'Rush YPC': game_stat.rush_ypc,
+                    'Sacks': game_stat.sacks_allowed,
+                    '3rd Down%': game_stat.third_down_pct,
+                    'Success%': game_stat.success_rate,
+                    '1st Downs': game_stat.first_downs,
+                    'Pts/Drive': game_stat.points_per_drive,
+                    'RZ TD%': game_stat.redzone_td_pct,
+                    'Pen Yards': game_stat.penalty_yards,
+                    'TOER': game_stat.toer
+                })
+            display_df = pd.DataFrame(game_data)
+            
+            # Format numeric columns for display
+            format_dict = {
+                'Yds/Play': '{:.2f}',
+                'Turnovers': '{:.0f}',
+                'Pass Comp%': '{:.2f}',
+                'Rush YPC': '{:.2f}',
+                'Sacks': '{:.0f}',
+                '3rd Down%': '{:.2f}',
+                'Success%': '{:.2f}',
+                '1st Downs': '{:.0f}',
+                'Pts/Drive': '{:.2f}',
+                'RZ TD%': '{:.2f}',
+                'Pen Yards': '{:.0f}',
+                'TOER': '{:.2f}'
+            }
+            
+            st.dataframe(
+                display_df.style.format(format_dict, na_rep='-'),
+                use_container_width=True,
+                hide_index=True,
+                height=len(display_df) * 35 + 38
+            )
+            return
+        
+        regular_season_weeks_cutoff = get_regular_season_weeks(analysis_response.season.year)
+        regular_weeks = [w for w in weeks_with_games if w <= regular_season_weeks_cutoff]
+        
+        # Determine expected regular season weeks based on season year
+        expected_weeks = regular_season_weeks_cutoff + 1  # Account for bye week
+        
         game_data = []
-        for i, game_stat in enumerate(analysis_response.game_stats, 1):
+        
+        # Add regular season games and detect missing weeks
+        for week in range(1, min(expected_weeks, regular_season_weeks_cutoff + 1)):
+            if week in regular_weeks:
+                # Find the game for this week
+                game_stat = next(g for g in analysis_response.game_stats if g.game.week == week)
+                game_data.append({
+                    'Week': str(week),
+                    'Opponent': game_stat.opponent.abbreviation,
+                    'Location': game_stat.location.value,
+                    'Yds/Play': game_stat.yards_per_play,
+                    'Turnovers': game_stat.turnovers,
+                    'Pass Comp%': game_stat.completion_pct,
+                    'Rush YPC': game_stat.rush_ypc,
+                    'Sacks': game_stat.sacks_allowed,
+                    '3rd Down%': game_stat.third_down_pct,
+                    'Success%': game_stat.success_rate,
+                    '1st Downs': game_stat.first_downs,
+                    'Pts/Drive': game_stat.points_per_drive,
+                    'RZ TD%': game_stat.redzone_td_pct,
+                    'Pen Yards': game_stat.penalty_yards,
+                    'TOER': game_stat.toer
+                })
+            else:
+                # Week without a game - it's missing data
+                # We can't reliably detect bye weeks without additional schedule data
+                game_data.append({
+                    'Week': str(week),
+                    'Opponent': 'NO DATA',
+                    'Location': '-',
+                    'Yds/Play': None,
+                    'Turnovers': None,
+                    'Pass Comp%': None,
+                    'Rush YPC': None,
+                    'Sacks': None,
+                    '3rd Down%': None,
+                    'Success%': None,
+                    '1st Downs': None,
+                    'Pts/Drive': None,
+                    'RZ TD%': None,
+                    'Pen Yards': None,
+                    'TOER': None
+                })
+        
+        # Add playoff games
+        playoff_games = [g for g in analysis_response.game_stats if g.game.week > regular_season_weeks_cutoff]
+        for game_stat in playoff_games:
+            playoff_round = game_stat.game.week - regular_season_weeks_cutoff
+            week_display = f"P{playoff_round}"
             game_data.append({
-                'Game': i,
+                'Week': week_display,
                 'Opponent': game_stat.opponent.abbreviation,
                 'Location': game_stat.location.value,
-                'Yds/Play': f"{game_stat.yards_per_play:.2f}",
+                'Yds/Play': game_stat.yards_per_play,
                 'Turnovers': game_stat.turnovers,
-                'Pass Comp%': f"{game_stat.completion_pct:.2f}",
-                'Rush YPC': f"{game_stat.rush_ypc:.2f}",
+                'Pass Comp%': game_stat.completion_pct,
+                'Rush YPC': game_stat.rush_ypc,
                 'Sacks': game_stat.sacks_allowed,
-                '3rd Down%': f"{game_stat.third_down_pct:.2f}",
-                'Success%': f"{game_stat.success_rate:.2f}",
+                '3rd Down%': game_stat.third_down_pct,
+                'Success%': game_stat.success_rate,
                 '1st Downs': game_stat.first_downs,
-                'Pts/Drive': f"{game_stat.points_per_drive:.2f}",
-                'RZ TD%': f"{game_stat.redzone_td_pct:.2f}",
+                'Pts/Drive': game_stat.points_per_drive,
+                'RZ TD%': game_stat.redzone_td_pct,
                 'Pen Yards': game_stat.penalty_yards,
-                'TOER': f"{game_stat.toer:.1f}"
+                'TOER': game_stat.toer
             })
         
         display_df = pd.DataFrame(game_data)
         
+        # Format numeric columns for display
+        format_dict = {
+            'Yds/Play': '{:.2f}',
+            'Turnovers': '{:.0f}',
+            'Pass Comp%': '{:.2f}',
+            'Rush YPC': '{:.2f}',
+            'Sacks': '{:.0f}',
+            '3rd Down%': '{:.2f}',
+            'Success%': '{:.2f}',
+            '1st Downs': '{:.0f}',
+            'Pts/Drive': '{:.2f}',
+            'RZ TD%': '{:.2f}',
+            'Pen Yards': '{:.0f}',
+            'TOER': '{:.2f}'
+        }
+        
         st.dataframe(
-            display_df,
+            display_df.style.format(format_dict, na_rep='-'),
             use_container_width=True,
             hide_index=True,
             height=len(display_df) * 35 + 38
@@ -350,7 +474,139 @@ class TabManager:
         # Build breakdown data
         breakdown_data = []
         
-        for i, game_stat in enumerate(analysis_response.game_stats, 1):
+        # Get weeks that have games
+        weeks_with_games = [g.game.week for g in analysis_response.game_stats if g.game is not None]
+        
+        # If no valid game objects, fall back to simple display
+        if not weeks_with_games:
+            for i, game_stat in enumerate(analysis_response.game_stats, 1):
+                # Calculate individual component scores for this game
+                ypp_score = TOERCalculator.calculate_yards_per_play_score(game_stat.yards_per_play)
+                turnovers_score = TOERCalculator.calculate_turnovers_score(float(game_stat.turnovers))
+                completion_score = TOERCalculator.calculate_completion_pct_score(game_stat.completion_pct)
+                rush_ypc_score = TOERCalculator.calculate_rush_ypc_score(game_stat.rush_ypc)
+                sacks_score = TOERCalculator.calculate_sacks_score(float(game_stat.sacks_allowed))
+                third_down_score = TOERCalculator.calculate_third_down_score(game_stat.third_down_pct)
+                success_rate_score = TOERCalculator.calculate_success_rate_score(game_stat.success_rate)
+                first_downs_score = TOERCalculator.calculate_first_downs_score(float(game_stat.first_downs))
+                ppd_score = TOERCalculator.calculate_ppd_score(game_stat.points_per_drive)
+                redzone_score = TOERCalculator.calculate_redzone_score(game_stat.redzone_td_pct)
+                penalty_score = TOERCalculator.calculate_penalty_yards_adjustment(float(game_stat.penalty_yards))
+                
+                breakdown_data.append({
+                    'Game': i,
+                    'Opponent': game_stat.opponent.abbreviation,
+                    'Location': game_stat.location.value,
+                    'Yds/Play': ypp_score,
+                    'Turnovers': turnovers_score,
+                    'Pass Comp%': completion_score,
+                    'Rush YPC': rush_ypc_score,
+                    'Sacks': sacks_score,
+                    '3rd Down%': third_down_score,
+                    'Success%': success_rate_score,
+                    '1st Downs': first_downs_score,
+                    'Pts/Drive': ppd_score,
+                    'RZ TD%': redzone_score,
+                    'Pen Yards': penalty_score,
+                    'TOER': game_stat.toer
+                })
+            
+            # Create DataFrame and display
+            breakdown_df = pd.DataFrame(breakdown_data)
+            
+            # Format numeric columns for display
+            format_dict = {
+                'Yds/Play': '{:.2f}',
+                'Turnovers': '{:.2f}',
+                'Pass Comp%': '{:.2f}',
+                'Rush YPC': '{:.2f}',
+                'Sacks': '{:.2f}',
+                '3rd Down%': '{:.2f}',
+                'Success%': '{:.2f}',
+                '1st Downs': '{:.2f}',
+                'Pts/Drive': '{:.2f}',
+                'RZ TD%': '{:.2f}',
+                'Pen Yards': '{:.2f}',
+                'TOER': '{:.2f}'
+            }
+            
+            st.dataframe(
+                breakdown_df.style.format(format_dict, na_rep='-'),
+                use_container_width=True,
+                hide_index=True,
+                height=len(breakdown_df) * 35 + 38
+            )
+            return
+        
+        # Build breakdown with regular season and playoff games
+        regular_season_weeks_cutoff = get_regular_season_weeks(analysis_response.season.year)
+        regular_weeks = [w for w in weeks_with_games if w <= regular_season_weeks_cutoff]
+        
+        # Determine expected regular season weeks
+        expected_weeks = regular_season_weeks_cutoff + 1  # Account for bye week
+        
+        # Add regular season games and detect missing weeks
+        for week in range(1, min(expected_weeks, regular_season_weeks_cutoff + 1)):
+            if week in regular_weeks:
+                # Find the game for this week
+                game_stat = next(g for g in analysis_response.game_stats if g.game.week == week)
+                
+                # Calculate individual component scores for this game
+                ypp_score = TOERCalculator.calculate_yards_per_play_score(game_stat.yards_per_play)
+                turnovers_score = TOERCalculator.calculate_turnovers_score(float(game_stat.turnovers))
+                completion_score = TOERCalculator.calculate_completion_pct_score(game_stat.completion_pct)
+                rush_ypc_score = TOERCalculator.calculate_rush_ypc_score(game_stat.rush_ypc)
+                sacks_score = TOERCalculator.calculate_sacks_score(float(game_stat.sacks_allowed))
+                third_down_score = TOERCalculator.calculate_third_down_score(game_stat.third_down_pct)
+                success_rate_score = TOERCalculator.calculate_success_rate_score(game_stat.success_rate)
+                first_downs_score = TOERCalculator.calculate_first_downs_score(float(game_stat.first_downs))
+                ppd_score = TOERCalculator.calculate_ppd_score(game_stat.points_per_drive)
+                redzone_score = TOERCalculator.calculate_redzone_score(game_stat.redzone_td_pct)
+                penalty_score = TOERCalculator.calculate_penalty_yards_adjustment(float(game_stat.penalty_yards))
+                
+                breakdown_data.append({
+                    'Week': str(week),
+                    'Opponent': game_stat.opponent.abbreviation,
+                    'Location': game_stat.location.value,
+                    'Yds/Play': ypp_score,
+                    'Turnovers': turnovers_score,
+                    'Pass Comp%': completion_score,
+                    'Rush YPC': rush_ypc_score,
+                    'Sacks': sacks_score,
+                    '3rd Down%': third_down_score,
+                    'Success%': success_rate_score,
+                    '1st Downs': first_downs_score,
+                    'Pts/Drive': ppd_score,
+                    'RZ TD%': redzone_score,
+                    'Pen Yards': penalty_score,
+                    'TOER': game_stat.toer
+                })
+            else:
+                # Week without a game - it's missing data
+                breakdown_data.append({
+                    'Week': str(week),
+                    'Opponent': 'NO DATA',
+                    'Location': '-',
+                    'Yds/Play': None,
+                    'Turnovers': None,
+                    'Pass Comp%': None,
+                    'Rush YPC': None,
+                    'Sacks': None,
+                    '3rd Down%': None,
+                    'Success%': None,
+                    '1st Downs': None,
+                    'Pts/Drive': None,
+                    'RZ TD%': None,
+                    'Pen Yards': None,
+                    'TOER': None
+                })
+        
+        # Add playoff games
+        playoff_games = [g for g in analysis_response.game_stats if g.game.week > regular_season_weeks_cutoff]
+        for game_stat in playoff_games:
+            playoff_round = game_stat.game.week - regular_season_weeks_cutoff
+            week_display = f"P{playoff_round}"
+            
             # Calculate individual component scores for this game
             ypp_score = TOERCalculator.calculate_yards_per_play_score(game_stat.yards_per_play)
             turnovers_score = TOERCalculator.calculate_turnovers_score(float(game_stat.turnovers))
@@ -365,7 +621,7 @@ class TabManager:
             penalty_score = TOERCalculator.calculate_penalty_yards_adjustment(float(game_stat.penalty_yards))
             
             breakdown_data.append({
-                'Game': i,
+                'Week': week_display,
                 'Opponent': game_stat.opponent.abbreviation,
                 'Location': game_stat.location.value,
                 'Yds/Play': ypp_score,
@@ -379,14 +635,30 @@ class TabManager:
                 'Pts/Drive': ppd_score,
                 'RZ TD%': redzone_score,
                 'Pen Yards': penalty_score,
-                'TOER': f"{game_stat.toer:.1f}"
+                'TOER': game_stat.toer
             })
         
         # Create DataFrame
         breakdown_df = pd.DataFrame(breakdown_data)
         
+        # Format numeric columns for display
+        format_dict = {
+            'Yds/Play': '{:.2f}',
+            'Turnovers': '{:.2f}',
+            'Pass Comp%': '{:.2f}',
+            'Rush YPC': '{:.2f}',
+            'Sacks': '{:.2f}',
+            '3rd Down%': '{:.2f}',
+            'Success%': '{:.2f}',
+            '1st Downs': '{:.2f}',
+            'Pts/Drive': '{:.2f}',
+            'RZ TD%': '{:.2f}',
+            'Pen Yards': '{:.2f}',
+            'TOER': '{:.2f}'
+        }
+        
         st.dataframe(
-            breakdown_df,
+            breakdown_df.style.format(format_dict, na_rep='-'),
             use_container_width=True,
             hide_index=True,
             height=len(breakdown_df) * 35 + 38
