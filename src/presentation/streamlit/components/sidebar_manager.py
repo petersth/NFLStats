@@ -45,12 +45,23 @@ class SidebarManager:
             )
             
             team_options = self._get_team_options(season_year)
+            
+            # Try to maintain the current team selection when year changes
+            current_team = st.session_state.get('selected_team', None)
+            default_index = 0
+            if current_team and current_team in team_options:
+                default_index = list(team_options.keys()).index(current_team)
+            
             team_abbreviation = st.selectbox(
                 "Select Team",
                 options=list(team_options.keys()),
                 format_func=lambda x: team_options[x],
-                index=0
+                index=default_index,
+                key='team_selector'
             )
+            
+            # Store the selected team in session state for persistence
+            st.session_state.selected_team = team_abbreviation
             
             self._render_team_info(team_abbreviation, season_year)
             
