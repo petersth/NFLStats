@@ -62,6 +62,7 @@ logs/
 *.tmp
 *.temp
 .cache/
+.requirements.hash
 
 # Environment variables
 .env.local
