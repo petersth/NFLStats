@@ -271,17 +271,30 @@ class NFLStatsCalculator:
             # Get unique games and try to determine wins/losses, separated by season type
             games = team_data['game_id'].unique()
             reg_wins = reg_losses = reg_ties = 0
-            playoff_wins = playoff_losses = playoff_ties = 0
+            playoff_wins = playoff_losses = 0
             
             for game_id in games:
                 game_data = team_data[team_data['game_id'] == game_id]
                 
                 # Try to determine game result from score columns if available
-                if 'posteam_score_post' in game_data.columns and 'defteam_score_post' in game_data.columns:
-                    final_play = game_data.iloc[-1]  # Last play of game
-                    team_score = final_play['posteam_score_post']
-                    opp_score = final_play['defteam_score_post']
+                if 'home_score' in game_data.columns and 'away_score' in game_data.columns:
+                    final_play = game_data.iloc[-1]
+                    home_score = final_play['home_score']
+                    away_score = final_play['away_score']
+                    home_team = final_play.get('home_team', '')
+                    away_team = final_play.get('away_team', '')
                     season_type = final_play.get('season_type', 'REG')
+                    
+                    # Determine if our team won based on whether they were home or away
+                    if home_team == team_abbreviation:
+                        team_score = home_score
+                        opp_score = away_score
+                    elif away_team == team_abbreviation:
+                        team_score = away_score
+                        opp_score = home_score
+                    else:
+                        # Skip this game if we can't determine the team
+                        continue
                     
                     # Determine win/loss/tie
                     if team_score > opp_score:
@@ -295,14 +308,13 @@ class NFLStatsCalculator:
                         else:
                             reg_losses += 1
                     else:
-                        if season_type == 'POST':
-                            playoff_ties += 1
-                        else:
-                            reg_ties += 1
-            
+                        if season_type != 'POST':
+                            reg_ties += 1            
+
             return TeamRecord(
                 regular_season_wins=reg_wins, 
                 regular_season_losses=reg_losses,
+                regular_season_ties=reg_ties,
                 playoff_wins=playoff_wins,
                 playoff_losses=playoff_losses
             )
@@ -312,6 +324,7 @@ class NFLStatsCalculator:
             return TeamRecord(
                 regular_season_wins=0, 
                 regular_season_losses=0,
+                regular_season_ties=0,
                 playoff_wins=0,
                 playoff_losses=0
             )

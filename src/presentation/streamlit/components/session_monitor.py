@@ -86,10 +86,6 @@ def render_session_cleanup_status():
         
         if active_sessions > 1:
             st.sidebar.caption(f"👥 {active_sessions} active sessions")
-        
-        # Show warning if cleanup thread is not running
-        if not cleanup_info['cleanup_thread_running']:
-            st.sidebar.error("⚠️ Session cleanup not running!")
             
     except Exception:
         pass  # Silently fail

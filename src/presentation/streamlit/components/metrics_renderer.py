@@ -39,9 +39,12 @@ class MetricsRenderer:
             record_content = ""
             
             # Always show regular season record if it exists
-            if team_record.regular_season_wins + team_record.regular_season_losses > 0:
-                total_reg_games = team_record.regular_season_wins + team_record.regular_season_losses
-                record_content += f"{team_record.regular_season_wins}-{team_record.regular_season_losses} Regular Season"
+            total_reg_games = team_record.regular_season_wins + team_record.regular_season_losses + getattr(team_record, 'regular_season_ties', 0)
+            if total_reg_games > 0:
+                if hasattr(team_record, 'regular_season_ties') and team_record.regular_season_ties > 0:
+                    record_content += f"{team_record.regular_season_wins}-{team_record.regular_season_losses}-{team_record.regular_season_ties} Regular Season"
+                else:
+                    record_content += f"{team_record.regular_season_wins}-{team_record.regular_season_losses} Regular Season"
                 
                 # Add note if incomplete data (less than expected games)
                 expected_games = get_regular_season_games(season.year)
@@ -123,11 +126,20 @@ class MetricsRenderer:
             st.subheader("Team Record")
             
             # Regular season record
-            if team_record.regular_season_wins + team_record.regular_season_losses > 0:
-                reg_pct = team_record.regular_season_wins / (team_record.regular_season_wins + team_record.regular_season_losses)
+            total_reg_games = team_record.regular_season_wins + team_record.regular_season_losses + getattr(team_record, 'regular_season_ties', 0)
+            if total_reg_games > 0:
+                # Win percentage: ties count as 0.5 wins
+                ties = getattr(team_record, 'regular_season_ties', 0)
+                reg_pct = (team_record.regular_season_wins + 0.5 * ties) / total_reg_games
+                
+                if ties > 0:
+                    record_str = f"{team_record.regular_season_wins}-{team_record.regular_season_losses}-{ties}"
+                else:
+                    record_str = f"{team_record.regular_season_wins}-{team_record.regular_season_losses}"
+                
                 st.metric(
                     "Regular Season", 
-                    f"{team_record.regular_season_wins}-{team_record.regular_season_losses}",
+                    record_str,
                     f"{reg_pct:.1%}"
                 )
             

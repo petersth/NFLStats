@@ -161,12 +161,13 @@ class TeamRecord:
     """Team's win-loss record."""
     regular_season_wins: int
     regular_season_losses: int
-    playoff_wins: int
-    playoff_losses: int
+    regular_season_ties: int = 0
+    playoff_wins: int = 0
+    playoff_losses: int = 0
     
     @property
     def total_games(self) -> int:
-        return (self.regular_season_wins + self.regular_season_losses + 
+        return (self.regular_season_wins + self.regular_season_losses + self.regular_season_ties +
                 self.playoff_wins + self.playoff_losses)
 
 

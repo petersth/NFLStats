@@ -23,6 +23,7 @@ class UnifiedNFLRepository:
         # Core game identification
         'season', 'season_type', 'week', 'game_id', 'game_date',
         'home_team', 'away_team', 'posteam', 'defteam',
+        'home_score', 'away_score',
         
         # Essential game state
         'yardline_100', 'down', 'ydstogo', 'drive', 'play_type',
