@@ -79,23 +79,53 @@ class MetricsRenderer:
             toer_value = season_stats.toer
             safe_toer_value = html.escape(f"{toer_value:.1f}")
             
-            toer_display = f"""<div style="margin-left: auto; text-align: center; padding: 0 20px;">
-                    <div style="
-                        background: rgba(0,0,0,0.4); 
-                        border: 3px solid rgba(255,255,255,0.4);
-                        border-radius: 50%; 
-                        width: 95px;
-                        height: 95px;
-                        display: flex;
-                        flex-direction: column;
-                        align-items: center;
-                        justify-content: center;
-                        backdrop-filter: blur(5px);
-                        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-                    ">
-                        <div style="font-size: 0.65em; opacity: 0.9; margin-bottom: 2px; letter-spacing: 1px;">AVG TOER</div>
-                        <div style="font-size: 2.0em; font-weight: 900; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); line-height: 1;">
-                            {safe_toer_value}
+            # Also get TOER Allowed if available
+            toer_allowed_value = getattr(season_stats, 'toer_allowed', 0.0)
+            safe_toer_allowed_value = html.escape(f"{toer_allowed_value:.1f}")
+            
+            toer_display = f"""<div style="margin-left: auto; display: flex; gap: 20px; padding: 0 20px;">
+                    <div style="text-align: center;">
+                        <div style="
+                            background: linear-gradient(135deg, rgba(0,30,0,0.5), rgba(0,0,0,0.5)); 
+                            border: 3px solid rgba(255,255,255,0.4);
+                            border-radius: 50%; 
+                            width: 90px;
+                            height: 90px;
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            justify-content: center;
+                            backdrop-filter: blur(5px);
+                            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                            position: relative;
+                        ">
+                            <div style="font-size: 0.55em; opacity: 0.8; margin-bottom: -2px; letter-spacing: 1px; text-transform: uppercase;">Offense</div>
+                            <div style="font-size: 2.0em; font-weight: 900; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); line-height: 1; margin: 2px 0;">
+                                {safe_toer_value}
+                            </div>
+                            <div style="font-size: 0.5em; opacity: 0.7; letter-spacing: 0.5px;">TOER</div>
+                        </div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="
+                            background: linear-gradient(135deg, rgba(30,0,0,0.5), rgba(0,0,0,0.5)); 
+                            border: 3px solid rgba(255,255,255,0.4);
+                            border-radius: 50%; 
+                            width: 90px;
+                            height: 90px;
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            justify-content: center;
+                            backdrop-filter: blur(5px);
+                            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                            position: relative;
+                        ">
+                            <div style="font-size: 0.55em; opacity: 0.8; margin-bottom: -2px; letter-spacing: 1px; text-transform: uppercase;">Defense</div>
+                            <div style="font-size: 2.0em; font-weight: 900; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); line-height: 1; margin: 2px 0;">
+                                {safe_toer_allowed_value}
+                            </div>
+                            <div style="font-size: 0.5em; opacity: 0.7; letter-spacing: 0.5px;">TOER ALLOWED</div>
                         </div>
                     </div>
                 </div>"""

@@ -1,7 +1,7 @@
 # src/domain/entities.py - Core domain entities
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import List
 from enum import Enum
 
 
@@ -65,26 +65,56 @@ class Game:
 
 
 @dataclass
-class GameStats:
-    """Statistics for a single game."""
-    game: Game
-    team: Team
-    opponent: Team
-    location: Location
+class OffensiveStats:
+    """Offensive performance metrics for a single game."""
     yards_per_play: float
     total_yards: int
     total_plays: int
     turnovers: int
     completion_pct: float
     rush_ypc: float
-    sacks_allowed: int
+    sacks: int
     third_down_pct: float
     success_rate: float
     first_downs: int
     points_per_drive: float
     redzone_td_pct: float
     penalty_yards: int
-    toer: float  # Total Offensive Efficiency Rating (0-100)
+    toer: float
+    
+    @classmethod
+    def empty(cls) -> 'OffensiveStats':
+        """Create empty offensive stats with all zero values.
+        
+        Used when no data is available or for initialization.
+        """
+        return cls(
+            yards_per_play=0.0,
+            total_yards=0,
+            total_plays=0,
+            turnovers=0,
+            completion_pct=0.0,
+            rush_ypc=0.0,
+            sacks=0,
+            third_down_pct=0.0,
+            success_rate=0.0,
+            first_downs=0,
+            points_per_drive=0.0,
+            redzone_td_pct=0.0,
+            penalty_yards=0,
+            toer=0.0
+        )
+
+
+@dataclass
+class GameStats:
+    """Statistics for a single game from a team's perspective."""
+    game: Game
+    team: Team
+    opponent: Team
+    location: Location
+    offensive_stats: OffensiveStats
+    defensive_stats: OffensiveStats
 
 
 @dataclass
@@ -106,7 +136,8 @@ class SeasonStats:
     points_per_drive: float
     redzone_td_pct: float
     penalty_yards_per_game: float
-    toer: float  # Total Offensive Efficiency Rating (0-100)
+    toer: float
+    toer_allowed: float = 0.0
     
     # Raw input data for methodology display
     total_rush_yards: int = 0

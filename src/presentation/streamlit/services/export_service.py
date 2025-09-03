@@ -93,19 +93,19 @@ class ExportService:
                 'Week': week_display,
                 'Opponent': game_stat.opponent.abbreviation,
                 'Location': game_stat.location.value,
-                'Yards_Per_Play': game_stat.yards_per_play,
-                'Total_Yards': game_stat.total_yards,
-                'Total_Plays': game_stat.total_plays,
-                'Turnovers': game_stat.turnovers,
-                'Completion_Pct': game_stat.completion_pct,
-                'Rush_YPC': game_stat.rush_ypc,
-                'Sacks_Allowed': game_stat.sacks_allowed,
-                'Third_Down_Pct': game_stat.third_down_pct,
-                'Success_Rate': game_stat.success_rate,
-                'First_Downs': game_stat.first_downs,
-                'Points_Per_Drive': game_stat.points_per_drive,
-                'Redzone_TD_Pct': game_stat.redzone_td_pct,
-                'Penalty_Yards': game_stat.penalty_yards
+                'Yards_Per_Play': game_stat.offensive_stats.yards_per_play,
+                'Total_Yards': game_stat.offensive_stats.total_yards,
+                'Total_Plays': game_stat.offensive_stats.total_plays,
+                'Turnovers': game_stat.offensive_stats.turnovers,
+                'Completion_Pct': game_stat.offensive_stats.completion_pct,
+                'Rush_YPC': game_stat.offensive_stats.rush_ypc,
+                'sacks': game_stat.offensive_stats.sacks,
+                'Third_Down_Pct': game_stat.offensive_stats.third_down_pct,
+                'Success_Rate': game_stat.offensive_stats.success_rate,
+                'First_Downs': game_stat.offensive_stats.first_downs,
+                'Points_Per_Drive': game_stat.offensive_stats.points_per_drive,
+                'Redzone_TD_Pct': game_stat.offensive_stats.redzone_td_pct,
+                'Penalty_Yards': game_stat.offensive_stats.penalty_yards
             })
         
         return pd.DataFrame(game_data)
@@ -185,20 +185,20 @@ class ExportService:
         return {
             'opponent': game_stats.opponent.abbreviation,
             'location': game_stats.location.value,
-            'yards_per_play': game_stats.yards_per_play,
-            'total_yards': game_stats.total_yards,
-            'total_plays': game_stats.total_plays,
-            'turnovers': game_stats.turnovers,
-            'completion_pct': game_stats.completion_pct,
-            'rush_ypc': game_stats.rush_ypc,
-            'sacks_allowed': game_stats.sacks_allowed,
-            'third_down_pct': game_stats.third_down_pct,
-            'success_rate': game_stats.success_rate,
-            'first_downs': game_stats.first_downs,
-            'points_per_drive': game_stats.points_per_drive,
-            'redzone_td_pct': game_stats.redzone_td_pct,
-            'penalty_yards': game_stats.penalty_yards,
-            'toer': game_stats.toer
+            'yards_per_play': game_stats.offensive_stats.yards_per_play,
+            'total_yards': game_stats.offensive_stats.total_yards,
+            'total_plays': game_stats.offensive_stats.total_plays,
+            'turnovers': game_stats.offensive_stats.turnovers,
+            'completion_pct': game_stats.offensive_stats.completion_pct,
+            'rush_ypc': game_stats.offensive_stats.rush_ypc,
+            'sacks': game_stats.offensive_stats.sacks,
+            'third_down_pct': game_stats.offensive_stats.third_down_pct,
+            'success_rate': game_stats.offensive_stats.success_rate,
+            'first_downs': game_stats.offensive_stats.first_downs,
+            'points_per_drive': game_stats.offensive_stats.points_per_drive,
+            'redzone_td_pct': game_stats.offensive_stats.redzone_td_pct,
+            'penalty_yards': game_stats.offensive_stats.penalty_yards,
+            'toer': game_stats.offensive_stats.toer
         }
     
     def _rankings_to_dict(self, rankings: Dict) -> Dict[str, Any]:

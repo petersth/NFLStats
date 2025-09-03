@@ -185,10 +185,10 @@ class ChartGenerationService:
         
         # Create box plots for key metrics
         metrics_data = {
-            'Avg Yards/Play': [game.yards_per_play for game in analysis_response.game_stats],
-            'Success Rate': [game.success_rate for game in analysis_response.game_stats],
-            'Points/Drive': [game.points_per_drive for game in analysis_response.game_stats],
-            'Completion %': [game.completion_pct for game in analysis_response.game_stats]
+            'Avg Yards/Play': [game.offensive_stats.yards_per_play for game in analysis_response.game_stats],
+            'Success Rate': [game.offensive_stats.success_rate for game in analysis_response.game_stats],
+            'Points/Drive': [game.offensive_stats.points_per_drive for game in analysis_response.game_stats],
+            'Completion %': [game.offensive_stats.completion_pct for game in analysis_response.game_stats]
         }
         
         fig = go.Figure()
@@ -231,8 +231,8 @@ class ChartGenerationService:
         # Future enhancement: factor in opponent defensive rankings
         
         games = list(range(1, len(analysis_response.game_stats) + 1))
-        yards_per_play = [game.yards_per_play for game in analysis_response.game_stats]
-        success_rates = [game.success_rate for game in analysis_response.game_stats]
+        yards_per_play = [game.offensive_stats.yards_per_play for game in analysis_response.game_stats]
+        success_rates = [game.offensive_stats.success_rate for game in analysis_response.game_stats]
         opponents = [game.opponent.abbreviation for game in analysis_response.game_stats]
         
         fig = go.Figure()

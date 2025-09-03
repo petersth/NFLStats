@@ -4,7 +4,7 @@ import logging
 from typing import Dict, List, Optional, Tuple
 import pandas as pd
 
-from ..entities import Team, Season, SeasonStats, GameStats, TeamRecord
+from ..entities import Team, Season, SeasonStats, GameStats, TeamRecord, GameType
 from ..exceptions import DataNotFoundError
 from ...utils.configuration_utils import apply_configuration_to_data
 
@@ -104,17 +104,22 @@ class CalculationOrchestrator:
             if all_games_data is not None:
                 complete_team_data = all_games_data[all_games_data['posteam'] == team.abbreviation].copy()
                 
-                # Calculate team record using complete data (always show full season record)
                 team_record = self._statistics_calculator.calculate_team_record(complete_team_data, team.abbreviation)
                 
-                # Apply filters for stats calculations
                 filtered_team_data = complete_team_data.copy()
                 if season_type_filter and season_type_filter != 'ALL':
                     filtered_team_data = filtered_team_data[filtered_team_data['season_type'] == season_type_filter]
                 if configuration:
                     filtered_team_data = apply_configuration_to_data(filtered_team_data, configuration)
                 
-                game_stats = self._statistics_calculator.calculate_game_stats(filtered_team_data, team)
+                if 'home_team' in all_games_data.columns and 'away_team' in all_games_data.columns:
+                    game_stats = self._statistics_calculator.calculate_game_stats_with_toer_allowed(all_games_data, team)
+                    
+                    if season_type_filter and season_type_filter != 'ALL':
+                        game_stats = [gs for gs in game_stats if gs.game and 
+                                     gs.game.game_type == (GameType.PLAYOFF if season_type_filter == 'POST' else GameType.REGULAR)]
+                else:
+                    game_stats = self._statistics_calculator.calculate_game_stats(filtered_team_data, team)
                 
                 return season_stats, game_stats, team_record
             else:

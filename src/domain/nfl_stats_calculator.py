@@ -1,13 +1,14 @@
 # src/domain/nfl_stats_calculator.py - NFL statistics calculator
 
 import logging
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 import pandas as pd
 import numpy as np
 
-from .entities import Team, Season, SeasonStats, GameStats, TeamRecord
+from .entities import Team, Season, SeasonStats, GameStats, TeamRecord, OffensiveStats
 from .utilities import PlayFilter
 from .toer_calculator import TOERCalculator
+from .game_processor import GameProcessor
 from ..config.nfl_constants import (
     TOUCHDOWN_POINTS, EXTRA_POINT_POINTS, TWO_POINT_CONVERSION_POINTS,
     FIELD_GOAL_POINTS, RED_ZONE_YARDLINE, FIRST_DOWN_SUCCESS_THRESHOLD,
@@ -32,12 +33,16 @@ class NFLStatsCalculator:
             'CONVERSION_SUCCESS_THRESHOLD': CONVERSION_SUCCESS_THRESHOLD
         })()
         self._play_filter = PlayFilter()
+        self._game_processor = GameProcessor()
         
         # Cache for game stats with reasonable TTL and size limits
         self._game_stats_cache = SimpleCache(
             default_ttl=86400,  # 1 day TTL for game stats
             max_size=1000       # Reasonable limit for game stats
         )
+        
+        # Cache for processed game results
+        self._game_results_cache = {}
         
         logger.debug("Initialized NFLStatsCalculator with game stats caching")
     
@@ -54,6 +59,39 @@ class NFLStatsCalculator:
         return (numerator / denominator) * 100.0 if denominator > 0 else default
     
     # === Main Interface Methods ===
+    
+    def calculate_season_stats_with_toer_allowed(self, all_pbp_data: pd.DataFrame, team: Team,
+                                                 season: Season) -> SeasonStats:
+        """Calculate season stats including TOER Allowed using game-centric approach.
+        
+        This method processes all games once and calculates both offensive TOER 
+        and TOER Allowed efficiently without duplication.
+        """
+        try:
+            # Process all games once if not cached
+            season_key = f"games_{season.year}"
+            if season_key not in self._game_results_cache:
+                logger.info(f"Processing all games for season {season.year}")
+                self._game_results_cache[season_key] = self._game_processor.process_all_games(all_pbp_data)
+            
+            game_results = self._game_results_cache[season_key]
+            
+            team_games = game_results.get(team.abbreviation, [])
+            if not team_games:
+                return self._create_empty_season_stats(team, season)
+            
+            team_data = all_pbp_data[all_pbp_data['posteam'] == team.abbreviation]
+            games_played = len(team_games)
+            stats = self._calculate_all_stats(team_data, team.abbreviation)
+            avg_toer, avg_toer_allowed = self._game_processor.get_team_toer_stats(team_games, team.abbreviation)
+            stats['avg_toer'] = avg_toer
+            stats['avg_toer_allowed'] = avg_toer_allowed
+            
+            return self._build_season_stats(team, season, games_played, stats)
+            
+        except Exception as e:
+            logger.error(f"Error calculating season stats with TOER allowed for {team.abbreviation}: {e}")
+            return self._create_empty_season_stats(team, season)
     
     def calculate_season_stats(self, team_data: pd.DataFrame, team: Team, 
                               season: Season, pre_calculated: Optional[Dict] = None) -> SeasonStats:
@@ -78,11 +116,16 @@ class NFLStatsCalculator:
             else:
                 stats['avg_toer'] = 0.0
             
+            # Note: TOER Allowed should be calculated using calculate_season_stats_with_toer_allowed
+            # which processes all games once to avoid duplication
+            stats['avg_toer_allowed'] = 0.0
+            
             return self._build_season_stats(team, season, games_played, stats)
             
         except Exception as e:
             logger.error(f"Error calculating season stats for {team.abbreviation}: {e}")
             return self._create_empty_season_stats(team, season)
+    
     
     
     def _calculate_game_toer_scores(self, team_data: pd.DataFrame, team_abbr: str) -> List[float]:
@@ -126,6 +169,58 @@ class NFLStatsCalculator:
             logger.error(f"Error calculating game TOER scores for {team_abbr}: {e}")
             return []
     
+    def calculate_game_stats_with_toer_allowed(self, all_pbp_data: pd.DataFrame, team: Team) -> List[GameStats]:
+        """Calculate game stats including TOER Allowed using game-centric approach."""
+        try:
+            # Process all games once if not cached
+            season_year = all_pbp_data['season'].iloc[0] if 'season' in all_pbp_data.columns else 2023
+            season_key = f"games_{season_year}"
+            if season_key not in self._game_results_cache:
+                logger.info(f"Processing all games for season {season_year}")
+                self._game_results_cache[season_key] = self._game_processor.process_all_games(all_pbp_data)
+            
+            game_results = self._game_results_cache[season_key]
+            
+            team_games = game_results.get(team.abbreviation, [])
+            if not team_games:
+                logger.warning(f"No games found for {team.abbreviation} in game_results. Available teams: {list(game_results.keys())[:5]}")
+                return []
+            
+            logger.info(f"Found {len(team_games)} games for {team.abbreviation}")
+            
+            team_data = all_pbp_data[all_pbp_data['posteam'] == team.abbreviation]
+            game_stats = []
+            for game_result in team_games:
+                game_id = game_result.game_id
+                game_data = team_data[team_data['game_id'] == game_id]
+                
+                if len(game_data) == 0:
+                    continue
+                
+                game_stat = self._compute_single_game_stats(game_data, team, game_id)
+                if game_result.home_team == team.abbreviation:
+                    game_stat.offensive_stats = game_result.home_team_offensive_stats
+                    game_stat.defensive_stats = game_result.away_team_offensive_stats
+                    logger.debug(f"Game {game_id}: {team.abbreviation} (home) TOER={game_stat.offensive_stats.toer:.1f}, Allowed={game_stat.defensive_stats.toer:.1f}")
+                else:
+                    game_stat.offensive_stats = game_result.away_team_offensive_stats
+                    game_stat.defensive_stats = game_result.home_team_offensive_stats
+                    logger.debug(f"Game {game_id}: {team.abbreviation} (away) TOER={game_stat.offensive_stats.toer:.1f}, Allowed={game_stat.defensive_stats.toer:.1f}")
+                
+                game_stats.append(game_stat)
+            
+            game_stats.sort(key=lambda x: x.game.week if x.game else 0)
+            return game_stats
+            
+        except Exception as e:
+            logger.error(f"Error calculating game stats with TOER allowed for {team.abbreviation}: {e}")
+            # Fallback to regular game stats without TOER Allowed
+            logger.info("Falling back to regular game stats calculation")
+            team_data = all_pbp_data[all_pbp_data['posteam'] == team.abbreviation] if 'posteam' in all_pbp_data.columns else pd.DataFrame()
+            if len(team_data) > 0:
+                return self.calculate_game_stats(team_data, team)
+            return []
+    
     def calculate_game_stats(self, team_data: pd.DataFrame, team: Team) -> List[GameStats]:
         """Calculate game-by-game statistics with caching."""
         try:
@@ -157,6 +252,99 @@ class NFLStatsCalculator:
             logger.error(f"Error calculating game stats for {team.abbreviation}: {e}")
             return []
     
+    def _compute_single_game_stats(self, game_data: pd.DataFrame, team: Team, game_id: str) -> GameStats:
+        """Compute statistics for a single game."""
+        # Calculate actual game statistics
+        offensive_plays = self._play_filter.get_offensive_plays(game_data)
+        
+        # Basic stats
+        total_yards = int(offensive_plays['yards_gained'].sum()) if len(offensive_plays) > 0 else 0
+        total_plays = len(offensive_plays)
+        yards_per_play = total_yards / total_plays if total_plays > 0 else 0.0
+        
+        game_stats_dict = self._calculate_all_stats(game_data, team.abbreviation)
+        
+        # Extract the specific stats needed for GameStats
+        turnovers = game_stats_dict.get('total_turnovers', 0)
+        completion_pct = game_stats_dict.get('completion_pct', 0.0)
+        rush_ypc = game_stats_dict.get('rush_ypc', 0.0)
+        sacks = game_stats_dict.get('sacks', 0)
+        third_down_pct = game_stats_dict.get('third_down_pct', 0.0)
+        success_rate = game_stats_dict.get('success_rate', 0.0)
+        first_downs = game_stats_dict.get('first_downs_total', 0)
+        penalty_yards = game_stats_dict.get('penalty_yards', 0)
+        points_per_drive = game_stats_dict.get('points_per_drive', 0.0)
+        redzone_td_pct = game_stats_dict.get('redzone_td_pct', 0.0)
+        
+        # Calculate TOER for this game
+        toer_score = TOERCalculator.calculate_toer(
+            avg_yards_per_play=yards_per_play,
+            turnovers=int(turnovers),
+            completion_pct=completion_pct,
+            rush_ypc=rush_ypc,
+            sacks=int(sacks),
+            third_down_pct=third_down_pct,
+            success_rate=success_rate,
+            first_downs=float(first_downs),
+            points_per_drive=points_per_drive,
+            redzone_td_pct=redzone_td_pct,
+            penalty_yards=int(penalty_yards)
+        )
+        
+        # Determine opponent
+        opponent = self._get_opponent_from_game_data(game_data, team.abbreviation)
+        opponent_team = Team.from_abbreviation(opponent) if opponent != "Unknown" else team
+        
+        # Extract game information from data
+        week = int(game_data['week'].iloc[0]) if 'week' in game_data.columns else 0
+        season_year = int(game_data['season'].iloc[0]) if 'season' in game_data.columns else 0
+        game_date = str(game_data['game_date'].iloc[0]) if 'game_date' in game_data.columns else ""
+        season_type = str(game_data['season_type'].iloc[0]) if 'season_type' in game_data.columns else "REG"
+        home_team_abbr = str(game_data['home_team'].iloc[0]) if 'home_team' in game_data.columns else ""
+        away_team_abbr = str(game_data['away_team'].iloc[0]) if 'away_team' in game_data.columns else ""
+        
+        # Create Game object
+        from .entities import Game, Season, GameType
+        game_obj = Game(
+            game_id=game_id,
+            season=Season(season_year),
+            week=week,
+            game_date=game_date,
+            home_team=Team.from_abbreviation(home_team_abbr) if home_team_abbr else team,
+            away_team=Team.from_abbreviation(away_team_abbr) if away_team_abbr else opponent_team,
+            game_type=GameType.PLAYOFF if season_type == "POST" else GameType.REGULAR
+        )
+        
+        # Create offensive stats for our team
+        offensive_stats = OffensiveStats(
+            yards_per_play=yards_per_play,
+            total_yards=total_yards,
+            total_plays=total_plays,
+            turnovers=turnovers,
+            completion_pct=completion_pct,
+            rush_ypc=rush_ypc,
+            sacks=sacks,
+            third_down_pct=third_down_pct,
+            success_rate=success_rate,
+            first_downs=first_downs,
+            points_per_drive=points_per_drive,
+            redzone_td_pct=redzone_td_pct,
+            penalty_yards=penalty_yards,
+            toer=toer_score
+        )
+        
+        # Create empty defensive stats (will be set by caller if available)
+        defensive_stats = OffensiveStats.empty()
+        
+        return GameStats(
+            game=game_obj,
+            team=team,
+            opponent=opponent_team,
+            location=self._determine_location(game_data, team.abbreviation),
+            offensive_stats=offensive_stats,
+            defensive_stats=defensive_stats  # Will be set by caller
+        )
+    
     def _compute_all_game_stats(self, team_data: pd.DataFrame, team: Team) -> List[GameStats]:
         """Compute game statistics without caching (used by cache)."""
         game_stats = []
@@ -178,7 +366,7 @@ class NFLStatsCalculator:
             turnovers = game_stats_dict.get('total_turnovers', 0)
             completion_pct = game_stats_dict.get('completion_pct', 0.0)
             rush_ypc = game_stats_dict.get('rush_ypc', 0.0)
-            sacks_allowed = game_stats_dict.get('sacks', 0)
+            sacks = game_stats_dict.get('sacks', 0)
             third_down_pct = game_stats_dict.get('third_down_pct', 0.0)
             success_rate = game_stats_dict.get('success_rate', 0.0)
             first_downs = game_stats_dict.get('first_downs_total', 0)
@@ -192,7 +380,7 @@ class NFLStatsCalculator:
                 turnovers=int(turnovers),
                 completion_pct=completion_pct,
                 rush_ypc=rush_ypc,
-                sacks=int(sacks_allowed),
+                sacks=int(sacks),
                 third_down_pct=third_down_pct,
                 success_rate=success_rate,
                 first_downs=float(first_downs),
@@ -204,6 +392,8 @@ class NFLStatsCalculator:
             # Determine opponent
             opponent = self._get_opponent_from_game_data(game_data, team.abbreviation)
             opponent_team = Team.from_abbreviation(opponent) if opponent != "Unknown" else team
+            
+            toer_allowed = 0.0
             
             # Extract game information from data
             week = int(game_data['week'].iloc[0]) if 'week' in game_data.columns else 0
@@ -237,14 +427,15 @@ class NFLStatsCalculator:
                 turnovers=turnovers,
                 completion_pct=completion_pct,
                 rush_ypc=rush_ypc,
-                sacks_allowed=sacks_allowed,
+                sacks=sacks,
                 third_down_pct=third_down_pct,
                 success_rate=success_rate,
                 first_downs=first_downs,
                 points_per_drive=points_per_drive,
                 redzone_td_pct=redzone_td_pct,
                 penalty_yards=penalty_yards,
-                toer=toer_score
+                toer=toer_score,
+                toer_allowed=toer_allowed
             )
             game_stats.append(game_stat)
         
@@ -601,6 +792,7 @@ class NFLStatsCalculator:
         
         # Calculate TOER score as average of individual game TOER scores
         toer_score = stats.get('avg_toer', 0.0)
+        toer_allowed_score = stats.get('avg_toer_allowed', 0.0)
         
         return SeasonStats(
             team=team, season=season, games_played=games_played,
@@ -642,6 +834,7 @@ class NFLStatsCalculator:
             total_redzone_failed=stats.get('redzone_failed', 0),
             redzone_td_pct=stats.get('redzone_td_pct', 0.0),
             toer=toer_score,
+            toer_allowed=toer_allowed_score,
             first_down_successful_plays=stats.get('first_down_successful', 0),
             first_down_total_plays=stats.get('first_down_total', 0),
             second_down_successful_plays=stats.get('second_down_successful', 0),
@@ -797,5 +990,6 @@ class NFLStatsCalculator:
             points_per_drive=0.0,
             redzone_td_pct=0.0,
             penalty_yards_per_game=0.0,
-            toer=0.0
+            toer=0.0,
+            toer_allowed=0.0
         )

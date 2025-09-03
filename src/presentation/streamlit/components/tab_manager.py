@@ -91,18 +91,18 @@ class TabManager:
                     'Game': i,
                     'Opponent': game_stat.opponent.abbreviation,
                     'Location': game_stat.location.value,
-                    'Yds/Play': game_stat.yards_per_play,
-                    'Turnovers': game_stat.turnovers,
-                    'Pass Comp%': game_stat.completion_pct,
-                    'Rush YPC': game_stat.rush_ypc,
-                    'Sacks': game_stat.sacks_allowed,
-                    '3rd Down%': game_stat.third_down_pct,
-                    'Success%': game_stat.success_rate,
-                    '1st Downs': game_stat.first_downs,
-                    'Pts/Drive': game_stat.points_per_drive,
-                    'RZ TD%': game_stat.redzone_td_pct,
-                    'Pen Yards': game_stat.penalty_yards,
-                    'TOER': game_stat.toer
+                    'Yds/Play': game_stat.offensive_stats.yards_per_play,
+                    'Turnovers': game_stat.offensive_stats.turnovers,
+                    'Pass Comp%': game_stat.offensive_stats.completion_pct,
+                    'Rush YPC': game_stat.offensive_stats.rush_ypc,
+                    'Sacks': game_stat.offensive_stats.sacks,
+                    '3rd Down%': game_stat.offensive_stats.third_down_pct,
+                    'Success%': game_stat.offensive_stats.success_rate,
+                    '1st Downs': game_stat.offensive_stats.first_downs,
+                    'Pts/Drive': game_stat.offensive_stats.points_per_drive,
+                    'RZ TD%': game_stat.offensive_stats.redzone_td_pct,
+                    'Pen Yards': game_stat.offensive_stats.penalty_yards,
+                    'TOER': game_stat.offensive_stats.toer
                 })
             display_df = pd.DataFrame(game_data)
             
@@ -147,18 +147,18 @@ class TabManager:
                     'Week': str(week),
                     'Opponent': game_stat.opponent.abbreviation,
                     'Location': game_stat.location.value,
-                    'Yds/Play': game_stat.yards_per_play,
-                    'Turnovers': game_stat.turnovers,
-                    'Pass Comp%': game_stat.completion_pct,
-                    'Rush YPC': game_stat.rush_ypc,
-                    'Sacks': game_stat.sacks_allowed,
-                    '3rd Down%': game_stat.third_down_pct,
-                    'Success%': game_stat.success_rate,
-                    '1st Downs': game_stat.first_downs,
-                    'Pts/Drive': game_stat.points_per_drive,
-                    'RZ TD%': game_stat.redzone_td_pct,
-                    'Pen Yards': game_stat.penalty_yards,
-                    'TOER': game_stat.toer
+                    'Yds/Play': game_stat.offensive_stats.yards_per_play,
+                    'Turnovers': game_stat.offensive_stats.turnovers,
+                    'Pass Comp%': game_stat.offensive_stats.completion_pct,
+                    'Rush YPC': game_stat.offensive_stats.rush_ypc,
+                    'Sacks': game_stat.offensive_stats.sacks,
+                    '3rd Down%': game_stat.offensive_stats.third_down_pct,
+                    'Success%': game_stat.offensive_stats.success_rate,
+                    '1st Downs': game_stat.offensive_stats.first_downs,
+                    'Pts/Drive': game_stat.offensive_stats.points_per_drive,
+                    'RZ TD%': game_stat.offensive_stats.redzone_td_pct,
+                    'Pen Yards': game_stat.offensive_stats.penalty_yards,
+                    'TOER': game_stat.offensive_stats.toer
                 })
             else:
                 # Week without a game - it's missing data
@@ -190,18 +190,18 @@ class TabManager:
                 'Week': week_display,
                 'Opponent': game_stat.opponent.abbreviation,
                 'Location': game_stat.location.value,
-                'Yds/Play': game_stat.yards_per_play,
-                'Turnovers': game_stat.turnovers,
-                'Pass Comp%': game_stat.completion_pct,
-                'Rush YPC': game_stat.rush_ypc,
-                'Sacks': game_stat.sacks_allowed,
-                '3rd Down%': game_stat.third_down_pct,
-                'Success%': game_stat.success_rate,
-                '1st Downs': game_stat.first_downs,
-                'Pts/Drive': game_stat.points_per_drive,
-                'RZ TD%': game_stat.redzone_td_pct,
-                'Pen Yards': game_stat.penalty_yards,
-                'TOER': game_stat.toer
+                'Yds/Play': game_stat.offensive_stats.yards_per_play,
+                'Turnovers': game_stat.offensive_stats.turnovers,
+                'Pass Comp%': game_stat.offensive_stats.completion_pct,
+                'Rush YPC': game_stat.offensive_stats.rush_ypc,
+                'Sacks': game_stat.offensive_stats.sacks,
+                '3rd Down%': game_stat.offensive_stats.third_down_pct,
+                'Success%': game_stat.offensive_stats.success_rate,
+                '1st Downs': game_stat.offensive_stats.first_downs,
+                'Pts/Drive': game_stat.offensive_stats.points_per_drive,
+                'RZ TD%': game_stat.offensive_stats.redzone_td_pct,
+                'Pen Yards': game_stat.offensive_stats.penalty_yards,
+                'TOER': game_stat.offensive_stats.toer
             })
         
         display_df = pd.DataFrame(game_data)
@@ -481,17 +481,17 @@ class TabManager:
         if not weeks_with_games:
             for i, game_stat in enumerate(analysis_response.game_stats, 1):
                 # Calculate individual component scores for this game
-                ypp_score = TOERCalculator.calculate_yards_per_play_score(game_stat.yards_per_play)
-                turnovers_score = TOERCalculator.calculate_turnovers_score(float(game_stat.turnovers))
-                completion_score = TOERCalculator.calculate_completion_pct_score(game_stat.completion_pct)
-                rush_ypc_score = TOERCalculator.calculate_rush_ypc_score(game_stat.rush_ypc)
-                sacks_score = TOERCalculator.calculate_sacks_score(float(game_stat.sacks_allowed))
-                third_down_score = TOERCalculator.calculate_third_down_score(game_stat.third_down_pct)
-                success_rate_score = TOERCalculator.calculate_success_rate_score(game_stat.success_rate)
-                first_downs_score = TOERCalculator.calculate_first_downs_score(float(game_stat.first_downs))
-                ppd_score = TOERCalculator.calculate_ppd_score(game_stat.points_per_drive)
-                redzone_score = TOERCalculator.calculate_redzone_score(game_stat.redzone_td_pct)
-                penalty_score = TOERCalculator.calculate_penalty_yards_adjustment(float(game_stat.penalty_yards))
+                ypp_score = TOERCalculator.calculate_yards_per_play_score(game_stat.offensive_stats.yards_per_play)
+                turnovers_score = TOERCalculator.calculate_turnovers_score(float(game_stat.offensive_stats.turnovers))
+                completion_score = TOERCalculator.calculate_completion_pct_score(game_stat.offensive_stats.completion_pct)
+                rush_ypc_score = TOERCalculator.calculate_rush_ypc_score(game_stat.offensive_stats.rush_ypc)
+                sacks_score = TOERCalculator.calculate_sacks_score(float(game_stat.offensive_stats.sacks))
+                third_down_score = TOERCalculator.calculate_third_down_score(game_stat.offensive_stats.third_down_pct)
+                success_rate_score = TOERCalculator.calculate_success_rate_score(game_stat.offensive_stats.success_rate)
+                first_downs_score = TOERCalculator.calculate_first_downs_score(float(game_stat.offensive_stats.first_downs))
+                ppd_score = TOERCalculator.calculate_ppd_score(game_stat.offensive_stats.points_per_drive)
+                redzone_score = TOERCalculator.calculate_redzone_score(game_stat.offensive_stats.redzone_td_pct)
+                penalty_score = TOERCalculator.calculate_penalty_yards_adjustment(float(game_stat.offensive_stats.penalty_yards))
                 
                 breakdown_data.append({
                     'Game': i,
@@ -508,7 +508,7 @@ class TabManager:
                     'Pts/Drive': ppd_score,
                     'RZ TD%': redzone_score,
                     'Pen Yards': penalty_score,
-                    'TOER': game_stat.toer
+                    'TOER': game_stat.offensive_stats.toer
                 })
             
             # Create DataFrame and display
@@ -552,17 +552,17 @@ class TabManager:
                 game_stat = next(g for g in analysis_response.game_stats if g.game.week == week)
                 
                 # Calculate individual component scores for this game
-                ypp_score = TOERCalculator.calculate_yards_per_play_score(game_stat.yards_per_play)
-                turnovers_score = TOERCalculator.calculate_turnovers_score(float(game_stat.turnovers))
-                completion_score = TOERCalculator.calculate_completion_pct_score(game_stat.completion_pct)
-                rush_ypc_score = TOERCalculator.calculate_rush_ypc_score(game_stat.rush_ypc)
-                sacks_score = TOERCalculator.calculate_sacks_score(float(game_stat.sacks_allowed))
-                third_down_score = TOERCalculator.calculate_third_down_score(game_stat.third_down_pct)
-                success_rate_score = TOERCalculator.calculate_success_rate_score(game_stat.success_rate)
-                first_downs_score = TOERCalculator.calculate_first_downs_score(float(game_stat.first_downs))
-                ppd_score = TOERCalculator.calculate_ppd_score(game_stat.points_per_drive)
-                redzone_score = TOERCalculator.calculate_redzone_score(game_stat.redzone_td_pct)
-                penalty_score = TOERCalculator.calculate_penalty_yards_adjustment(float(game_stat.penalty_yards))
+                ypp_score = TOERCalculator.calculate_yards_per_play_score(game_stat.offensive_stats.yards_per_play)
+                turnovers_score = TOERCalculator.calculate_turnovers_score(float(game_stat.offensive_stats.turnovers))
+                completion_score = TOERCalculator.calculate_completion_pct_score(game_stat.offensive_stats.completion_pct)
+                rush_ypc_score = TOERCalculator.calculate_rush_ypc_score(game_stat.offensive_stats.rush_ypc)
+                sacks_score = TOERCalculator.calculate_sacks_score(float(game_stat.offensive_stats.sacks))
+                third_down_score = TOERCalculator.calculate_third_down_score(game_stat.offensive_stats.third_down_pct)
+                success_rate_score = TOERCalculator.calculate_success_rate_score(game_stat.offensive_stats.success_rate)
+                first_downs_score = TOERCalculator.calculate_first_downs_score(float(game_stat.offensive_stats.first_downs))
+                ppd_score = TOERCalculator.calculate_ppd_score(game_stat.offensive_stats.points_per_drive)
+                redzone_score = TOERCalculator.calculate_redzone_score(game_stat.offensive_stats.redzone_td_pct)
+                penalty_score = TOERCalculator.calculate_penalty_yards_adjustment(float(game_stat.offensive_stats.penalty_yards))
                 
                 breakdown_data.append({
                     'Week': str(week),
@@ -579,7 +579,7 @@ class TabManager:
                     'Pts/Drive': ppd_score,
                     'RZ TD%': redzone_score,
                     'Pen Yards': penalty_score,
-                    'TOER': game_stat.toer
+                    'TOER': game_stat.offensive_stats.toer
                 })
             else:
                 # Week without a game - it's missing data
@@ -608,17 +608,17 @@ class TabManager:
             week_display = f"P{playoff_round}"
             
             # Calculate individual component scores for this game
-            ypp_score = TOERCalculator.calculate_yards_per_play_score(game_stat.yards_per_play)
-            turnovers_score = TOERCalculator.calculate_turnovers_score(float(game_stat.turnovers))
-            completion_score = TOERCalculator.calculate_completion_pct_score(game_stat.completion_pct)
-            rush_ypc_score = TOERCalculator.calculate_rush_ypc_score(game_stat.rush_ypc)
-            sacks_score = TOERCalculator.calculate_sacks_score(float(game_stat.sacks_allowed))
-            third_down_score = TOERCalculator.calculate_third_down_score(game_stat.third_down_pct)
-            success_rate_score = TOERCalculator.calculate_success_rate_score(game_stat.success_rate)
-            first_downs_score = TOERCalculator.calculate_first_downs_score(float(game_stat.first_downs))
-            ppd_score = TOERCalculator.calculate_ppd_score(game_stat.points_per_drive)
-            redzone_score = TOERCalculator.calculate_redzone_score(game_stat.redzone_td_pct)
-            penalty_score = TOERCalculator.calculate_penalty_yards_adjustment(float(game_stat.penalty_yards))
+            ypp_score = TOERCalculator.calculate_yards_per_play_score(game_stat.offensive_stats.yards_per_play)
+            turnovers_score = TOERCalculator.calculate_turnovers_score(float(game_stat.offensive_stats.turnovers))
+            completion_score = TOERCalculator.calculate_completion_pct_score(game_stat.offensive_stats.completion_pct)
+            rush_ypc_score = TOERCalculator.calculate_rush_ypc_score(game_stat.offensive_stats.rush_ypc)
+            sacks_score = TOERCalculator.calculate_sacks_score(float(game_stat.offensive_stats.sacks))
+            third_down_score = TOERCalculator.calculate_third_down_score(game_stat.offensive_stats.third_down_pct)
+            success_rate_score = TOERCalculator.calculate_success_rate_score(game_stat.offensive_stats.success_rate)
+            first_downs_score = TOERCalculator.calculate_first_downs_score(float(game_stat.offensive_stats.first_downs))
+            ppd_score = TOERCalculator.calculate_ppd_score(game_stat.offensive_stats.points_per_drive)
+            redzone_score = TOERCalculator.calculate_redzone_score(game_stat.offensive_stats.redzone_td_pct)
+            penalty_score = TOERCalculator.calculate_penalty_yards_adjustment(float(game_stat.offensive_stats.penalty_yards))
             
             breakdown_data.append({
                 'Week': week_display,
@@ -635,7 +635,7 @@ class TabManager:
                 'Pts/Drive': ppd_score,
                 'RZ TD%': redzone_score,
                 'Pen Yards': penalty_score,
-                'TOER': game_stat.toer
+                'TOER': game_stat.offensive_stats.toer
             })
         
         # Create DataFrame
@@ -663,7 +663,121 @@ class TabManager:
             hide_index=True,
             height=len(breakdown_df) * 35 + 38
         )
-
+        
+        st.subheader("TOER Allowed Component Breakdown")
+        
+        toer_allowed_data = []
+        
+        # Map game stats by week for easier lookup
+        game_stats_by_week = {}
+        for game_stat in analysis_response.game_stats:
+            if game_stat.game:
+                game_stats_by_week[game_stat.game.week] = game_stat
+        
+        # Iterate through breakdown_data to include NO DATA entries
+        for item in breakdown_data:
+            if item['Opponent'] == 'NO DATA':
+                # Missing week - add NO DATA entry
+                toer_allowed_row = {
+                    'Opponent': 'NO DATA',
+                    'Location': '-',
+                    'Yds/Play': None,
+                    'Turnovers': None,
+                    'Pass Comp%': None,
+                    'Rush YPC': None,
+                    'Sacks': None,
+                    '3rd Down%': None,
+                    'Success%': None,
+                    '1st Downs': None,
+                    'Pts/Drive': None,
+                    'RZ TD%': None,
+                    'Pen Yards': None,
+                    'TOER Allowed': None
+                }
+            else:
+                # Get the corresponding game_stat
+                week_str = item.get('Week', '')
+                if week_str.startswith('P'):
+                    # Playoff game
+                    playoff_round = int(week_str[1:])
+                    week = get_regular_season_weeks(analysis_response.season.year) + playoff_round
+                else:
+                    week = int(week_str)
+                
+                game_stat = game_stats_by_week.get(week)
+                if not game_stat:
+                    continue
+                
+                # Get TOER Allowed value
+                toer_allowed = game_stat.defensive_stats.toer
+                
+                # Get actual opponent offensive stats from game data (now in defensive_stats)
+                defensive_stats = game_stat.defensive_stats
+                
+                # Calculate component scores using actual opponent stats
+                ypp_score = TOERCalculator.calculate_yards_per_play_score(defensive_stats.yards_per_play)
+                turnovers_score = TOERCalculator.calculate_turnovers_score(float(defensive_stats.turnovers))
+                completion_score = TOERCalculator.calculate_completion_pct_score(defensive_stats.completion_pct)
+                rush_ypc_score = TOERCalculator.calculate_rush_ypc_score(defensive_stats.rush_ypc)
+                sacks_score = TOERCalculator.calculate_sacks_score(float(defensive_stats.sacks))
+                third_down_score = TOERCalculator.calculate_third_down_score(defensive_stats.third_down_pct)
+                success_rate_score = TOERCalculator.calculate_success_rate_score(defensive_stats.success_rate)
+                first_downs_score = TOERCalculator.calculate_first_downs_score(float(defensive_stats.first_downs))
+                ppd_score = TOERCalculator.calculate_ppd_score(defensive_stats.points_per_drive)
+                redzone_score = TOERCalculator.calculate_redzone_score(defensive_stats.redzone_td_pct)
+                penalty_score = TOERCalculator.calculate_penalty_yards_adjustment(float(defensive_stats.penalty_yards))
+                
+                toer_allowed_row = {
+                    'Opponent': game_stat.opponent.abbreviation,
+                    'Location': game_stat.location.value,
+                    'Yds/Play': ypp_score,
+                    'Turnovers': turnovers_score,
+                    'Pass Comp%': completion_score,
+                    'Rush YPC': rush_ypc_score,
+                    'Sacks': sacks_score,
+                    '3rd Down%': third_down_score,
+                    'Success%': success_rate_score,
+                    '1st Downs': first_downs_score,
+                    'Pts/Drive': ppd_score,
+                    'RZ TD%': redzone_score,
+                    'Pen Yards': penalty_score,
+                    'TOER Allowed': toer_allowed
+                }
+            
+            # Add week/game identifier (same as original table)
+            if 'Week' in item:
+                toer_allowed_row = {'Week': item['Week'], **toer_allowed_row}
+            elif 'Game' in item:
+                toer_allowed_row = {'Game': item['Game'], **toer_allowed_row}
+                    
+            toer_allowed_data.append(toer_allowed_row)
+    
+        # Create DataFrame for TOER Allowed
+        toer_allowed_df = pd.DataFrame(toer_allowed_data)
+        
+        # Format numeric columns for display
+        format_dict = {
+            'Yds/Play': '{:.2f}',
+            'Turnovers': '{:.2f}',
+            'Pass Comp%': '{:.2f}',
+            'Rush YPC': '{:.2f}',
+            'Sacks': '{:.2f}',
+            '3rd Down%': '{:.2f}',
+            'Success%': '{:.2f}',
+            '1st Downs': '{:.2f}',
+            'Pts/Drive': '{:.2f}',
+            'RZ TD%': '{:.2f}',
+            'Pen Yards': '{:.2f}',
+            'TOER Allowed': '{:.2f}'
+        }
+        
+        st.dataframe(
+            toer_allowed_df.style.format(format_dict, na_rep='-'),
+            use_container_width=True,
+            hide_index=True,
+            height=len(toer_allowed_df) * 35 + 38
+        )
+        
     def _render_methodology_tab(self, analysis_response: TeamAnalysisResponse):
         """Render the methodology documentation tab."""
         self._methodology_renderer.render_methodology_page(analysis_response)

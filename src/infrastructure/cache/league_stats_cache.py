@@ -19,11 +19,12 @@ logger = logging.getLogger(__name__)
 
 def _process_team_parallel(args):
     """Process a single team's statistics (for multiprocessing)."""
-    team_abbr, season_year, team_data = args
+    team_abbr, season_year, team_data, team_game_results = args
     try:
         # Import inside the function for multiprocessing
         from src.domain.entities import Team, Season
         from src.domain.nfl_stats_calculator import NFLStatsCalculator
+        from src.domain.game_processor import GameProcessor
         from src.utils.league_stats_utils import extract_stats_for_averaging
         import pandas as pd
         
@@ -42,6 +43,12 @@ def _process_team_parallel(args):
         season_stats = calculator.calculate_season_stats(
             team_data, team, season, pre_calculated=None
         )
+        
+        # If we have game results, update TOER Allowed
+        if season_stats and team_game_results:
+            game_processor = GameProcessor()
+            avg_toer, avg_toer_allowed = game_processor.get_team_toer_stats(team_game_results, team_abbr)
+            season_stats.toer_allowed = avg_toer_allowed
         
         if season_stats:
             stats_for_avg = extract_stats_for_averaging(season_stats)
@@ -401,9 +408,13 @@ class LeagueStatsCache:
             
             if progress_callback:
                 progress_callback.update(0.8, "Processing team statistics...")
+                
+            from ...domain.game_processor import GameProcessor
+            game_processor = GameProcessor()
             
-            # Note: We don't cache the filtered data since configuration can change
-            # The raw data is cached above and filtering is fast
+            # Process all games to get TOER results for all teams
+            logger.info("Processing all games for TOER calculations...")
+            game_results_by_team = game_processor.process_all_games(filtered_data)
             
             # Calculate statistics for all teams in the filtered data
             teams = sorted(filtered_data['posteam'].dropna().unique())
@@ -434,7 +445,9 @@ class LeagueStatsCache:
                     if len(team_data) > 0:
                         # Memory optimization: reset index and drop unnecessary data
                         team_data = team_data.reset_index(drop=True)
-                        team_data_list.append((team_abbr, season_year, team_data))
+                        # Include game results for TOER Allowed calculation
+                        team_game_results = game_results_by_team.get(team_abbr, [])
+                        team_data_list.append((team_abbr, season_year, team_data, team_game_results))
                 
                 # Process in parallel using joblib
                 results = Parallel(n_jobs=num_processes, backend=backend)(
@@ -455,7 +468,9 @@ class LeagueStatsCache:
                     if len(team_data) > 0:
                         # Memory optimization: reset index and drop unnecessary data
                         team_data = team_data.reset_index(drop=True)
-                        team_data_args.append((team_abbr, season_year, team_data))
+                        # Include game results for TOER Allowed calculation
+                        team_game_results = game_results_by_team.get(team_abbr, [])
+                        team_data_args.append((team_abbr, season_year, team_data, team_game_results))
                 
                 num_processes = min(cpu_count(), 8, len(team_data_args))
                 logger.info(f"Processing {len(team_data_args)} teams using {num_processes} processes")
