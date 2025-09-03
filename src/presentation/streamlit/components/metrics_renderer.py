@@ -62,11 +62,15 @@ class MetricsRenderer:
             if record_content:
                 safe_record_content = html.escape(record_content)
                 record_text = f"<p style='margin: 5px 0 0 0; opacity: 0.9; font-size: 0.9em;'>{safe_record_content}</p>"
+            else:
+                record_text = f"<p style='margin: 5px 0 0 0; opacity: 0.9; font-size: 0.9em;'>Season has not started</p>"
         elif game_stats and len(game_stats) > 0:
             # Fallback to games analyzed
             games_count = len(game_stats)
             safe_games_text = html.escape(f"{games_count} games analyzed")
             record_text = f"<p style='margin: 5px 0 0 0; opacity: 0.9; font-size: 0.9em;'>{safe_games_text}</p>"
+        else:
+            record_text = f"<p style='margin: 5px 0 0 0; opacity: 0.9; font-size: 0.9em;'>No data available</p>"
         
         # Sanitize all user-controlled content
         safe_logo = html.escape(str(team.logo))
