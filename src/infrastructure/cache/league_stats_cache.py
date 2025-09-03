@@ -156,6 +156,7 @@ class LeagueStatsCache:
             # Use get_or_compute for main statistics
             def compute_stats():
                 if self._nfl_data_repo:
+                    logger.info(f"Computing fresh statistics for season {season_year} (cache miss or expired)")
                     return self._compute_from_raw_data(
                         season_year, season_type, _configuration, progress_callback
                     )
@@ -173,6 +174,9 @@ class LeagueStatsCache:
             current_year = datetime.now().year
             ttl = 600 if season_year == current_year else 1800  # 10 min vs 30 min (reduced)
             
+            # Check if data was already cached before calling get_or_compute
+            was_cached = cache_key in self._memory_cache._cache
+            
             result = self._memory_cache.get_or_compute(
                 key=cache_key,
                 compute_func=compute_stats,
@@ -189,7 +193,7 @@ class LeagueStatsCache:
             # Ensure rankings are cached
             self._ensure_rankings_cached(cache_key, team_stats_dict)
             
-            logger.info(f"Retrieved statistics for {len(team_stats_dict)} teams (cached: {cache_key in self._memory_cache._cache})")
+            logger.info(f"Retrieved statistics for {len(team_stats_dict)} teams (cached: {was_cached})")
             return team_stats_dict, league_averages, data_timestamp
             
         except Exception as e:
@@ -307,6 +311,29 @@ class LeagueStatsCache:
             logger.error(f"Failed to clear cache: {e}")
             raise CacheError(f"Cache clear operation failed: {e}", operation="clear_cache")
     
+    def clear_repository_cache(self, season_year: Optional[int] = None) -> int:
+        """Clear repository cache separately to avoid serialization issues.
+        
+        This method should be called separately from clear_cache to ensure
+        the repository's cache is also cleared when needed.
+        """
+        try:
+            if self._nfl_data_repo and hasattr(self._nfl_data_repo, '_cache'):
+                if season_year:
+                    # Clear specific season
+                    pattern = f"pbp_{season_year}"
+                    count = self._nfl_data_repo._cache.clear(pattern)
+                    logger.info(f"Cleared {count} repository cache entries for season {season_year}")
+                else:
+                    # Clear all
+                    count = self._nfl_data_repo._cache.clear()
+                    logger.info(f"Cleared {count} repository cache entries")
+                return count
+            return 0
+        except Exception as e:
+            logger.error(f"Failed to clear repository cache: {e}")
+            return 0
+    
     def force_cleanup(self) -> Dict[str, int]:
         """Force cleanup of expired entries across all caches.
         
@@ -354,12 +381,6 @@ class LeagueStatsCache:
                 if pbp_data is None or len(pbp_data) == 0:
                     logger.warning(f"No raw data found for season {season_year}")
                     return None, datetime.now()
-                
-                # Also ensure the repository's own cache has the data
-                if self._nfl_data_repo and hasattr(self._nfl_data_repo, '_cache'):
-                    repo_cache_key = f"pbp_{season_year}"
-                    # Cache the data in the repository
-                    self._nfl_data_repo._cache.set(repo_cache_key, (pbp_data, data_timestamp))
                 
                 return (pbp_data, data_timestamp)
             

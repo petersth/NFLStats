@@ -46,8 +46,13 @@ class SidebarManager:
             
             team_options = self._get_team_options(season_year)
             
-            # Try to maintain the current team selection when year changes
-            current_team = st.session_state.get('selected_team', None)
+            # Use the team_selector key directly if it exists (user just selected)
+            # Otherwise fall back to selected_team (for persistence across reruns)
+            if 'team_selector' in st.session_state:
+                current_team = st.session_state.team_selector
+            else:
+                current_team = st.session_state.get('selected_team', None)
+            
             default_index = 0
             if current_team and current_team in team_options:
                 default_index = list(team_options.keys()).index(current_team)

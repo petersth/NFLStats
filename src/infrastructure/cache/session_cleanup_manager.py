@@ -116,6 +116,9 @@ class SessionCleanupManager:
                 if orchestrator and hasattr(orchestrator, 'league_cache'):
                     try:
                         cleanup_stats = orchestrator.league_cache.clear_cache()
+                        repo_cleared = orchestrator.league_cache.clear_repository_cache()
+                        if repo_cleared > 0:
+                            cleanup_stats['repository'] = repo_cleared
                         total_entries_freed = sum(cleanup_stats.values())
                         logger.info(f"CACHE CLEARED - Session {session_short_id}: {total_entries_freed} entries freed {cleanup_stats}")
                     except Exception as e:
@@ -205,6 +208,9 @@ class SessionCleanupManager:
                     if orchestrator and hasattr(orchestrator, 'league_cache'):
                         try:
                             cleanup_stats = orchestrator.league_cache.clear_cache()
+                            repo_cleared = orchestrator.league_cache.clear_repository_cache()
+                            if repo_cleared > 0:
+                                cleanup_stats['repository'] = repo_cleared
                             total_entries_freed = sum(cleanup_stats.values())
                             logger.info(f"DISCONNECT CACHE CLEARED - Session {session_short_id}: {total_entries_freed} entries freed {cleanup_stats}")
                         except Exception as e:
@@ -240,6 +246,9 @@ class SessionCleanupManager:
                     if orchestrator and hasattr(orchestrator, 'league_cache'):
                         try:
                             cleanup_stats = orchestrator.league_cache.clear_cache()
+                            repo_cleared = orchestrator.league_cache.clear_repository_cache()
+                            if repo_cleared > 0:
+                                cleanup_stats['repository'] = repo_cleared
                             total_entries_freed = sum(cleanup_stats.values())
                             logger.info(f"INACTIVE CACHE CLEARED - Session {session_short_id}: {total_entries_freed} entries freed {cleanup_stats}")
                         except Exception as e:
