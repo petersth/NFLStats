@@ -102,7 +102,8 @@ class TabManager:
                     'Pts/Drive': game_stat.offensive_stats.points_per_drive,
                     'RZ TD%': game_stat.offensive_stats.redzone_td_pct,
                     'Pen Yards': game_stat.offensive_stats.penalty_yards,
-                    'TOER': game_stat.offensive_stats.toer
+                    'TOER': game_stat.offensive_stats.toer,
+                    'TOER Allowed': game_stat.defensive_stats.toer
                 })
             display_df = pd.DataFrame(game_data)
             
@@ -119,7 +120,8 @@ class TabManager:
                 'Pts/Drive': '{:.2f}',
                 'RZ TD%': '{:.2f}',
                 'Pen Yards': '{:.0f}',
-                'TOER': '{:.2f}'
+                'TOER': '{:.2f}',
+                'TOER Allowed': '{:.2f}'
             }
             
             st.dataframe(
@@ -158,7 +160,8 @@ class TabManager:
                     'Pts/Drive': game_stat.offensive_stats.points_per_drive,
                     'RZ TD%': game_stat.offensive_stats.redzone_td_pct,
                     'Pen Yards': game_stat.offensive_stats.penalty_yards,
-                    'TOER': game_stat.offensive_stats.toer
+                    'TOER': game_stat.offensive_stats.toer,
+                    'TOER Allowed': game_stat.defensive_stats.toer
                 })
             else:
                 # Week without a game - it's missing data
@@ -178,7 +181,8 @@ class TabManager:
                     'Pts/Drive': None,
                     'RZ TD%': None,
                     'Pen Yards': None,
-                    'TOER': None
+                    'TOER': None,
+                    'TOER Allowed': None
                 })
         
         # Add playoff games
@@ -201,7 +205,8 @@ class TabManager:
                 'Pts/Drive': game_stat.offensive_stats.points_per_drive,
                 'RZ TD%': game_stat.offensive_stats.redzone_td_pct,
                 'Pen Yards': game_stat.offensive_stats.penalty_yards,
-                'TOER': game_stat.offensive_stats.toer
+                'TOER': game_stat.offensive_stats.toer,
+                'TOER Allowed': game_stat.defensive_stats.toer
             })
         
         display_df = pd.DataFrame(game_data)
@@ -219,7 +224,8 @@ class TabManager:
             'Pts/Drive': '{:.2f}',
             'RZ TD%': '{:.2f}',
             'Pen Yards': '{:.0f}',
-            'TOER': '{:.2f}'
+            'TOER': '{:.2f}',
+            'TOER Allowed': '{:.2f}'
         }
         
         st.dataframe(
