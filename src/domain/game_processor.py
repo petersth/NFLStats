@@ -279,7 +279,7 @@ class GameProcessor:
                 # We were home team
                 offensive_toers.append(game.home_team_offensive_stats.toer)
                 toers_allowed.append(game.away_team_offensive_stats.toer)  # Opponent's TOER is our TOER Allowed
-            else:
+            elif game.away_team == team_abbr:
                 # We were away team
                 offensive_toers.append(game.away_team_offensive_stats.toer)
                 toers_allowed.append(game.home_team_offensive_stats.toer)  # Opponent's TOER is our TOER Allowed

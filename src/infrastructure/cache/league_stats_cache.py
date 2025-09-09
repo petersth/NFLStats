@@ -44,10 +44,11 @@ def _process_team_parallel(args):
             team_data, team, season, pre_calculated=None
         )
         
-        # If we have game results, update TOER Allowed
+        # If we have game results, update TOER values from actual game results
         if season_stats and team_game_results:
             game_processor = GameProcessor()
             avg_toer, avg_toer_allowed = game_processor.get_team_toer_stats(team_game_results, team_abbr)
+            season_stats.toer = avg_toer
             season_stats.toer_allowed = avg_toer_allowed
         
         if season_stats:
