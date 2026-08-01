@@ -31,27 +31,28 @@ if [ "$PYTHON_MAJOR" -ne 3 ]; then
     exit 1
 fi
 
-if [ "$PYTHON_MINOR" -lt 8 ]; then
-    echo "ERROR: Python 3.8 or higher is required (found Python $PYTHON_MAJOR.$PYTHON_MINOR)"
+if [ "$PYTHON_MINOR" -lt 12 ]; then
+    echo "ERROR: Python 3.12 or higher is required (found Python $PYTHON_MAJOR.$PYTHON_MINOR)"
     echo "Please install Python 3.12 from https://www.python.org/downloads/"
     exit 1
 fi
 
-if [ "$PYTHON_MINOR" -gt 12 ]; then
-    echo "WARNING: Python 3.13+ detected (Python $PYTHON_MAJOR.$PYTHON_MINOR)"
-    echo "This version may have compatibility issues with some dependencies."
-    echo "Python 3.12 is recommended for best compatibility."
-    echo ""
-    echo "Do you want to continue anyway? (y/n)"
-    read -r response
-    if [[ ! "$response" =~ ^[Yy]$ ]]; then
-        echo "Installation cancelled. Please install Python 3.12."
-        exit 1
-    fi
-fi
-
 echo "Python version OK!"
 echo ""
+
+# Preserve virtual environments created with an older supported Python.
+# They cannot be upgraded in place because a venv is bound to its interpreter.
+if [ -d "venv" ]; then
+    if [ ! -x "venv/bin/python" ] || ! venv/bin/python -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 12) else 1)'; then
+        echo "Existing virtual environment is not compatible with Python 3.12+."
+        BACKUP_PATH=$($PYTHON_CMD -c "from datetime import datetime; from pathlib import Path; source = Path('venv'); target = source.with_name(f'venv.incompatible.{datetime.now():%Y%m%d%H%M%S%f}'); source.rename(target); print(target)")
+        if [ $? -ne 0 ]; then
+            echo "ERROR: Could not preserve the incompatible virtual environment."
+            exit 1
+        fi
+        echo "Preserved the old environment as $BACKUP_PATH"
+    fi
+fi
 
 # Create virtual environment
 echo "Creating virtual environment..."
@@ -81,7 +82,7 @@ echo "This may take a few minutes..."
 echo ""
 
 # Install requirements
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 
 if [ $? -ne 0 ]; then
     echo ""
@@ -89,6 +90,8 @@ if [ $? -ne 0 ]; then
     echo "Please check your internet connection and try again"
     exit 1
 fi
+
+python -c "import hashlib, pathlib; requirements = pathlib.Path('requirements.txt'); pathlib.Path('.requirements.hash').write_text(hashlib.sha256(requirements.read_bytes()).hexdigest())"
 
 echo ""
 echo "========================================"

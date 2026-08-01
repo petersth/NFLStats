@@ -140,6 +140,8 @@ class SimpleCache:
         # Compute and cache
         try:
             computed_value = compute_func()
+            if validator and not validator(computed_value):
+                raise ValueError(f"Computed value for key '{key}' failed validation")
             self.set(key, computed_value, ttl)
             return computed_value
         except Exception as e:

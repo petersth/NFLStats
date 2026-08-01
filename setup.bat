@@ -19,7 +19,7 @@ if exist app.py if exist requirements.txt (
     
     echo.
     echo This appears to be a ZIP download without Git history.
-    echo To enable automatic updates, this needs to be converted to a Git repository.
+    echo Git-managed updates require a separately cloned repository.
     echo.
     
     REM Check for git
@@ -27,7 +27,7 @@ if exist app.py if exist requirements.txt (
     if %errorlevel% neq 0 (
         echo Git is not installed.
         echo.
-        echo To enable automatic updates, please:
+        echo To use Git-managed updates, please:
         echo 1. Install Git from: https://git-scm.com/downloads
         echo 2. Run this setup script again
         echo.
@@ -36,43 +36,11 @@ if exist app.py if exist requirements.txt (
         exit /b 1
     )
     
-    choice /C YN /M "Convert to Git repository for automatic updates"
-    if %errorlevel% equ 2 (
-        echo.
-        echo Skipping Git setup. You can run start.bat but won't get automatic updates.
-        pause
-        exit /b 0
-    )
-    
     echo.
-    echo Initializing Git repository...
-    
-    REM Initialize git repo
-    git init
-    
-    REM Add the remote
-    git remote add origin https://github.com/petersth/NFLStats.git
-    
-    REM Disable credential helper for public repo
-    git config --local credential.helper ""
-    
-    REM Fetch all remote branches
-    echo Fetching from remote repository...
-    git fetch origin
-    
-    REM Reset to match remote main branch exactly
-    echo Synchronizing with remote repository...
-    git reset --hard origin/main
-    
-    REM Set up branch tracking
-    git branch --set-upstream-to=origin/main main
-    
-    REM Make sure we're on main branch
-    git checkout main 2>nul || git checkout -b main
-    
-    echo.
-    echo Git repository configured! Automatic updates are now enabled.
-    echo You can now run start.bat to launch the app.
+    echo This ZIP installation will be left unchanged to protect local files.
+    echo To use Git updates, clone a fresh copy in a different directory:
+    echo git clone https://github.com/petersth/NFLStats.git
+    echo You can continue using this copy with start.bat.
     pause
     exit /b 0
 )
@@ -87,7 +55,7 @@ if %errorlevel% neq 0 (
     echo Then run this script again.
     echo.
     echo Why Git is needed:
-    echo - Enables automatic updates
+    echo - Enables update notifications and explicit update commands
     echo - Ensures you always have the latest features
     pause
     exit /b 1

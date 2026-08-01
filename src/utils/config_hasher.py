@@ -2,10 +2,7 @@
 
 import json
 import hashlib
-import logging
 from typing import Dict, Any
-
-logger = logging.getLogger(__name__)
 
 
 def get_config_hash(configuration: Dict[str, Any]) -> str:
@@ -15,14 +12,9 @@ def get_config_hash(configuration: Dict[str, Any]) -> str:
     Uses recursive normalization to ensure consistent hashing
     regardless of key/value order.
     """
-    try:
-        normalized = _normalize_config(configuration)
-        config_string = json.dumps(normalized, sort_keys=True, separators=(',', ':'))
-        return hashlib.md5(config_string.encode()).hexdigest()
-    except Exception as e:
-        logger.error(f"Failed to generate config hash: {e}")
-        # Return a consistent fallback hash for error cases
-        return hashlib.md5(str(configuration).encode()).hexdigest()
+    normalized = _normalize_config(configuration)
+    config_string = json.dumps(normalized, sort_keys=True, separators=(',', ':'))
+    return hashlib.sha256(config_string.encode()).hexdigest()
 
 
 def _normalize_config(obj: Any) -> Any:

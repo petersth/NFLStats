@@ -6,10 +6,10 @@ An easy-to-use application for analyzing NFL team statistics and performance met
 
 ### Option 1: Download ZIP from GitHub (Simplest Start)
 1. Download ZIP from GitHub and extract to a folder
-2. Run the setup script to enable updates (optional):
+2. Run the setup script for environment guidance (optional):
    - **Windows**: Double-click `setup.bat`
    - **Mac/Linux**: Double-click `setup.sh`
-   - The setup script will offer to enable automatic updates
+   - ZIP installations are left unchanged to protect local files
 3. Start the app:
    - **Windows**: Double-click `start.bat`
    - **Mac/Linux**: Double-click `start.sh`
@@ -20,11 +20,11 @@ If you have Git installed and prefer command line:
 git clone https://github.com/petersth/NFLStats.git Stats
 cd Stats
 ```
-This method includes automatic updates from the start.
+This method enables update notifications and the explicit update scripts.
 
 ### What the Setup Script Does
 The `setup.bat`/`setup.sh` scripts are smart helpers that:
-- **If you downloaded the ZIP**: Offers to convert it to a Git repository for automatic updates
+- **If you downloaded the ZIP**: Explains how to clone a separate Git-managed copy safely
 - **If you downloaded just the script**: Downloads the full app with Git enabled
 - **If Git is already configured**: Tells you you're all set
 - **If Git isn't installed**: Guides you to install it (optional for updates)
@@ -47,15 +47,14 @@ The `setup.bat`/`setup.sh` scripts are smart helpers that:
 ## Prerequisites
 
 ### Required:
-**Python 3.12** (download from [python.org](https://www.python.org/downloads/))
-- **Recommended**: Python 3.12 for best compatibility
-- **Known issues**: Python 3.13+ may have dependency issues
+**Python 3.12 or newer** (download from [python.org](https://www.python.org/downloads/))
+- **Recommended**: Python 3.12 to match the hosted app
 - When installing on Windows, check "Add Python to PATH"
 - To verify: Open Terminal/Command Prompt and type `python --version`
 
 ### Optional (but recommended):
 **Git** (download from [git-scm.com](https://git-scm.com/downloads))
-- Enables automatic updates when you start the app
+- Enables update checks at startup and explicit updates through `update.sh`/`update.bat`
 - Without Git: App works fine but won't check for updates
 - No GitHub account needed for updates (public repository)
 - To verify: Open Terminal/Command Prompt and type `git --version`
@@ -96,7 +95,7 @@ source venv/bin/activate
 
 ### Step 5: Install Required Components
 ```bash
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 
 ### Step 6: Run the Application
@@ -108,12 +107,12 @@ The app will open at `http://localhost:8501` in your browser
 
 ## Updating the Application
 
-### Automatic Updates (If Git is configured)
-The app **automatically checks for updates** every time you start it.
+### Update Notifications (If Git is configured)
+The app checks whether updates are available when it starts, but never changes
+your working copy automatically. Run the update script explicitly to install them.
 
-To enable automatic updates on a ZIP download:
-- Run `setup.bat` (Windows) or `setup.sh` (Mac/Linux)
-- Choose "Yes" when asked to convert to Git repository
+ZIP downloads are not converted in place because doing so can overwrite local
+files. Clone a fresh Git copy in a different directory if you want Git updates.
 
 ### Manual Update Options
 
@@ -144,7 +143,10 @@ To enable automatic updates on a ZIP download:
 ### Installation fails
 - Make sure you have an internet connection
 - Try upgrading pip first: `python -m pip install --upgrade pip`
-- On Mac, you might need to use: `pip install --user -r requirements.txt`
+- On Mac, you might need to use: `python -m pip install --user -r requirements.txt`
+- When upgrading from an environment created with Python 3.8–3.11, the installer
+  preserves it as `venv.incompatible.<timestamp>` and creates a Python 3.12
+  environment. You can remove the preserved directory after verifying the app.
 
 ### Application won't start
 - Make sure you're in the correct folder (Stats)

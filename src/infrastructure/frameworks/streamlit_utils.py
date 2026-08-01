@@ -169,6 +169,7 @@ class StreamlitApplicationStateAdapter:
     ANALYZED_TEAM = "analyzed_team"
     ANALYZED_SEASON = "analyzed_season"
     ANALYZED_SEASON_TYPE = "analyzed_season_type"
+    ANALYZED_CACHE_NFL_DATA = "analyzed_cache_nfl_data"
     PREVIOUS_CONFIG = "previous_config"
     TABS_LOADED = "tabs_loaded"
     
@@ -185,10 +186,11 @@ class StreamlitApplicationStateAdapter:
             self.ANALYZED_TEAM: None,
             self.ANALYZED_SEASON: None,
             self.ANALYZED_SEASON_TYPE: None,
+            self.ANALYZED_CACHE_NFL_DATA: None,
             self.PREVIOUS_CONFIG: None,
             self.TABS_LOADED: {
                 'game_log': False,
-                'trends': False, 
+                'toer_breakdown': False,
                 'league': False,
                 'export': False,
                 'methodology': False
@@ -204,7 +206,7 @@ class StreamlitApplicationStateAdapter:
         self.state.set(self.CURRENT_ANALYSIS, None)
         self.state.set(self.TABS_LOADED, {
             'game_log': False,
-            'trends': False,
+            'toer_breakdown': False,
             'league': False, 
             'export': False,
             'methodology': False
@@ -232,10 +234,17 @@ class StreamlitApplicationStateAdapter:
             self.state.get(self.CURRENT_SEASON_TYPE)
         )
     
-    def set_analyzed_selections(self, team: str, season: int, season_type: str) -> None:
+    def set_analyzed_selections(
+        self,
+        team: str,
+        season: int,
+        season_type: str,
+        cache_nfl_data: Optional[bool] = None,
+    ) -> None:
         self.state.set(self.ANALYZED_TEAM, team)
         self.state.set(self.ANALYZED_SEASON, season)
         self.state.set(self.ANALYZED_SEASON_TYPE, season_type)
+        self.state.set(self.ANALYZED_CACHE_NFL_DATA, cache_nfl_data)
     
     def get_analyzed_selections(self) -> Tuple[str, int, str]:
         return (
@@ -243,6 +252,10 @@ class StreamlitApplicationStateAdapter:
             self.state.get(self.ANALYZED_SEASON),
             self.state.get(self.ANALYZED_SEASON_TYPE)
         )
+
+    def get_analyzed_cache_mode(self) -> Optional[bool]:
+        """Return the cache mode used for the displayed analysis."""
+        return self.state.get(self.ANALYZED_CACHE_NFL_DATA)
     
     def check_config_changed(self, current_config: Dict) -> bool:
         previous_config = self.state.get(self.PREVIOUS_CONFIG)
@@ -275,19 +288,6 @@ class StreamlitApplicationStateAdapter:
         """
         from ...utils.config_hasher import get_config_hash
         return get_config_hash(config)
-    
-    def should_analyze(self, analyze_button: bool, config_changed: bool, 
-                      team: str, season: int, season_type: str) -> bool:
-        current_team, current_season, current_season_type = self.get_current_selections()
-        
-        return (
-            analyze_button or 
-            config_changed or
-            (not self.is_analysis_complete() and
-             current_team == team and
-             current_season == season and  
-             current_season_type == season_type)
-        )
     
     def get_tabs_loaded(self) -> Dict[str, bool]:
         return self.state.get(self.TABS_LOADED, {})
@@ -437,5 +437,3 @@ class StreamlitCacheMonitoringAdapter:
             
             st.markdown("**Cache Controls**")
             self.render_cache_controls()
-
-

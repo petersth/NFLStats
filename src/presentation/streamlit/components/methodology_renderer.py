@@ -356,7 +356,7 @@ class MethodologyRenderer:
         
         st.markdown("### Data Source")
         st.markdown("""
-        **Primary Source:** `nfl_data_py` Python package
+        **Primary Source:** `nflreadpy` Python package and nflverse datasets
         - **Provider:** nflfastR project
         - **Coverage:** Play-by-play data for all NFL games
         - **Update Frequency:** Multiple times per week during season

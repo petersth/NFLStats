@@ -3,7 +3,7 @@
 """
 Team display name mapper for showing historically accurate team names.
 
-The nfl_data_py library uses current team codes for all historical data.
+The nflreadpy library uses current team codes for all historical data.
 For example, the St. Louis Rams (1995-2015) are coded as 'LA' in the data.
 
 This module provides the correct display names based on the year.

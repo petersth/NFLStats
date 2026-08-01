@@ -19,14 +19,14 @@ if [ -f "app.py" ] && [ -f "requirements.txt" ]; then
     
     echo ""
     echo "This appears to be a ZIP download without Git history."
-    echo "To enable automatic updates, this needs to be converted to a Git repository."
+    echo "Git-managed updates require a separately cloned repository."
     echo ""
     
     # Check for git
     if ! command -v git &> /dev/null; then
         echo "Git is not installed."
         echo ""
-        echo "To enable automatic updates, please:"
+        echo "To use Git-managed updates, please:"
         echo "1. Install Git from: https://git-scm.com/downloads"
         echo "2. Run this setup script again"
         echo ""
@@ -34,43 +34,11 @@ if [ -f "app.py" ] && [ -f "requirements.txt" ]; then
         exit 1
     fi
     
-    echo "Convert to Git repository for automatic updates? (y/n)"
-    read -r response
-    if [[ ! "$response" =~ ^[Yy]$ ]]; then
-        echo ""
-        echo "Skipping Git setup. You can run ./start.sh but won't get automatic updates."
-        exit 0
-    fi
-    
     echo ""
-    echo "Initializing Git repository..."
-    
-    # Initialize git repo
-    git init
-    
-    # Add the remote
-    git remote add origin https://github.com/petersth/NFLStats.git
-    
-    # Disable credential helper for public repo
-    git config --local credential.helper ""
-    
-    # Fetch all remote branches
-    echo "Fetching from remote repository..."
-    git fetch origin
-    
-    # Reset to match remote main branch exactly
-    echo "Synchronizing with remote repository..."
-    git reset --hard origin/main
-    
-    # Set up branch tracking
-    git branch --set-upstream-to=origin/main main
-    
-    # Make sure we're on main branch
-    git checkout main 2>/dev/null || git checkout -b main
-    
-    echo ""
-    echo "Git repository configured! Automatic updates are now enabled."
-    echo "You can now run ./start.sh to launch the app."
+    echo "This ZIP installation will be left unchanged to protect local files."
+    echo "To use Git updates, clone a fresh copy in a different directory:"
+    echo "git clone https://github.com/petersth/NFLStats.git"
+    echo "You can continue using this copy with ./start.sh."
     exit 0
 fi
 
@@ -83,7 +51,7 @@ if ! command -v git &> /dev/null; then
     echo "Then run this script again."
     echo ""
     echo "Why Git is needed:"
-    echo "- Enables automatic updates"
+    echo "- Enables update notifications and explicit update commands"
     echo "- Ensures you always have the latest features"
     exit 1
 fi

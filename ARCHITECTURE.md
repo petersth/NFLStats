@@ -16,7 +16,7 @@
 The NFL Statistics Application is an analytics platform that processes NFL play-by-play data to generate team performance metrics. The system provides statistical analysis, league rankings, and performance visualizations through a web interface.
 
 ### Key Features
-- **NFL Data Processing**: Downloads and processes play-by-play data from the NFL API
+- **NFL Data Processing**: Downloads and processes play-by-play data from nflverse
 - **Metrics Calculation**: Computes 14+ statistical metrics including success rate, yards per play, and red zone efficiency
 - **League Rankings**: Calculates team rankings across all metrics with tie handling
 - **Data Visualizations**: Provides charts, tables, and comparative analysis
@@ -204,18 +204,18 @@ The application uses a layered architecture with the following principles:
 **Purpose**: External system integration and technical concerns
 
 **Components**:
-- `UnifiedNFLRepository`: NFL API data access
+- `UnifiedNFLRepository`: nflverse data access
 - `LeagueStatsCache`: In-memory caching strategy
 - `StreamlitUtils`: Framework integration utilities
 - `Factories`: Dependency injection setup
 
 **Sub-layers**:
-- **Data**: NFL API integration and data access
+- **Data**: nflverse integration and data access
 - **Cache**: In-memory caching strategies
 - **Frameworks**: Streamlit framework integrations
 
 **Responsibilities**:
-- Fetch data from NFL API (via nfl_data_py)
+- Fetch data from nflverse (via nflreadpy)
 - Cache management
 - Framework integration
 - Technical infrastructure
@@ -257,7 +257,7 @@ The application uses a layered architecture with the following principles:
 
 ### 1. **User Interaction Flow**
 ```mermaid
-User Input → Streamlit UI → Controller → Use Case → Domain → Infrastructure → NFL API
+User Input → Streamlit UI → Controller → Use Case → Domain → Infrastructure → nflverse
                 ↑                                                              ↓
                 └──────────── Response ←──────────────────────────────────────┘
 ```
@@ -282,7 +282,7 @@ User Input → Streamlit UI → Controller → Use Case → Domain → Infrastru
 
 ### 3. **Caching Approach**
 ```text
-First Request:  NFL API → Download → Cache → Process → Display
+First Request:  nflverse → Download → Cache → Process → Display
 Subsequent:     Cache → Process → Display (skip download)
 ```
 
@@ -370,23 +370,22 @@ Subsequent:     Cache → Process → Display (skip download)
 ## Technology Stack
 
 ### Core Technologies
-- **Language**: Python 3.8+
-- **Web Framework**: Streamlit 1.47.1
-- **Data Processing**: Pandas 1.5.3, NumPy 1.26.4
-- **Visualization**: Plotly 6.2.0
-- **NFL Data**: nfl_data_py 0.3.3
+- **Language**: Python 3.12
+- **Web Framework**: Streamlit 1.60.0
+- **Data Processing**: Pandas 3.0.3, NumPy 2.5.1
+- **Visualization**: Plotly 6.9.0
+- **NFL Data**: nflreadpy 0.1.5
 
 ### Key Libraries
 ```python
 # requirements.txt (actual dependencies)
-streamlit==1.47.1
-pandas==1.5.3
-numpy==1.26.4
-nfl_data_py==0.3.3
-plotly==6.2.0
-openpyxl==3.1.2        # Excel export
-requests==2.31.0       # HTTP requests
-python-dateutil==2.8.2 # Date utilities
+streamlit==1.60.0
+pandas==3.0.3
+numpy==2.5.1
+nflreadpy==0.1.5
+plotly==6.9.0
+openpyxl==3.1.5             # Excel export
+PyYAML==6.0.3               # Scoring configuration
 ```
 
 ## Performance Strategies
@@ -407,7 +406,7 @@ python-dateutil==2.8.2 # Date utilities
 - Pre-computed league statistics for rankings
 
 ### 4. **Data Optimization**
-- Load only required columns from NFL API
+- Retain only required columns from nflverse data
 - Filter data early in pipeline
 - Reuse calculated intermediate results
 

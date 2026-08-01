@@ -27,32 +27,32 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-REM Check minimum version (3.8)
-python -c "import sys; exit(0 if sys.version_info.minor >= 8 else 1)" 2>nul
+REM Check minimum version (3.12)
+python -c "import sys; exit(0 if sys.version_info.minor >= 12 else 1)" 2>nul
 if %errorlevel% neq 0 (
-    echo ERROR: Python 3.8 or higher is required
+    echo ERROR: Python 3.12 or higher is required
     echo Please install Python 3.12 from https://www.python.org/downloads/
     pause
     exit /b 1
 )
 
-REM Check maximum version (warn for 3.13+)
-python -c "import sys; exit(0 if sys.version_info.minor <= 12 else 1)" 2>nul
-if %errorlevel% neq 0 (
-    echo WARNING: Python 3.13+ detected
-    echo This version may have compatibility issues with some dependencies.
-    echo Python 3.12 is recommended for best compatibility.
-    echo.
-    set /p continue="Do you want to continue anyway? (y/n): "
-    if /i not "%continue%"=="y" (
-        echo Installation cancelled. Please install Python 3.12.
-        pause
-        exit /b 1
-    )
-)
-
 echo Python version OK!
 echo.
+
+REM Preserve virtual environments created with an older supported Python.
+REM They cannot be upgraded in place because a venv is bound to its interpreter.
+if exist venv (
+    venv\Scripts\python.exe -c "import sys; raise SystemExit(0 if sys.version_info >= (3, 12) else 1)" >nul 2>&1
+    if errorlevel 1 (
+        echo Existing virtual environment is not compatible with Python 3.12+.
+        python -c "from datetime import datetime; from pathlib import Path; source = Path('venv'); target = source.with_name(f'venv.incompatible.{datetime.now():%%Y%%m%%d%%H%%M%%S%%f}'); source.rename(target); print(f'Preserved the old environment as {target}')"
+        if errorlevel 1 (
+            echo ERROR: Could not preserve the incompatible virtual environment.
+            pause
+            exit /b 1
+        )
+    )
+)
 
 echo Creating virtual environment...
 if exist venv (
@@ -79,7 +79,7 @@ echo Installing required packages...
 echo This may take a few minutes...
 echo.
 
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 
 if %errorlevel% neq 0 (
     echo.
@@ -88,6 +88,8 @@ if %errorlevel% neq 0 (
     pause
     exit /b 1
 )
+
+python -c "import hashlib, pathlib; requirements = pathlib.Path('requirements.txt'); pathlib.Path('.requirements.hash').write_text(hashlib.sha256(requirements.read_bytes()).hexdigest())"
 
 echo.
 echo ========================================

@@ -17,7 +17,7 @@ echo "Git found!"
 echo ""
 
 echo "Pulling latest changes from GitHub..."
-git pull
+git pull --ff-only
 
 if [ $? -ne 0 ]; then
     echo ""
@@ -35,6 +35,18 @@ fi
 echo ""
 echo "Checking for dependency updates..."
 
+# Rebuild environments created under the app's former Python support range.
+if [ -d "venv" ]; then
+    if [ ! -x "venv/bin/python" ] || ! venv/bin/python -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 12) else 1)'; then
+        echo "Python upgrade detected. Rebuilding the virtual environment safely..."
+        ./install.sh
+        if [ $? -ne 0 ]; then
+            echo "ERROR: Failed to rebuild the virtual environment."
+            exit 1
+        fi
+    fi
+fi
+
 # Check if virtual environment exists
 if [ ! -d "venv" ]; then
     echo "Virtual environment not found. Running install.sh..."
@@ -42,14 +54,22 @@ if [ ! -d "venv" ]; then
 else
     echo "Activating virtual environment..."
     source venv/bin/activate
+
+    if python -m pip show nfl-data-py &> /dev/null; then
+        echo "Removing obsolete nfl-data-py dependency..."
+        python -m pip uninstall -y nfl-data-py
+    fi
     
     echo "Updating dependencies..."
-    pip install -r requirements.txt --upgrade
+    python -m pip install -r requirements.txt --upgrade
     
     if [ $? -ne 0 ]; then
         echo ""
-        echo "WARNING: Some dependencies may not have updated properly"
-        echo "The app should still work with existing packages"
+        echo "ERROR: Dependency update failed. The environment may be partially updated."
+        echo "Run ./install.sh after resolving the error before starting the app."
+        exit 1
+    else
+        python -c "import hashlib, pathlib; requirements = pathlib.Path('requirements.txt'); pathlib.Path('.requirements.hash').write_text(hashlib.sha256(requirements.read_bytes()).hexdigest())"
     fi
 fi
 

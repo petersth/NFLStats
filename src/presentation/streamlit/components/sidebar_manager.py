@@ -94,7 +94,11 @@ class SidebarManager:
                 "Cache NFL data for session",
                 value=True,
                 disabled=False,
-                help="Cache NFL library data in memory to avoid reloading for each team. Unchecking forces fresh API calls for every analysis."
+                help=(
+                    "Cache NFL data and completed analyses for up to 30 minutes. "
+                    "Unchecking immediately refreshes the current selection and "
+                    "uses fresh nflverse data for subsequent analyses."
+                )
             )
             
             config_changed = self._check_config_changed(configuration)
@@ -117,6 +121,8 @@ class SidebarManager:
     def _should_analyze_fixed(self, config_changed: bool, 
                              team: str, season: int, season_type: str) -> bool:
         """Auto-trigger analysis when selections or configuration changes."""
+        if not self._app_state.is_analysis_complete():
+            return True
         selections_changed = self._check_selections_changed(team, season, season_type)
         return config_changed or selections_changed
     

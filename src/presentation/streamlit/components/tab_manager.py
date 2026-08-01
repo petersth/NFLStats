@@ -126,7 +126,7 @@ class TabManager:
             
             st.dataframe(
                 display_df.style.format(format_dict, na_rep='-'),
-                use_container_width=True,
+                width="stretch",
                 hide_index=True,
                 height=len(display_df) * 35 + 38
             )
@@ -230,7 +230,7 @@ class TabManager:
         
         st.dataframe(
             display_df.style.format(format_dict, na_rep='-'),
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
             height=len(display_df) * 35 + 38
         )
@@ -286,7 +286,7 @@ class TabManager:
             comparison_df = pd.DataFrame(comparison_data)
             st.dataframe(
                 comparison_df,
-                use_container_width=True,
+                width="stretch",
                 hide_index=True,
                 height=len(comparison_df) * 35 + 38
             )
@@ -340,7 +340,7 @@ class TabManager:
                 margin=dict(l=60, r=60, t=80, b=80)  # Extra bottom margin for angled labels
             )
             
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
             
             # Rankings Overview
             st.markdown("### Rankings Overview")
@@ -405,7 +405,7 @@ class TabManager:
                 data=csv_data,
                 file_name=f"{analysis_response.team.abbreviation}_{analysis_response.season.year}_stats.csv",
                 mime="text/csv",
-                use_container_width=True
+                width="stretch"
             )
         
         with col2:
@@ -419,13 +419,13 @@ class TabManager:
                     data=excel_data,
                     file_name=f"{analysis_response.team.abbreviation}_{analysis_response.season.year}_analysis.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    use_container_width=True
+                    width="stretch"
                 )
             except ImportError as e:
                 st.button(
                     label="📈 Excel (Not Available)",
                     disabled=True,
-                    use_container_width=True,
+                    width="stretch",
                     help="Install openpyxl library to enable Excel export: pip install openpyxl"
                 )
         
@@ -439,7 +439,7 @@ class TabManager:
                 data=json_data,
                 file_name=f"{analysis_response.team.abbreviation}_{analysis_response.season.year}_data.json",
                 mime="application/json",
-                use_container_width=True
+                width="stretch"
             )
         
         st.divider()
@@ -455,19 +455,19 @@ class TabManager:
         if preview_option == "Game Log":
             game_data = self._export_service._prepare_game_data(analysis_response)
             if not game_data.empty:
-                st.dataframe(game_data.head(10), use_container_width=True)
+                st.dataframe(game_data.head(10), width="stretch")
                 if len(game_data) > 10:
                     st.info(f"Showing first 10 of {len(game_data)} games. Download full data using buttons above.")
         
         elif preview_option == "Season Summary":
             season_data = self._export_service._prepare_season_summary(analysis_response)
             if not season_data.empty:
-                st.dataframe(season_data, use_container_width=True)
+                st.dataframe(season_data, width="stretch")
         
         elif preview_option == "Rankings" and analysis_response.rankings:
             rankings_data = self._export_service._prepare_rankings_data(analysis_response)
             if not rankings_data.empty:
-                st.dataframe(rankings_data, use_container_width=True)
+                st.dataframe(rankings_data, width="stretch")
     
     def _render_toer_breakdown_tab(self, analysis_response: TeamAnalysisResponse):
         """Render the TOER breakdown showing component scores for each game."""
@@ -538,7 +538,7 @@ class TabManager:
             
             st.dataframe(
                 breakdown_df.style.format(format_dict, na_rep='-'),
-                use_container_width=True,
+                width="stretch",
                 hide_index=True,
                 height=len(breakdown_df) * 35 + 38
             )
@@ -665,7 +665,7 @@ class TabManager:
         
         st.dataframe(
             breakdown_df.style.format(format_dict, na_rep='-'),
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
             height=len(breakdown_df) * 35 + 38
         )
@@ -779,7 +779,7 @@ class TabManager:
         
         st.dataframe(
             toer_allowed_df.style.format(format_dict, na_rep='-'),
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
             height=len(toer_allowed_df) * 35 + 38
         )

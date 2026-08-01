@@ -131,32 +131,19 @@ def _calculate_metric_rank(team_abbr: str, team_value: float,
     Returns:
         Integer rank position (1-based), or None if team not found
     """
-    try:
-        # Sort by value based on whether lower or higher is better
-        if metric in LOWER_IS_BETTER_METRICS:
-            # Lower is better for turnovers, sacks allowed, penalty yards
-            ranked_teams = sorted(team_values, key=lambda x: x[1])
-        else:
-            # Higher is better for most offensive metrics (yards/play, completion %, etc.)
-            ranked_teams = sorted(team_values, key=lambda x: x[1], reverse=True)
-        
-        # Handle ties using 'min' method - all tied values get the same (minimum) rank
-        current_rank = 1
-        for i, (abbr, value) in enumerate(ranked_teams):
-            if i > 0:
-                prev_value = ranked_teams[i-1][1]
-                # If value changed from previous, update rank to position + 1
-                if value != prev_value:
-                    current_rank = i + 1
-            
-            if abbr == team_abbr:
-                return current_rank
-        
-        return None
-        
-    except Exception as e:
-        logger.error(f"Error calculating rank for {team_abbr} {metric}: {e}")
-        return None
+    if metric in LOWER_IS_BETTER_METRICS:
+        ranked_teams = sorted(team_values, key=lambda item: item[1])
+    else:
+        ranked_teams = sorted(team_values, key=lambda item: item[1], reverse=True)
+
+    current_rank = 1
+    for index, (abbr, value) in enumerate(ranked_teams):
+        if index > 0 and value != ranked_teams[index - 1][1]:
+            current_rank = index + 1
+        if abbr == team_abbr:
+            return current_rank
+
+    return None
 
 
 def calculate_performance_rank(rank: int, total_teams: int) -> PerformanceRank:

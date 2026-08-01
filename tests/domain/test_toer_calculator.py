@@ -491,22 +491,21 @@ class TestTOERCalculation:
         assert toer == 97.0
     
     def test_toer_with_invalid_inputs_during_calculation(self):
-        """Test that TOER calculation handles validation errors by returning 0."""
-        # The calculate_toer method catches all exceptions and returns 0.0
-        toer = TOERCalculator.calculate_toer(
-            avg_yards_per_play=-1.0,  # Invalid negative value
-            turnovers=0,
-            completion_pct=65.0,
-            rush_ypc=4.5,
-            sacks=2,
-            third_down_pct=40.0,
-            success_rate=45.0,
-            first_downs=20.0,
-            points_per_drive=2.2,
-            redzone_td_pct=60.0,
-            penalty_yards=30
-        )
-        assert toer == 0.0
+        """Invalid composite inputs must not look like a real zero-rated game."""
+        with pytest.raises(TOERValidationError, match="yards_per_play cannot be negative"):
+            TOERCalculator.calculate_toer(
+                avg_yards_per_play=-1.0,
+                turnovers=0,
+                completion_pct=65.0,
+                rush_ypc=4.5,
+                sacks=2,
+                third_down_pct=40.0,
+                success_rate=45.0,
+                first_downs=20.0,
+                points_per_drive=2.2,
+                redzone_td_pct=60.0,
+                penalty_yards=30
+            )
     
     def test_individual_methods_raise_validation_errors(self):
         """Test that individual scoring methods raise validation errors properly."""

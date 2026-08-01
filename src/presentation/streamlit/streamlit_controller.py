@@ -2,7 +2,7 @@
 
 import streamlit as st
 import logging
-from typing import Dict, Any
+from datetime import timedelta
 
 from .controllers.team_analysis_controller import TeamAnalysisController
 from ...application.dto import TeamAnalysisRequest
@@ -14,6 +14,8 @@ from .components.tab_manager import TabManager
 from .components.progress_manager import create_data_loading_progress
 from .styling.app_styling import inject_custom_css, inject_team_colors
 from ...infrastructure.cache.session_cleanup_manager import register_session_cleanup, register_orchestrator_for_cleanup
+from ...utils.config_hasher import get_config_hash
+from ...utils.season_utils import get_current_nfl_season_info
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +63,7 @@ class StreamlitController:
     def __init__(self):
         # Create Streamlit adapters
         adapter = StreamlitAdapter()
-        self.state_manager = adapter.state
+        self.analysis_cache = adapter.cache
         self.notification_service = adapter.notifications
         self.app_state = adapter.app_state
         
@@ -74,9 +76,7 @@ class StreamlitController:
         if 'league_cache_instances' not in st.session_state:
             st.session_state.league_cache_instances = {}
         
-        # Clean up old cache instances to prevent memory buildup
-        self._cleanup_old_cache_instances()
-    
+
     def run(self) -> None:
         """Main entry point for the Streamlit application."""
         try:
@@ -91,9 +91,6 @@ class StreamlitController:
             
             # Register session cleanup for disconnect detection
             register_session_cleanup()
-            
-            # Periodic memory cleanup
-            self._periodic_memory_cleanup()
             
             # First get basic selections without analysis data
             selections = self.sidebar_manager.render()
@@ -124,11 +121,12 @@ class StreamlitController:
             )
             
             # Check for existing analysis (include season type and config hash in cache key)
-            config_hash = self._get_cache_config_hash(request.configuration)
+            config_hash = get_config_hash(request.configuration)
             cache_key = f"analysis_{request.team_abbreviation}_{request.season_year}_{request.season_type_filter}_{config_hash}"
-            
-            # Skip cache if user wants fresh data
-            analysis_response = None
+
+            analysis_response = self._get_reusable_analysis(
+                request, selections, cache_key
+            )
             
             if analysis_response is None:
                 # Reset analysis state to clear stale UI elements
@@ -147,21 +145,25 @@ class StreamlitController:
                 # Clear the loading message and render results
                 main_content.empty()
                 
-                if analysis_response:
-                    # Cache the result
-                    self.state_manager.set(cache_key, analysis_response)
-                    
-                    # Store analyzed selections for comparison
-                    self.app_state.set_analyzed_selections(
-                        request.team_abbreviation, 
-                        request.season_year, 
-                        request.season_type_filter
-                    )
-                    
-                    # Mark analysis as complete
-                    self.app_state.set_analysis_complete(analysis_response)
-            
             if analysis_response:
+                if request.cache_nfl_data:
+                    season_info = get_current_nfl_season_info()
+                    is_live_season = (
+                        request.season_year == season_info['current_season']
+                        and season_info['season_status'] in {'in_progress', 'playoffs'}
+                    )
+                    self.analysis_cache.set(
+                        cache_key,
+                        analysis_response,
+                        ttl=timedelta(minutes=10 if is_live_season else 30),
+                    )
+                self.app_state.set_analyzed_selections(
+                    request.team_abbreviation,
+                    request.season_year,
+                    request.season_type_filter,
+                    request.cache_nfl_data,
+                )
+                self.app_state.set_analysis_complete(analysis_response)
                 self._render_analysis_results(analysis_response, selections)
                 # Force re-render sidebar with data status
                 self._rerender_sidebar_with_data_status(analysis_response)
@@ -173,6 +175,31 @@ class StreamlitController:
         except Exception as e:
             logger.error(f"Unexpected error during analysis: {e}")
             st.error("An unexpected error occurred during analysis.")
+
+    def _get_reusable_analysis(self, request, selections, cache_key):
+        """Reuse a matching response without suppressing an intentional refresh."""
+        if request.cache_nfl_data:
+            cached_response = self.analysis_cache.get(cache_key)
+            # A miss includes expiry. Do not fall through to CURRENT_ANALYSIS,
+            # which has no TTL and would otherwise make this cache permanent.
+            return cached_response
+        elif self.app_state.get_analyzed_cache_mode() is not False:
+            # Switching caching off is the explicit refresh action. Once that
+            # fresh result is displayed, unrelated Streamlit reruns may reuse it.
+            return None
+
+        if selections.should_analyze or not self.app_state.is_analysis_complete():
+            return None
+
+        analyzed = self.app_state.get_analyzed_selections()
+        requested = (
+            request.team_abbreviation,
+            request.season_year,
+            request.season_type_filter,
+        )
+        if analyzed == requested:
+            return self.app_state.get_current_analysis()
+        return None
     
     def _perform_analysis_with_progress(self, request: TeamAnalysisRequest):
         """Perform analysis with progress tracking."""
@@ -217,27 +244,6 @@ class StreamlitController:
         except Exception as e:
             logger.error(f"Analysis failed: {e}")
             raise
-    
-    
-    def _get_cache_config_hash(self, configuration: Dict) -> str:
-        """Get configuration hash for cache key generation."""
-        import json
-        import hashlib
-        
-        # Create a deterministic string representation
-        # Sort keys and handle nested dicts consistently  
-        def normalize_config(obj):
-            if isinstance(obj, dict):
-                return {k: normalize_config(v) for k, v in sorted(obj.items())}
-            elif isinstance(obj, list):
-                return [normalize_config(item) for item in obj]
-            else:
-                return obj
-        
-        normalized = normalize_config(configuration)
-        config_string = json.dumps(normalized, sort_keys=True, separators=(',', ':'))
-        return hashlib.md5(config_string.encode()).hexdigest()[:8]  # Short hash for readability
-    
     def _render_analysis_results(self, analysis_response, selections) -> None:
         """Render the analysis results."""
         # Render team header
@@ -301,51 +307,6 @@ class StreamlitController:
                 self.sidebar_manager._render_data_status_sidebar(analysis_response)
         except Exception as e:
             logger.debug(f"Could not rerender sidebar with data status: {e}")
-    
-    def _cleanup_old_cache_instances(self) -> None:
-        """Clean up old cache instances to prevent memory buildup."""
-        try:
-            if 'league_cache_instances' in st.session_state:
-                # Keep only the 3 most recent cache instances
-                max_instances = 3
-                if len(st.session_state.league_cache_instances) > max_instances:
-                    # Sort by key (which includes timestamp info) and keep newest
-                    sorted_keys = sorted(st.session_state.league_cache_instances.keys())
-                    keys_to_remove = sorted_keys[:-max_instances]
-                    
-                    for key in keys_to_remove:
-                        logger.debug(f"Removing old cache instance: {key}")
-                        del st.session_state.league_cache_instances[key]
-        except Exception as e:
-            logger.warning(f"Failed to cleanup cache instances: {e}")
-    
-    def _periodic_memory_cleanup(self) -> None:
-        """Perform periodic memory cleanup tasks."""
-        try:
-            import time
-            # Track last cleanup time in session state
-            if 'last_memory_cleanup' not in st.session_state:
-                st.session_state.last_memory_cleanup = time.time()
-            
-            current_time = time.time()
-            cleanup_interval = 300  # 5 minutes
-            
-            if current_time - st.session_state.last_memory_cleanup > cleanup_interval:
-                st.session_state.last_memory_cleanup = current_time
-                
-                # Clear old orchestrator instances
-                if 'league_cache_instances' in st.session_state:
-                    for key, orchestrator in list(st.session_state.league_cache_instances.items()):
-                        if hasattr(orchestrator, 'cache') and hasattr(orchestrator.cache, 'clear_cache'):
-                            # Clear caches older than 30 minutes
-                            logger.debug(f"Clearing old cache entries for {key}")
-                
-                # Force garbage collection
-                import gc
-                gc.collect()
-                logger.info("Performed periodic memory cleanup")
-        except Exception as e:
-            logger.warning(f"Failed to perform memory cleanup: {e}")
     
     def _render_welcome_screen(self) -> None:
         """Render the welcome screen when no team is selected."""

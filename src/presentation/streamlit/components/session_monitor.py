@@ -67,12 +67,12 @@ class SessionMonitor:
             cleanup_info = get_session_cleanup_info()
             active_sessions = cleanup_info['active_sessions']
             
-            if active_sessions > 5:
-                st.warning(f"⚠️ {active_sessions} active sessions detected. "
-                          f"Memory usage may be high from multiple users.")
-            elif active_sessions > 10:
+            if active_sessions > 10:
                 st.error(f"🚨 {active_sessions} active sessions! "
                         f"Consider restarting the app to free memory.")
+            elif active_sessions > 5:
+                st.warning(f"⚠️ {active_sessions} active sessions detected. "
+                          f"Memory usage may be high from multiple users.")
                 
         except Exception:
             pass  # Silently fail to avoid disrupting main app

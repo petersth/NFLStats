@@ -383,4 +383,4 @@ class TOERCalculator:
             
         except Exception as e:
             logger.error(f"Error calculating TOER: {e}")
-            return 0.0
+            raise

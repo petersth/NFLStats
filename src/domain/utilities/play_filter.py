@@ -180,16 +180,9 @@ class PlayFilter:
                 (data['touchdown'] == 1) & 
                 (data['td_team'] == team_abbr)
             ].copy()
-        else:
-            # Fallback to old method if td_team not available
-            return data[
-                (data['touchdown'] == 1) & 
-                (
-                    (data['yards_gained'] > 0) |  # Positive yard TDs
-                    ((data['yards_gained'] == 0) & 
-                     ((data['rush_attempt'] == 1) | (data['pass_attempt'] == 1)))  # Zero-yard offensive TDs
-                )
-            ].copy()
+        if not team_abbr:
+            raise ValueError("team_abbr is required to attribute offensive touchdowns")
+        raise ValueError("Play data is missing required 'td_team' touchdown attribution")
     
     def apply_success_rate_exclusions(self, data: pd.DataFrame) -> pd.DataFrame:
         """Apply success rate specific exclusions based on configuration."""

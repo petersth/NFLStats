@@ -5,6 +5,7 @@ import time
 import logging
 import threading
 import weakref
+import uuid
 from typing import Dict, Set, Optional
 from datetime import datetime, timedelta
 
@@ -39,11 +40,13 @@ class SessionCleanupManager:
             ctx = get_script_run_ctx()
             if ctx and ctx.session_id:
                 return ctx.session_id
-        except:
-            pass
-        
-        # Fallback to session state hash
-        return str(hash(str(st.session_state)))
+        except Exception as exc:
+            logger.debug("Could not read Streamlit runtime session id: %s", exc)
+
+        fallback_key = "_nflstats_session_id"
+        if fallback_key not in st.session_state:
+            st.session_state[fallback_key] = uuid.uuid4().hex
+        return st.session_state[fallback_key]
     
     @classmethod
     def _is_session_alive(cls, session_id: str) -> bool:
@@ -57,8 +60,9 @@ class SessionCleanupManager:
                 # Check if session exists in Streamlit's session manager
                 session_info = runtime._session_mgr.get_session_info(session_id)
                 return session_info is not None
-        except:
+        except Exception as exc:
             # If we can't check, assume it's alive
+            logger.debug("Could not inspect Streamlit session %s: %s", session_id, exc)
             return True
         
         return True
@@ -93,11 +97,13 @@ class SessionCleanupManager:
     
     def cleanup_session(self, session_id: str = None):
         """Clean up data for a specific session."""
-        if session_id is None:
-            session_id = self.session_id
-        
-        with self._lock:
-            session_data = self._active_sessions.get(session_id)
+        self._cleanup_session_by_id(session_id or self.session_id)
+
+    @classmethod
+    def _cleanup_session_by_id(cls, session_id: str):
+        """Clean a registered session without creating another manager."""
+        with cls._lock:
+            session_data = cls._active_sessions.get(session_id)
             if not session_data:
                 return
             
@@ -109,7 +115,7 @@ class SessionCleanupManager:
             
             # Clean up orchestrator if it still exists
             orchestrator_ref = session_data.get('orchestrator_ref')
-            cleanup_stats = {'memory': 0, 'rankings': 0, 'raw_data': 0}
+            cleanup_stats = {'memory': 0, 'rankings': 0, 'game_results': 0}
             
             if orchestrator_ref:
                 orchestrator = orchestrator_ref()
@@ -127,7 +133,7 @@ class SessionCleanupManager:
                 logger.info(f"NO DATA TO CLEAR - Session {session_short_id} had no cached data")
             
             # Remove from active sessions
-            del self._active_sessions[session_id]
+            del cls._active_sessions[session_id]
             logger.info(f"SESSION CLEANUP COMPLETE - Session {session_short_id} removed from tracking")
     
     @classmethod
@@ -172,93 +178,44 @@ class SessionCleanupManager:
         with cls._lock:
             inactive_sessions = []
             disconnected_sessions = []
-            
+
             for session_id, session_data in cls._active_sessions.items():
                 last_activity = session_data['last_activity']
                 inactive_duration = current_time - last_activity
                 has_orchestrator = session_data.get('orchestrator_ref') is not None
-                
-                # Check if session is still alive in Streamlit
+
                 if not cls._is_session_alive(session_id):
-                    disconnected_sessions.append(session_id)
+                    disconnected_sessions.append((
+                        session_id,
+                        (current_time - session_data['created_at']) / 60,
+                    ))
                     continue
-                
-                # Use shorter timeout for sessions without data (likely disconnected)
-                # and longer timeout for sessions with data
+
                 timeout_to_use = normal_timeout if has_orchestrator else quick_timeout
-                
                 if inactive_duration > timeout_to_use:
-                    inactive_sessions.append(session_id)
-            
-            # Clean up disconnected sessions immediately
-            for session_id in disconnected_sessions:
-                session_data = cls._active_sessions[session_id]
-                session_duration_minutes = (current_time - session_data['created_at']) / 60
-                session_short_id = session_id[:8] if len(session_id) > 8 else session_id
-                
-                logger.info(f"BROWSER CLOSED - Session {session_short_id} disconnected "
-                           f"(duration: {session_duration_minutes:.1f}min)")
-                
-                # Clean up orchestrator
-                orchestrator_ref = session_data.get('orchestrator_ref')
-                cleanup_stats = {'memory': 0, 'rankings': 0, 'raw_data': 0}
-                
-                if orchestrator_ref:
-                    orchestrator = orchestrator_ref()
-                    if orchestrator and hasattr(orchestrator, 'league_cache'):
-                        try:
-                            cleanup_stats = orchestrator.league_cache.clear_cache()
-                            repo_cleared = orchestrator.league_cache.clear_repository_cache()
-                            if repo_cleared > 0:
-                                cleanup_stats['repository'] = repo_cleared
-                            total_entries_freed = sum(cleanup_stats.values())
-                            logger.info(f"DISCONNECT CACHE CLEARED - Session {session_short_id}: {total_entries_freed} entries freed {cleanup_stats}")
-                        except Exception as e:
-                            logger.error(f"DISCONNECT CLEANUP ERROR - Session {session_short_id}: {e}")
-                else:
-                    logger.info(f"NO DATA TO CLEAR - Disconnected session {session_short_id} had no cached data")
-                
-                # Remove from tracking
-                del cls._active_sessions[session_id]
-                logger.info(f"DISCONNECTED SESSION REMOVED - Session {session_short_id} cleaned up")
-            
-            # Clean up inactive sessions
-            for session_id in inactive_sessions:
-                session_data = cls._active_sessions[session_id]
-                inactive_minutes = (current_time - session_data['last_activity']) / 60
-                session_duration_minutes = (current_time - session_data['created_at']) / 60
-                session_short_id = session_id[:8] if len(session_id) > 8 else session_id
-                
-                # Determine if this looks like a disconnect vs inactivity
-                if inactive_minutes < 10:
-                    logger.info(f"SESSION DISCONNECT DETECTED - Session {session_short_id} "
-                               f"(no activity for {inactive_minutes:.1f}min, total duration: {session_duration_minutes:.1f}min)")
-                else:
-                    logger.info(f"INACTIVE SESSION TIMEOUT - Session {session_short_id} "
-                               f"(inactive: {inactive_minutes:.1f}min, total duration: {session_duration_minutes:.1f}min)")
-                
-                # Clean up orchestrator
-                orchestrator_ref = session_data.get('orchestrator_ref')
-                cleanup_stats = {'memory': 0, 'rankings': 0, 'raw_data': 0}
-                
-                if orchestrator_ref:
-                    orchestrator = orchestrator_ref()
-                    if orchestrator and hasattr(orchestrator, 'league_cache'):
-                        try:
-                            cleanup_stats = orchestrator.league_cache.clear_cache()
-                            repo_cleared = orchestrator.league_cache.clear_repository_cache()
-                            if repo_cleared > 0:
-                                cleanup_stats['repository'] = repo_cleared
-                            total_entries_freed = sum(cleanup_stats.values())
-                            logger.info(f"INACTIVE CACHE CLEARED - Session {session_short_id}: {total_entries_freed} entries freed {cleanup_stats}")
-                        except Exception as e:
-                            logger.error(f"INACTIVE CLEANUP ERROR - Session {session_short_id}: {e}")
-                else:
-                    logger.info(f"NO DATA TO CLEAR - Inactive session {session_short_id} had no cached data")
-                
-                # Remove from tracking
-                del cls._active_sessions[session_id]
-                logger.info(f"INACTIVE SESSION REMOVED - Session {session_short_id} cleaned up and removed")
+                    inactive_sessions.append((
+                        session_id,
+                        inactive_duration / 60,
+                        (current_time - session_data['created_at']) / 60,
+                    ))
+
+        for session_id, duration_minutes in disconnected_sessions:
+            logger.info(
+                "BROWSER CLOSED - Session %s disconnected (duration: %.1fmin)",
+                session_id[:8],
+                duration_minutes,
+            )
+            cls._cleanup_session_by_id(session_id)
+
+        for session_id, inactive_minutes, duration_minutes in inactive_sessions:
+            logger.info(
+                "INACTIVE SESSION TIMEOUT - Session %s "
+                "(inactive: %.1fmin, total duration: %.1fmin)",
+                session_id[:8],
+                inactive_minutes,
+                duration_minutes,
+            )
+            cls._cleanup_session_by_id(session_id)
     
     @classmethod
     def get_active_session_count(cls) -> int:
@@ -296,8 +253,7 @@ class SessionCleanupManager:
         total_cleaned = 0
         for session_id in session_ids:
             try:
-                temp_manager = cls()
-                temp_manager.cleanup_session(session_id)
+                cls._cleanup_session_by_id(session_id)
                 total_cleaned += 1
             except Exception as e:
                 session_short_id = session_id[:8] if len(session_id) > 8 else session_id
@@ -339,7 +295,7 @@ def register_orchestrator_for_cleanup(orchestrator):
             cache_stats = {
                 'memory': orchestrator.league_cache._memory_cache.get_stats()['size'],
                 'rankings': orchestrator.league_cache._rankings_cache.get_stats()['size'],
-                'raw_data': orchestrator.league_cache._raw_data_cache.get_stats()['size']
+                'game_results': orchestrator.league_cache._game_results_cache.get_stats()['size']
             }
             total_entries = sum(cache_stats.values())
             session_id = st.session_state.session_cleanup_manager.session_id
