@@ -240,7 +240,6 @@ The application uses a layered architecture with the following principles:
 - `ranking_utils`: League ranking calculations
 - `configuration_utils`: Configuration management
 - `season_utils`: Season filtering logic
-- `error_handling`: Error decorators and handlers
 - `league_stats_utils`: League-wide statistical utilities
 - `nfl_metrics`: Metrics definitions and helpers
 - `config_hasher`: Configuration hashing for caching
@@ -249,7 +248,6 @@ The application uses a layered architecture with the following principles:
 - League ranking calculations with tie handling
 - Configuration management and validation
 - Season filtering and date utilities
-- Error handling and logging decorators
 - Cross-cutting statistical utilities
 - Configuration-based cache invalidation
 

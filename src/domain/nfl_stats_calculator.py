@@ -281,6 +281,10 @@ class NFLStatsCalculator:
         logger.debug(f"Computed game stats for {team.abbreviation}: {len(game_stats)} games")
         return game_stats
     
+    def clear_cache(self) -> int:
+        """Release game results owned by this calculator instance."""
+        return self._game_stats_cache.clear()
+
     def get_cache_stats(self) -> Dict:
         """Get game stats cache statistics."""
         return {

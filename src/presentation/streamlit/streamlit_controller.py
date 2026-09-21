@@ -2,6 +2,7 @@
 
 import streamlit as st
 import logging
+import time
 from datetime import timedelta
 
 from .controllers.team_analysis_controller import TeamAnalysisController
@@ -13,9 +14,9 @@ from .components.metrics_renderer import MetricsRenderer
 from .components.tab_manager import TabManager
 from .components.progress_manager import create_data_loading_progress
 from .styling.app_styling import inject_custom_css
-from ...infrastructure.cache.session_cleanup_manager import register_session_cleanup, register_orchestrator_for_cleanup
+from ...infrastructure.cache.session_resources import analysis_orchestrator
 from ...utils.config_hasher import get_config_hash
-from ...utils.season_utils import get_current_nfl_season_info
+from ...utils.cache_policy import get_season_cache_ttl
 
 logger = logging.getLogger(__name__)
 
@@ -72,25 +73,18 @@ class StreamlitController:
         self.metrics_renderer = MetricsRenderer()
         self.tab_manager = TabManager(self.app_state)
         
-        # Initialize session state for persistent cache instances with cleanup
-        if 'league_cache_instances' not in st.session_state:
-            st.session_state.league_cache_instances = {}
-        
 
     def run(self) -> None:
         """Main entry point for the Streamlit application."""
         try:
             st.set_page_config(
                 page_title="NFL Team Statistics Dashboard",
-                page_icon="🏈",
+                page_icon=":material/bar_chart:",
                 layout="wide",
                 initial_sidebar_state="expanded"
             )
             
             inject_custom_css()
-            
-            # Register session cleanup for disconnect detection
-            register_session_cleanup()
             
             # First get basic selections without analysis data
             selections = self.sidebar_manager.render()
@@ -117,6 +111,14 @@ class StreamlitController:
                 cache_nfl_data=selections.cache_nfl_data
             )
             
+            # Disabling the cache requests a fresh snapshot. Also discard this
+            # session's response cache so re-enabling cannot restore an old one.
+            if (
+                not request.cache_nfl_data
+                and self.app_state.get_analyzed_cache_mode() is not False
+            ):
+                self.analysis_cache.clear()
+
             # Check for existing analysis (include season type and config hash in cache key)
             config_hash = get_config_hash(request.configuration)
             cache_key = f"analysis_{request.team_abbreviation}_{request.season_year}_{request.season_type_filter}_{config_hash}"
@@ -135,7 +137,7 @@ class StreamlitController:
                 
                 with main_content.container():
                     # Show appropriate message based on why we're recalculating
-                    st.info("🔄 Loading team statistics...")
+                    st.info("Loading team statistics...")
                     
                     # Perform new analysis with progress tracking
                     analysis_response = self._perform_analysis_with_progress(request)
@@ -146,16 +148,16 @@ class StreamlitController:
             if analysis_response:
                 # A rerun must not restart the lifetime of an existing response.
                 if request.cache_nfl_data and computed_analysis:
-                    season_info = get_current_nfl_season_info()
-                    is_live_season = (
-                        request.season_year == season_info['current_season']
-                        and season_info['season_status'] in {'in_progress', 'playoffs'}
-                    )
-                    self.analysis_cache.set(
-                        cache_key,
-                        analysis_response,
-                        ttl=timedelta(minutes=10 if is_live_season else 30),
-                    )
+                    ttl = get_season_cache_ttl(request.season_year)
+                    source_expiry = analysis_response.source_data_expires_at
+                    if source_expiry is not None:
+                        ttl = min(ttl, source_expiry - time.time())
+                    # A late calculation must not extend its source's lifetime.
+                    # Zero TTL means untimed in the response cache, so skip it.
+                    if ttl > 0:
+                        self.analysis_cache.set(
+                            cache_key, analysis_response, ttl=timedelta(seconds=ttl),
+                        )
                 self.app_state.set_analyzed_selections(
                     request.team_abbreviation,
                     request.season_year,
@@ -179,6 +181,13 @@ class StreamlitController:
         """Reuse a matching response without suppressing an intentional refresh."""
         if request.cache_nfl_data:
             cached_response = self.analysis_cache.get(cache_key)
+            if (
+                cached_response is not None
+                and cached_response.source_data_expires_at is not None
+                and time.time() >= cached_response.source_data_expires_at
+            ):
+                self.analysis_cache.delete(cache_key)
+                return None
             # A miss includes expiry. Do not fall through to CURRENT_ANALYSIS,
             # which has no TTL and would otherwise make this cache permanent.
             return cached_response
@@ -202,47 +211,25 @@ class StreamlitController:
     
     def _perform_analysis_with_progress(self, request: TeamAnalysisRequest):
         """Perform analysis with progress tracking."""
-        # Get or create a persistent orchestrator instance
-        orchestrator_key = "calculation_orchestrator"
-        
-        if request.cache_nfl_data:
-            # Use persistent orchestrator instance when caching is enabled
-            if orchestrator_key not in st.session_state.league_cache_instances:
-                from ...infrastructure.factories import create_calculation_orchestrator
-                orchestrator = create_calculation_orchestrator()
-                st.session_state.league_cache_instances[orchestrator_key] = orchestrator
-                # Register for cleanup when session disconnects
-                register_orchestrator_for_cleanup(orchestrator)
-            orchestrator = st.session_state.league_cache_instances[orchestrator_key]
-        else:
-            # Create a fresh orchestrator instance when caching is disabled (forces fresh data)
-            from ...infrastructure.factories import create_calculation_orchestrator
-            orchestrator = create_calculation_orchestrator()
-        
-        # Create controller with the persistent/fresh orchestrator
-        try:
-            controller = TeamAnalysisController(calculation_orchestrator=orchestrator)
-                
-        except (ValueError, TypeError) as e:
-            logger.error(f"Failed to create TeamAnalysisController via DI: {e}")
-            error_message = str(e)
-            st.error(f"Failed to initialize analysis components: {error_message}")
-            return
-        
-        
-        # Create progress tracker
-        progress_manager = create_data_loading_progress()
-        
-        try:
-            # Execute with progress tracking using the context manager properly
-            with progress_manager.track_overall_progress("Analyzing NFL Statistics") as multi_stage:
-                progress_adapter = MultiStageProgressAdapter(multi_stage)
-                analysis_response = controller.analyze_team(request, progress_adapter)
-                return analysis_response
-            
-        except Exception as e:
-            logger.error(f"Analysis failed: {e}")
-            raise
+        # The resource lease covers initialization and execution. Temporary,
+        # cache-off resources are released even when setup or analysis fails.
+        with analysis_orchestrator(request.cache_nfl_data) as orchestrator:
+            try:
+                controller = TeamAnalysisController(calculation_orchestrator=orchestrator)
+            except (ValueError, TypeError) as e:
+                logger.error(f"Failed to create TeamAnalysisController via DI: {e}")
+                st.error(f"Failed to initialize analysis components: {e}")
+                return None
+
+            progress_manager = create_data_loading_progress()
+            try:
+                with progress_manager.track_overall_progress("Analyzing NFL Statistics") as multi_stage:
+                    progress_adapter = MultiStageProgressAdapter(multi_stage)
+                    return controller.analyze_team(request, progress_adapter)
+            except Exception:
+                logger.exception("Analysis failed")
+                raise
+
     def _render_analysis_results(self, analysis_response, selections) -> None:
         """Render the analysis results."""
         # Render team header
@@ -266,7 +253,8 @@ class StreamlitController:
         with tabs_container:
             # Render main content tabs
             self.tab_manager.render_analysis_tabs(
-                analysis_response=analysis_response
+                analysis_response=analysis_response,
+                cache_nfl_data=selections.cache_nfl_data,
             )
     
     
@@ -275,9 +263,9 @@ class StreamlitController:
         if "did not make the playoffs" in error_message:
             # Show specific playoff message with helpful UI
             st.warning(f"""
-            🏈 **{error_message}**
+            **{error_message}**
             
-            💡 **Quick Fix**: Use the season type selector above to choose:
+            Use the season type selector to choose:
             - **Regular Season** - See their regular season performance
             - **All Games** - See complete season overview
             """)
@@ -313,28 +301,29 @@ class StreamlitController:
         
         with col2:
             st.markdown("""
-            ## Welcome to the NFL Statistics Dashboard! 🏈
+            ## Welcome to the NFL Statistics Dashboard
             
             ### Getting Started
             1. **Select a team** from the sidebar
             2. **Choose a season** to analyze
-            3. **Customize filters** (optional)
-            4. **Click "Analyze Team"** to view statistics
+            3. **Choose a season type** and adjust **Analysis settings** if needed
+
+            Statistics update automatically when you change your selections.
             
             ### Features
-            - 📊 Comprehensive team statistics
-            - 🏆 League rankings and comparisons
-            - 📈 Game-by-game performance charts
-            - 📋 Detailed methodology explanations
-            - 📥 Export capabilities
+            - Comprehensive team statistics
+            - League rankings and comparisons
+            - Game-by-game statistics
+            - Detailed methodology explanations
+            - Export capabilities
             
             ### Tips
-            - Use **Turbo Mode** for faster loading with cached data
+            - Enable **Cache NFL data for session** in **Analysis settings** to reuse loaded data
             - Try different **Season Types** (Regular, Playoffs, All)
-            - Explore the **Configuration** options for advanced filtering
+            - Use **Analysis settings** to include or exclude QB kneels and spikes
             """)
             
-            st.info("👈 Start by selecting a team from the sidebar!")
+            st.info("Start by selecting a team from the sidebar.")
 
 
 def main():

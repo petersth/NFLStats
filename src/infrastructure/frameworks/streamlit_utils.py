@@ -2,13 +2,10 @@
 
 
 import streamlit as st
-import logging
 from typing import Any, Dict, Optional, Callable, TypeVar, Tuple
 from datetime import timedelta, datetime
-from functools import wraps
 
 
-logger = logging.getLogger(__name__)
 T = TypeVar('T')
 
 
@@ -18,19 +15,12 @@ class StreamlitAdapter:
     def __init__(self):
         # Initialize all functionality in one place
         self.cache = StreamlitCacheAdapter()
-        self.session_cache = StreamlitSessionCacheAdapter()
         self.state = StreamlitStateAdapter() 
         self.notifications = StreamlitNotificationAdapter()
         self.app_state = StreamlitApplicationStateAdapter(self.state)
-        self.monitoring = StreamlitCacheMonitoringAdapter()
         
         # Initialize application state
         self.app_state.init()
-    
-    def create_progress_adapter(self, progress_bar=None, status_text=None) -> 'StreamlitProgressAdapter':
-        """Create a progress adapter instance."""
-        return StreamlitProgressAdapter(progress_bar, status_text)
-    
 
 
 class StreamlitCacheAdapter:
@@ -101,35 +91,6 @@ class StreamlitCacheAdapter:
         return computed_value
 
 
-class StreamlitSessionCacheAdapter:
-    """Adapter for Streamlit's built-in caching mechanisms."""
-    
-    def cached_data(self, key: str, ttl: Optional[timedelta] = None, 
-                   show_spinner: bool = True) -> Callable:
-        def decorator(func: Callable) -> Callable:
-            ttl_seconds = int(ttl.total_seconds()) if ttl else None
-            
-            cached_func = st.cache_data(
-                ttl=ttl_seconds,
-                show_spinner=show_spinner,
-                hash_funcs=None
-            )(func)
-            
-            return cached_func
-        return decorator
-    
-    def invalidate_cache(self, key: str) -> None:
-        logger.warning("Streamlit cache doesn't support selective invalidation by key")
-        st.cache_data.clear()
-    
-    def get_cache_info(self) -> Dict[str, Any]:
-        return {
-            'type': 'streamlit_cache_data',
-            'selective_invalidation': False,
-            'introspection_available': False
-        }
-
-
 class StreamlitStateAdapter:
     """Streamlit session state implementation."""
     
@@ -171,7 +132,6 @@ class StreamlitApplicationStateAdapter:
     ANALYZED_SEASON_TYPE = "analyzed_season_type"
     ANALYZED_CACHE_NFL_DATA = "analyzed_cache_nfl_data"
     PREVIOUS_CONFIG = "previous_config"
-    TABS_LOADED = "tabs_loaded"
     
     def __init__(self, state_manager):
         self.state = state_manager
@@ -188,13 +148,6 @@ class StreamlitApplicationStateAdapter:
             self.ANALYZED_SEASON_TYPE: None,
             self.ANALYZED_CACHE_NFL_DATA: None,
             self.PREVIOUS_CONFIG: None,
-            self.TABS_LOADED: {
-                'game_log': False,
-                'toer_breakdown': False,
-                'league': False,
-                'export': False,
-                'methodology': False
-            }
         }
         
         for key, default_value in defaults.items():
@@ -204,13 +157,6 @@ class StreamlitApplicationStateAdapter:
     def reset_analysis(self) -> None:
         self.state.set(self.ANALYSIS_COMPLETE, False)
         self.state.set(self.CURRENT_ANALYSIS, None)
-        self.state.set(self.TABS_LOADED, {
-            'game_log': False,
-            'toer_breakdown': False,
-            'league': False, 
-            'export': False,
-            'methodology': False
-        })
     
     def is_analysis_complete(self) -> bool:
         return self.state.get(self.ANALYSIS_COMPLETE, False)
@@ -289,22 +235,10 @@ class StreamlitApplicationStateAdapter:
         from ...utils.config_hasher import get_config_hash
         return get_config_hash(config)
     
-    def get_tabs_loaded(self) -> Dict[str, bool]:
-        return self.state.get(self.TABS_LOADED, {})
-    
-    def set_tab_loaded(self, tab_name: str) -> None:
-        tabs_loaded = self.get_tabs_loaded()
-        tabs_loaded[tab_name] = True
-        self.state.set(self.TABS_LOADED, tabs_loaded)
-    
-    def is_tab_loaded(self, tab_name: str) -> bool:
-        return self.get_tabs_loaded().get(tab_name, False)
-    
     def get_debug_info(self) -> Dict[str, Any]:
         return {
             'analysis_complete': self.is_analysis_complete(),
             'current_selections': self.get_current_selections(),
-            'tabs_loaded': self.get_tabs_loaded(),
             'has_analysis_data': self.get_current_analysis() is not None,
             'total_session_keys': len(self.state.get_all_keys())
         }
@@ -324,116 +258,3 @@ class StreamlitNotificationAdapter:
     
     def info(self, message: str) -> None:
         st.info(message)
-
-
-class StreamlitProgressAdapter:
-    """Streamlit progress tracking implementation."""
-    
-    def __init__(self, progress_bar=None, status_text=None):
-        self.progress_bar = progress_bar or st.progress(0)
-        self.status_text = status_text or st.empty()
-        self.current_progress = 0.0
-    
-    def update(self, progress: float, message: str) -> None:
-        self.current_progress = max(0.0, min(1.0, progress))
-        self.progress_bar.progress(self.current_progress)
-        self.status_text.text(message)
-    
-    def stage(self, stage_name: str) -> 'StreamlitProgressStage':
-        return StreamlitProgressStage(self, stage_name)
-
-
-class StreamlitProgressStage:
-    """Streamlit progress stage implementation."""
-    
-    def __init__(self, parent: StreamlitProgressAdapter, stage_name: str):
-        self.parent = parent
-        self.stage_name = stage_name
-        self.stage_start_progress = parent.current_progress
-    
-    def update(self, progress: float, message: str) -> None:
-        stage_message = f"{self.stage_name}: {message}"
-        self.parent.update(progress, stage_message)
-    
-    def __enter__(self) -> 'StreamlitProgressStage':
-        self.update(0.0, "Starting...")
-        return self
-    
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-        if exc_type is None:
-            self.update(1.0, "Complete")
-        else:
-            self.update(1.0, "Failed")
-
-
-class StreamlitCacheMonitoringAdapter:
-    """Streamlit cache monitoring and diagnostics."""
-    
-    def render_cache_stats(self, show_details: bool = False) -> None:
-        """Render simple cache statistics in Streamlit UI."""
-        try:
-            # Try to get cache stats from session state
-            if 'league_cache_instances' in st.session_state:
-                orchestrator = st.session_state.league_cache_instances.get('calculation_orchestrator')
-                if orchestrator and hasattr(orchestrator, 'league_cache'):
-                    cache = orchestrator.league_cache
-                    if hasattr(cache, 'get_cache_statistics'):
-                        stats = cache.get_cache_statistics()
-                        
-                        st.markdown("### 📊 Cache Performance")
-                        with st.expander("🔧 League Stats Cache", expanded=show_details):
-                            if isinstance(stats, dict) and stats:
-                                for key, value in stats.items():
-                                    if isinstance(value, (int, float)):
-                                        if 'rate' in key.lower() or 'percent' in key.lower():
-                                            st.metric(key.replace('_', ' ').title(), f"{value:.1f}%")
-                                        else:
-                                            st.metric(key.replace('_', ' ').title(), f"{value:,}")
-                                    else:
-                                        st.text(f"{key}: {value}")
-                            else:
-                                st.info("Cache statistics not available")
-                        return
-            
-            st.info("No active cache instances found")
-                
-        except Exception as e:
-            st.error(f"Cache stats unavailable: {str(e)}")
-    
-    def render_cache_controls(self) -> None:
-        """Render cache control buttons."""
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            if st.button("🔄 Refresh Cache Stats"):
-                st.rerun()
-        
-        with col2:
-            if st.button("🗑️ Clear Cache"):
-                try:
-                    # Clear cache from session state
-                    if 'league_cache_instances' in st.session_state:
-                        orchestrator = st.session_state.league_cache_instances.get('calculation_orchestrator')
-                        if orchestrator and hasattr(orchestrator, 'league_cache'):
-                            cache = orchestrator.league_cache
-                            if hasattr(cache, 'clear_cache'):
-                                cleared_count = cache.clear_cache()
-                                st.success(f"Cleared {cleared_count:,} cache entries")
-                                st.rerun()
-                            else:
-                                st.success("Cache cleared")
-                                st.rerun()
-                    else:
-                        st.info("No active cache to clear")
-                    
-                except Exception as e:
-                    st.error(f"Failed to clear cache: {e}")
-    
-    def add_debug_info_expander(self) -> None:
-        """Add debug information expander to sidebar."""
-        with st.expander("🐛 Debug Info"):
-            st.markdown("**Cache Statistics**")
-            self.render_cache_stats(show_details=False)
-            
-            st.markdown("**Cache Controls**")
-            self.render_cache_controls()

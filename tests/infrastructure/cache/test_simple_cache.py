@@ -33,3 +33,14 @@ def test_valid_computed_value_is_reused():
     assert cache.get_or_compute("league", compute, validator=bool) == {"DET": 1}
     assert cache.get_or_compute("league", compute, validator=bool) == {"DET": 1}
     assert calls == 1
+
+
+def test_cache_expires_at_the_deadline_not_after_it(monkeypatch):
+    clock = [100.0]
+    monkeypatch.setattr("src.infrastructure.cache.simple_cache.time.time", lambda: clock[0])
+    cache = SimpleCache(default_ttl=10)
+    cache.set("result", "cached")
+    clock[0] = 109.999
+    assert cache.get("result") == "cached"
+    clock[0] = 110.0
+    assert cache.get("result") is None

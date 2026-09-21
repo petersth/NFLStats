@@ -1,228 +1,183 @@
-# src/presentation/streamlit/components/progress_manager.py - Progress indicator management
+"""Native, operation-driven loading feedback for Streamlit."""
 
-import logging
-import streamlit as st
-import time
-from typing import Optional, Dict, Any
 from contextlib import contextmanager
+import logging
+import math
+from numbers import Real
+from typing import Any, Dict, Optional
+
+import streamlit as st
 
 logger = logging.getLogger(__name__)
 
 
+def _finite_number(value: Real, name: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, Real) or not math.isfinite(value):
+        raise ValueError(f"{name} must be a finite number")
+    return float(value)
+
+
 class ProgressManager:
-    """Manages progress indicators for long-running operations."""
-    
+    """Show the current operation without inventing a percentage or duration.
+
+    Nested data-loading and analysis callbacks each report their own 0–1 range.
+    Those values are useful to existing stage callers, but are not a reliable
+    percentage of the complete analysis. The native status therefore displays
+    callback messages, and completes only when the tracked operation returns.
+    """
+
     def __init__(self):
-        self.progress_bar = None
-        self.status_text = None
-        self.start_time = None
-        
+        self.status = None
+        self.status_placeholder = None
+        self.details = None
+        self.total_steps = 100.0
+        self.current_step = 0.0
+        self._active = False
+
     @contextmanager
     def track_progress(self, total_steps: int = 100, title: str = "Processing..."):
-        """Context manager for tracking progress with detailed status updates."""
-        status_placeholder = st.empty()
-        progress_placeholder = st.empty()
-        elapsed_placeholder = st.empty()
-        
+        """Track an operation; remove its transient status on every exit path."""
+        total = _finite_number(total_steps, "total_steps")
+        if total <= 0:
+            raise ValueError("total_steps must be greater than zero")
+        if self._active:
+            raise RuntimeError("This progress tracker is already active")
+
+        self.total_steps = total
+        self.current_step = 0.0
+        self._active = True
         try:
-            with status_placeholder.container():
-                self.status_text = st.empty()
-            with progress_placeholder.container():
-                # Create custom skinny progress bar instead of using st.progress
-                self.progress_container = st.empty()
-                self._render_custom_progress_bar(0)
-            with elapsed_placeholder.container():
-                self.elapsed_text = st.empty()
-            
-            self.start_time = time.time()
-            self.total_steps = total_steps
-            self.current_step = 0
-            
-            # Store placeholders for cleanup
-            self.status_placeholder = status_placeholder
-            self.progress_placeholder = progress_placeholder
-            self.elapsed_placeholder = elapsed_placeholder
-            
-            # Set initial status with title
-            self.update(0, title)
-            self._update_elapsed_time()
-            
+            self.status_placeholder = st.empty()
+            with self.status_placeholder.container():
+                self.status = st.status(title, state="running", type="compact")
+            self.details = self.status.empty()
             yield self
-            
-            # Complete progress and show briefly
-            self.update(self.total_steps, "✅ Analysis complete!")
-            time.sleep(0.3)  # Brief pause to show completion
-            
+        except Exception:
+            if self.status is not None:
+                self.status.update(state="error")
+            raise
+        else:
+            self.current_step = self.total_steps
+            self.status.update(state="complete")
         finally:
-            # Clean up all placeholders
             self._cleanup_progress()
-    
-    def _render_custom_progress_bar(self, progress_value: float):
-        """Render a custom skinny progress bar."""
-        progress_percent = int(progress_value * 100)
-        
-        progress_html = f"""
-        <div style="
-            width: 100%;
-            height: 8px;
-            background-color: #e0e0e0;
-            border-radius: 4px;
-            overflow: hidden;
-            margin: 10px 0;
-        ">
-            <div style="
-                width: {progress_percent}%;
-                height: 100%;
-                background: linear-gradient(90deg, #1976d2, #42a5f5);
-                transition: width 0.3s ease;
-                border-radius: 4px;
-            "></div>
-        </div>
-        """
-        
-        self.progress_container.markdown(progress_html, unsafe_allow_html=True)
-    
+
     def update(self, step: int, message: str = "", sub_progress: Optional[Dict[str, Any]] = None):
-        """Update progress bar and status message."""
-        self.current_step = min(step, self.total_steps)
-        progress = self.current_step / self.total_steps
-        
-        if hasattr(self, 'progress_container'):
-            self._render_custom_progress_bar(progress)
-        
-        if self.status_text and message:
-            # Build status message with optional sub-progress
-            status_html = f"<div style='margin-bottom: 10px;'>{message}</div>"
-            
-            if sub_progress:
-                sub_items = []
-                for key, value in sub_progress.items():
-                    if isinstance(value, bool):
-                        icon = "✅" if value else "⏳"
-                        sub_items.append(f"{icon} {key}")
-                    else:
-                        sub_items.append(f"• {key}: {value}")
-                
-                if sub_items:
-                    status_html += "<div style='font-size: 0.9em; color: #666; margin-left: 20px;'>"
-                    status_html += "<br>".join(sub_items)
-                    status_html += "</div>"
-            
-            self.status_text.markdown(status_html, unsafe_allow_html=True)
-        
-        self._update_elapsed_time()
-    
-    def _update_elapsed_time(self):
-        """Update the elapsed time display."""
-        if self.start_time and hasattr(self, 'elapsed_text') and self.elapsed_text:
-            elapsed = time.time() - self.start_time
-            self.elapsed_text.caption(f"⏱️ {elapsed:.1f}s elapsed")
-    
+        """Update from actual work callbacks, replacing rather than appending details."""
+        if not self._active:
+            raise RuntimeError("Use track_progress before updating progress")
+        self.current_step = min(self.total_steps, max(0.0, _finite_number(step, "step")))
+
+        if message:
+            self.status.update(label=message)
+        if sub_progress:
+            lines = []
+            for key, value in sub_progress.items():
+                if isinstance(value, bool):
+                    value = "Complete" if value else "In progress"
+                lines.append(f"{key}: {value}")
+            # Plain text preserves literal labels; no HTML or accumulated log.
+            self.details.text("\n".join(lines))
+        else:
+            self.details.empty()
+
     def _cleanup_progress(self):
-        """Clean up all progress indicators."""
-        try:
-            # Clear the main placeholders which will remove all content
-            if hasattr(self, 'status_placeholder') and self.status_placeholder:
-                self.status_placeholder.empty()
-            if hasattr(self, 'progress_placeholder') and self.progress_placeholder:
-                self.progress_placeholder.empty()
-            if hasattr(self, 'elapsed_placeholder') and self.elapsed_placeholder:
-                self.elapsed_placeholder.empty()
-        except Exception as e:
-            # Ignore cleanup errors but log them for debugging
-            logger.debug(f"Error during progress cleanup: {e}")
-            pass
+        """Clear once, including after cancellation, and allow safe tracker reuse."""
+        placeholder = self.status_placeholder
+        self.status_placeholder = None
+        self.status = None
+        self.details = None
+        self._active = False
+        if placeholder is not None:
+            try:
+                placeholder.empty()
+            except Exception as exc:
+                logger.debug("Error during progress cleanup: %s", exc)
 
 
 class MultiStageProgress:
-    """Manages multi-stage progress with detailed breakdowns."""
-    
+    """Track named operations while preserving the existing weighted-stage API."""
+
     def __init__(self, stages: Dict[str, int]):
-        """
-        Initialize with stages and their relative weights.
-        
-        Args:
-            stages: Dict mapping stage names to their relative weights
-                   e.g., {"Loading Data": 30, "Processing": 50, "Finalizing": 20}
-        """
-        self.stages = stages
-        self.total_weight = sum(stages.values())
-        self.completed_weight = 0
+        if not stages:
+            raise ValueError("At least one stage is required")
+        self.stages = {
+            name: _finite_number(weight, f"Weight for {name}")
+            for name, weight in stages.items()
+        }
+        if any(weight <= 0 for weight in self.stages.values()):
+            raise ValueError("Stage weights must be greater than zero")
+        self.total_weight = sum(self.stages.values())
+        self.completed_weight = 0.0
         self.current_stage = None
         self.progress_manager = ProgressManager()
-        
+        self.pm = None
+
     @contextmanager
     def track_overall_progress(self, title: str = "Analyzing NFL Statistics"):
-        """Track overall progress across all stages."""
+        """Track an entire operation and reset stage state for each invocation."""
+        if self.pm is not None:
+            raise RuntimeError("This stage tracker is already active")
+        self.completed_weight = 0.0
+        self.current_stage = None
         try:
             with self.progress_manager.track_progress(self.total_weight, title) as pm:
                 self.pm = pm
                 yield self
         finally:
-            # Ensure cleanup happens
-            if hasattr(self, 'pm'):
-                self.pm._cleanup_progress()
-    
+            self.pm = None
+            self.current_stage = None
+
     @contextmanager
     def stage(self, stage_name: str):
-        """Context manager for a single stage."""
+        """Only count a stage after its work has returned successfully."""
         if stage_name not in self.stages:
             raise ValueError(f"Unknown stage: {stage_name}")
-        
+        if self.pm is None:
+            raise RuntimeError("Use track_overall_progress before starting a stage")
+        if self.current_stage is not None:
+            raise RuntimeError("Finish the current stage before starting another")
+
         self.current_stage = stage_name
         stage_weight = self.stages[stage_name]
-        
-        # Update progress to start of this stage
-        self.pm.update(
-            self.completed_weight,
-            f"{stage_name}...",
-            {"Previous stages": "Complete" if self.completed_weight > 0 else "Starting"}
-        )
-        
-        yield StageProgress(
-            self.pm,
-            self.completed_weight,
-            stage_weight,
-            stage_name
-        )
-        
-        # Mark stage as complete
-        self.completed_weight += stage_weight
-        self.pm.update(
-            self.completed_weight,
-            f"✅ {stage_name} complete"
-        )
+        try:
+            self.pm.update(self.completed_weight, f"{stage_name}...")
+            yield StageProgress(self.pm, self.completed_weight, stage_weight, stage_name)
+            self.completed_weight += stage_weight
+            self.pm.update(self.completed_weight, f"{stage_name} complete")
+        finally:
+            self.current_stage = None
 
 
 class StageProgress:
-    """Progress tracking for a single stage."""
-    
-    def __init__(self, progress_manager: ProgressManager, base_progress: int, 
+    """Progress callback for a single named operation."""
+
+    def __init__(self, progress_manager: ProgressManager, base_progress: int,
                  stage_weight: int, stage_name: str):
         self.pm = progress_manager
         self.base_progress = base_progress
         self.stage_weight = stage_weight
         self.stage_name = stage_name
-        
+
     def update(self, percentage: float, message: str = "", details: Optional[Dict] = None):
-        """Update progress within this stage (0.0 to 1.0)."""
-        stage_progress = self.base_progress + int(percentage * self.stage_weight)
-        full_message = f"{self.stage_name}: {message}" if message else f"{self.stage_name}"
+        """Clamp a finite stage fraction to its own allocation, never another stage."""
+        fraction = min(1.0, max(0.0, _finite_number(percentage, "percentage")))
+        stage_progress = self.base_progress + fraction * self.stage_weight
+        full_message = f"{self.stage_name}: {message}" if message else self.stage_name
         self.pm.update(stage_progress, full_message, details)
 
 
 def create_simple_progress(message: str = "Loading...") -> Any:
-    """Create a simple progress spinner with message."""
+    """Create a native spinner for work without intermediate callbacks."""
     return st.spinner(message)
 
 
 def create_data_loading_progress() -> MultiStageProgress:
-    """Create a pre-configured progress tracker for data loading operations."""
-    stages = {
+    """Create the stage adapter used by the analysis controller."""
+    return MultiStageProgress({
         "Fetching Data": 25,
         "Validating Data": 10,
-        "Computing Rankings": 35,  # League-wide statistics (includes target team)
-        "Calculating Statistics": 25,  # Extract team stats and game data
-        "Preparing Display": 5
-    }
-    return MultiStageProgress(stages)
+        "Computing Rankings": 35,
+        "Calculating Statistics": 25,
+        "Preparing Display": 5,
+    })

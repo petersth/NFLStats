@@ -1,6 +1,8 @@
 # src/infrastructure/data/unified_nfl_repository.py - NFL data repository
 
 import logging
+import time
+from dataclasses import dataclass
 from typing import Optional, Tuple, Dict
 import pandas as pd
 import nflreadpy as nfl
@@ -9,9 +11,18 @@ from datetime import datetime
 
 from ...domain.exceptions import DataAccessError, DataNotFoundError
 from ..cache.simple_cache import SimpleCache
+from ...utils.cache_policy import get_season_cache_ttl
 
 logger = logging.getLogger(__name__)
 
+
+@dataclass(frozen=True)
+class PlayByPlaySnapshot:
+    """A source frame and its original freshness deadline, kept together."""
+
+    data: pd.DataFrame
+    latest_game_date: pd.Timestamp
+    expires_at: float
 
 
 class UnifiedNFLRepository:
@@ -95,13 +106,19 @@ class UnifiedNFLRepository:
 
         return raw_data.select(selected_columns).to_pandas()
     
-    def get_play_by_play_data(self, season: int, progress_callback=None) -> Tuple[Optional[pd.DataFrame], Optional[pd.Timestamp]]:
-        """Load play-by-play data for a given season with caching."""
+    def get_play_by_play_data(self, season: int, progress_callback=None) -> Tuple[pd.DataFrame, pd.Timestamp]:
+        """Load play-by-play data and its latest game date."""
+        snapshot = self.get_play_by_play_snapshot(season, progress_callback)
+        return snapshot.data, snapshot.latest_game_date
+
+    def get_play_by_play_snapshot(self, season: int, progress_callback=None) -> PlayByPlaySnapshot:
+        """Load source data with a deadline that derived caches must preserve."""
         try:
             if progress_callback:
                 progress_callback.update(0.1, f"Checking for {season} data...")
             
             cache_key = f"pbp_{season}"
+            ttl = get_season_cache_ttl(season)
             
             def fetch_nfl_data():
                 """Fetch NFL play-by-play data from API."""
@@ -198,23 +215,12 @@ class UnifiedNFLRepository:
                     progress_callback.update(0.9, f"Processing {season} data...")
                 
                 logger.info(f"Successfully fetched {len(nfl_data)} plays for season {season}, latest game: {timestamp}")
-                return (nfl_data, timestamp)
-            
-            def validate_data(data_tuple):
-                """Validate cached play-by-play data."""
-                if not isinstance(data_tuple, tuple) or len(data_tuple) != 2:
-                    return False
-                data, timestamp = data_tuple
-                return (data is not None and len(data) > 0 and 
-                       'season' in data.columns and timestamp is not None)
-            
-            # Set TTL for cache entries
-            ttl = 1800  # 30 minutes
+                return PlayByPlaySnapshot(nfl_data, timestamp, time.time() + ttl)
             
             result = self._cache.get_or_compute(
                 key=cache_key,
                 compute_func=fetch_nfl_data,
-                validator=validate_data,
+                validator=self._is_valid_snapshot,
                 ttl=ttl
             )
             
@@ -241,18 +247,20 @@ class UnifiedNFLRepository:
         """Return an already-cached season without triggering a download."""
         cache_key = f"pbp_{season}"
 
-        def validate_data(data_tuple):
-            if not isinstance(data_tuple, tuple) or len(data_tuple) != 2:
-                return False
-            data, timestamp = data_tuple
-            return (
-                data is not None
-                and not data.empty
-                and 'season' in data.columns
-                and timestamp is not None
-            )
+        snapshot = self._cache.get(cache_key, validator=self._is_valid_snapshot)
+        if snapshot is None:
+            return None
+        return snapshot.data, snapshot.latest_game_date
 
-        return self._cache.get(cache_key, validator=validate_data)
+    @staticmethod
+    def _is_valid_snapshot(snapshot) -> bool:
+        return (
+            isinstance(snapshot, PlayByPlaySnapshot)
+            and not snapshot.data.empty
+            and 'season' in snapshot.data.columns
+            and snapshot.latest_game_date is not None
+            and time.time() < snapshot.expires_at
+        )
 
     def clear_cache(self, season: Optional[int] = None) -> int:
         """Clear one cached season or the complete repository cache."""

@@ -1,6 +1,7 @@
 # src/application/dto.py - Data Transfer Objects with comprehensive validation
 
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Dict, List, Optional, Any
 from enum import Enum
 from ..domain.entities import Team, Season, GameStats, SeasonStats, PerformanceRank, TeamRecord
@@ -76,6 +77,8 @@ class TeamAnalysisResponse:
     league_averages: Optional[Dict[str, float]] = None
     configuration: Dict[str, Any] = field(default_factory=dict)
     season_type_filter: str = "ALL"
+    source_data_timestamp: Optional[datetime] = None
+    source_data_expires_at: Optional[float] = None
 
     @property
     def team_display_name(self) -> str:

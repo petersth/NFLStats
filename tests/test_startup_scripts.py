@@ -43,6 +43,7 @@ def test_launchers_preserve_and_rebuild_incompatible_virtual_environments():
     assert "venv.incompatible." in windows_scripts[0]
 
 
+@pytest.mark.skipif(os.name != 'posix', reason='Exercises the POSIX launcher and executable shell fixtures')
 @pytest.mark.parametrize('installer_exit', [0, 42])
 def test_posix_update_propagates_missing_environment_install_failure(tmp_path, installer_exit):
     """Run the real update script with local git/installer process fixtures."""

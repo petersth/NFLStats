@@ -2,6 +2,7 @@
 
 import logging
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Dict, List, Optional
 
 from ..entities import Team, Season, SeasonStats, GameStats, TeamRecord
@@ -21,6 +22,8 @@ class OrchestratedTeamAnalysis:
     raw_rankings: Dict[str, int]
     league_averages: Dict[str, float]
     league_team_count: int
+    source_data_timestamp: Optional[datetime] = None
+    source_data_expires_at: Optional[float] = None
 
 
 class CalculationOrchestrator:
@@ -148,4 +151,6 @@ class CalculationOrchestrator:
             raw_rankings=raw_rankings,
             league_averages=snapshot.league_averages,
             league_team_count=len(team_stats_dict),
+            source_data_timestamp=snapshot.data_timestamp,
+            source_data_expires_at=snapshot.source_data_expires_at,
         )

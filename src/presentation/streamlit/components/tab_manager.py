@@ -1,74 +1,76 @@
 # src/presentation/streamlit/components/tab_manager.py - Tab management component
 
+from copy import deepcopy
+from functools import partial
+import time
+
 import streamlit as st
 import pandas as pd
-import plotly.graph_objects as go
 from ....application.dto import TeamAnalysisResponse
+from ....domain.entities import OffensiveStats
 from ....domain.metrics import NFLMetrics
 from ....domain.toer_calculator import TOERCalculator
 from ....utils.season_utils import get_regular_season_weeks
 from ..metric_labels import get_metric_label
-from ..services.chart_generation_service import ChartGenerationService
 from ..services.export_service import ExportService
+from ..services.chart_generation_service import ChartGenerationService
 from .methodology_renderer import MethodologyRenderer
-from .progress_manager import ProgressManager
 
 
 class TabManager:
     """Manages the tab display and content."""
     
     def __init__(self, app_state):
-        self._chart_service = ChartGenerationService()
         self._export_service = ExportService()
         self._methodology_renderer = MethodologyRenderer()
-        self._app_state = app_state
-    
-    def render_analysis_tabs(self, analysis_response: TeamAnalysisResponse, configuration: dict = None):
-        """Render all tabs with their content and configuration."""
-        self.render_tabs(analysis_response)
-    
-    def render_tabs(self, analysis_response: TeamAnalysisResponse):
-        """Render all tabs with their content."""
-        tab1, tab2, tab3, tab4, tab5 = st.tabs(["Game Log", "TOER Breakdown", "League Comparison", "Methodology", "Export Data"])
-        
-        with tab1:
-            if not self._app_state.is_tab_loaded('game_log'):
-                with st.spinner("Loading game-by-game statistics..."):
-                    self._app_state.set_tab_loaded('game_log')
-            
-            self._render_game_log_tab(analysis_response)
-        
-        with tab2:
-            if not self._app_state.is_tab_loaded('toer_breakdown'):
-                with st.spinner("Loading TOER breakdown..."):
-                    self._app_state.set_tab_loaded('toer_breakdown')
-            
-            self._render_toer_breakdown_tab(analysis_response)
-        
-        with tab3:
-            if not self._app_state.is_tab_loaded('league'):
-                with ProgressManager().track_progress(100, "Preparing league comparison") as pm:
-                    pm.update(25, "Loading comparison data...")
-                    pm.update(50, "Calculating differences...")
-                    pm.update(75, "Generating visualizations...")
-                    self._app_state.set_tab_loaded('league')
-                    pm.update(100, "Complete!")
-            
-            self._render_league_comparison_tab(analysis_response)
-        
-        with tab4:
-            if not self._app_state.is_tab_loaded('methodology'):
-                with st.spinner("Loading methodology documentation..."):
-                    self._app_state.set_tab_loaded('methodology')
-            
-            self._render_methodology_tab(analysis_response)
-        
-        with tab5:
-            if not self._app_state.is_tab_loaded('export'):
-                with st.spinner("Preparing export options..."):
-                    self._app_state.set_tab_loaded('export')
-            
-            self._render_export_tab(analysis_response)
+        self._tab_fragment_rendered = False
+
+    def render_analysis_tabs(
+        self, analysis_response: TeamAnalysisResponse, configuration: dict = None,
+        *, cache_nfl_data: bool = True,
+    ):
+        """Start navigation for a response supplied by a full app run."""
+        self._tab_fragment_rendered = False
+        self.render_tabs(analysis_response, cache_nfl_data=cache_nfl_data)
+
+    @st.fragment
+    def render_tabs(self, analysis_response: TeamAnalysisResponse, *, cache_nfl_data: bool = True):
+        """Render only the active tab; tab interactions rerun this fragment.
+
+        The stable tab key preserves navigation when a sidebar change supplies
+        a new analysis response. Full app reruns replace the fragment arguments,
+        so subsequent tab interactions always use the current team and filters.
+        """
+        is_tab_interaction = self._tab_fragment_rendered
+        self._tab_fragment_rendered = True
+        if (
+            is_tab_interaction
+            and cache_nfl_data
+            and analysis_response.source_data_expires_at is not None
+            and time.time() >= analysis_response.source_data_expires_at
+        ):
+            # The initial full run may finish after its source deadline. Show
+            # that coherent result once instead of creating an endless rerun.
+            # Subsequent tab/preview interactions re-enter the controller so
+            # stale source data, calculations, and rankings refresh together.
+            st.rerun(scope="app")
+
+        renderers = (
+            ("Game Log", self._render_game_log_tab),
+            ("TOER Breakdown", self._render_toer_breakdown_tab),
+            ("League Comparison", self._render_league_comparison_tab),
+            ("Methodology", self._render_methodology_tab),
+            ("Export Data", self._render_export_tab),
+        )
+        tabs = st.tabs(
+            [label for label, _ in renderers],
+            key="analysis_tabs",
+            on_change="rerun",
+        )
+        for tab, (_, render) in zip(tabs, renderers):
+            if tab.open:
+                with tab:
+                    render(analysis_response)
     
     def _render_game_log_tab(self, analysis_response: TeamAnalysisResponse):
         """Render all game statistics together for the available games."""
@@ -148,9 +150,10 @@ class TabManager:
         })
         
         st.dataframe(
-            display_df.style.format(na_rep='-'),
+            display_df,
             width="stretch",
             hide_index=True,
+            placeholder="-",
             column_config=column_config,
             height=len(display_df) * 35 + 38
         )
@@ -183,11 +186,9 @@ class TabManager:
                 team_val = getattr(season_stats, stat_key)
                 league_val = league_avgs[stat_key]
                 
-                # Calculate percentage difference
-                if league_val != 0:
-                    pct_diff = ((team_val - league_val) / league_val) * 100
-                else:
-                    pct_diff = 0
+                # A zero baseline has no defined percentage difference, even
+                # when the team's value is also zero.
+                pct_diff = ((team_val - league_val) / league_val) * 100 if league_val != 0 else None
                 
                 rank_display = "N/A"
                 if stat_key in rankings:
@@ -198,7 +199,7 @@ class TabManager:
                     'Metric': display_name,
                     f'{analysis_response.team.abbreviation}': f"{team_val:.2f}",
                     'League Avg': f"{league_val:.2f}",
-                    'Difference': f"{pct_diff:+.2f}%",
+                    'Difference': pct_diff,
                     'Rank': rank_display
                 })
         
@@ -208,60 +209,26 @@ class TabManager:
                 comparison_df,
                 width="stretch",
                 hide_index=True,
-                height=len(comparison_df) * 35 + 38
+                placeholder="-",
+                column_config={
+                    'Difference': st.column_config.NumberColumn(
+                        'Difference',
+                        format='%+.2f%%',
+                        help=(
+                            'Percentage difference from the league average: '
+                            '(team − league average) ÷ league average × 100. '
+                            'A dash means the league average is zero, so this percentage is undefined. '
+                            'Positive values mean more, which is not always better.'
+                        ),
+                    ),
+                },
+                height=len(comparison_df) * 35 + 38,
             )
-            
-            # Create league comparison chart
-            team_values = [float(val) for val in comparison_df[f'{analysis_response.team.abbreviation}']]
-            league_values = [float(val) for val in comparison_df['League Avg']]
-            
-            fig = go.Figure()
-            
-            # Determine theme
-            use_dark_theme = st.get_option('theme.base') == 'dark'
-            plot_template = "plotly_dark" if use_dark_theme else "plotly_white"
-            primary_color = st.get_option('theme.primaryColor') or '#1f77b4'
-            
-            # Add team bars
-            fig.add_trace(go.Bar(
-                name='Your Team',
-                x=comparison_df['Metric'],
-                y=team_values,
-                marker_color=primary_color,
-                text=[f"{val}" for val in comparison_df[f'{analysis_response.team.abbreviation}']],
-                textposition='outside'
-            ))
-            
-            # Add league average bars
-            fig.add_trace(go.Bar(
-                name='League Average',
-                x=comparison_df['Metric'],
-                y=league_values,
-                marker_color='lightgray' if not use_dark_theme else 'gray',
-                text=[f"{val}" for val in comparison_df['League Avg']],
-                textposition='outside'
-            ))
-            
-            fig.update_layout(
-                template=plot_template,
-                title=dict(
-                    text='Team Performance vs League Average',
-                    x=0.5,
-                    xanchor='center',
-                    font=dict(size=18)
-                ),
-                xaxis=dict(
-                    title='Metrics',
-                    tickangle=-45
-                ),
-                yaxis_title='Values',
-                barmode='group',
-                height=500,
-                margin=dict(l=60, r=60, t=80, b=80)  # Extra bottom margin for angled labels
+            figure = ChartGenerationService.create_league_comparison_chart(
+                comparison_df, analysis_response.team.abbreviation,
             )
-            
-            st.plotly_chart(fig, width="stretch")
-            
+            st.plotly_chart(figure, theme="streamlit", width="stretch")
+
             # Rankings Overview
             st.markdown("### Rankings Overview")
             
@@ -288,6 +255,9 @@ class TabManager:
         st.subheader("Export Analysis Data")
         
         st.markdown("Download your team's analysis data in various formats:")
+        # Deferred downloads run on a worker thread. Capture independent data
+        # now rather than reading mutable session state inside those callbacks.
+        snapshot = deepcopy(analysis_response)
         
         col1, col2, col3 = st.columns(3)
         
@@ -295,31 +265,31 @@ class TabManager:
             st.markdown("**CSV Format**")
             st.markdown("Game-by-game data in spreadsheet format")
             
-            csv_data = self._export_service.export_to_csv(analysis_response)
             st.download_button(
-                label="📊 Download CSV",
-                data=csv_data,
+                label="Download CSV",
+                data=partial(self._export_service.export_to_csv, snapshot),
                 file_name=f"{analysis_response.team.abbreviation}_{analysis_response.season.year}_stats.csv",
                 mime="text/csv",
-                width="stretch"
+                width="stretch",
+                on_click="ignore",
             )
         
         with col2:
             st.markdown("**Excel Format**")
             st.markdown("Game-by-game data in Excel format")
             
-            try:
-                excel_data = self._export_service.export_to_excel(analysis_response)
+            if self._export_service.excel_available:
                 st.download_button(
-                    label="📈 Download Excel",
-                    data=excel_data,
+                    label="Download Excel",
+                    data=partial(self._export_service.export_to_excel, snapshot),
                     file_name=f"{analysis_response.team.abbreviation}_{analysis_response.season.year}_analysis.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    width="stretch"
+                    width="stretch",
+                    on_click="ignore",
                 )
-            except ImportError as e:
+            else:
                 st.button(
-                    label="📈 Excel (Not Available)",
+                    label="Excel (Not Available)",
                     disabled=True,
                     width="stretch",
                     help="Install openpyxl library to enable Excel export: pip install openpyxl"
@@ -329,13 +299,13 @@ class TabManager:
             st.markdown("**JSON Format**")
             st.markdown("Structured data for developers")
             
-            json_data = self._export_service.export_to_json(analysis_response)
             st.download_button(
-                label="🔧 Download JSON",
-                data=json_data,
+                label="Download JSON",
+                data=partial(self._export_service.export_to_json, snapshot),
                 file_name=f"{analysis_response.team.abbreviation}_{analysis_response.season.year}_data.json",
                 mime="application/json",
-                width="stretch"
+                width="stretch",
+                on_click="ignore",
             )
         
         st.divider()
@@ -343,10 +313,17 @@ class TabManager:
         # Data preview
         st.subheader("Data Preview")
         
+        preview_options = ["Game Log", "Season Summary", "Rankings"]
+        previous_preview = st.session_state.get("analysis_export_preview", "Game Log")
         preview_option = st.selectbox(
             "Select data to preview:",
-            ["Game Log", "Season Summary", "Rankings"]
+            preview_options,
+            index=preview_options.index(previous_preview),
+            key="_analysis_export_preview",
         )
+        # Hidden tabs don't render their widgets. Keep the preference in a
+        # separate key so Streamlit's widget cleanup doesn't reset it.
+        st.session_state["analysis_export_preview"] = preview_option
         
         if preview_option == "Game Log":
             game_data = self._export_service._prepare_game_data(analysis_response)
@@ -373,210 +350,72 @@ class TabManager:
             st.info("No game data available for TOER breakdown.")
             return
 
-        # Build breakdown data
-        breakdown_data = []
-        
         games_with_weeks = self._games_with_week_labels(analysis_response)
+        game_column = 'Week' if games_with_weeks else 'Game'
+        labelled_games = games_with_weeks or list(enumerate(analysis_response.game_stats, 1))
 
-        # If no valid game objects, fall back to simple display
-        if not games_with_weeks:
-            for i, game_stat in enumerate(analysis_response.game_stats, 1):
-                # Calculate individual component scores for this game
-                ypp_score = TOERCalculator.calculate_yards_per_play_score(game_stat.offensive_stats.yards_per_play)
-                turnovers_score = TOERCalculator.calculate_turnovers_score(float(game_stat.offensive_stats.turnovers))
-                completion_score = TOERCalculator.calculate_completion_pct_score(game_stat.offensive_stats.completion_pct)
-                rush_ypc_score = TOERCalculator.calculate_rush_ypc_score(game_stat.offensive_stats.rush_ypc)
-                sacks_score = TOERCalculator.calculate_sacks_score(float(game_stat.offensive_stats.sacks))
-                third_down_score = TOERCalculator.calculate_third_down_score(game_stat.offensive_stats.third_down_pct)
-                success_rate_score = TOERCalculator.calculate_success_rate_score(game_stat.offensive_stats.success_rate)
-                first_downs_score = TOERCalculator.calculate_first_downs_score(float(game_stat.offensive_stats.first_downs))
-                ppd_score = TOERCalculator.calculate_ppd_score(game_stat.offensive_stats.points_per_drive)
-                redzone_score = TOERCalculator.calculate_redzone_score(game_stat.offensive_stats.redzone_td_pct)
-                penalty_score = TOERCalculator.calculate_penalty_yards_adjustment(float(game_stat.offensive_stats.penalty_yards))
-                
-                breakdown_data.append({
-                    'Game': i,
-                    'Opponent': game_stat.opponent.abbreviation,
-                    'Location': game_stat.location.value,
-                    'Yds/Play': ypp_score,
-                    'Turnovers': turnovers_score,
-                    'Pass Comp%': completion_score,
-                    'Rush YPC': rush_ypc_score,
-                    'Sacks': sacks_score,
-                    '3rd Down%': third_down_score,
-                    'Success%': success_rate_score,
-                    '1st Downs': first_downs_score,
-                    'Pts/Drive': ppd_score,
-                    'RZ TD%': redzone_score,
-                    'Pen Yards': penalty_score,
-                    'TOER': game_stat.offensive_stats.toer
+        for stats_attribute, total_column in (
+            ('offensive_stats', 'TOER'),
+            ('defensive_stats', 'TOER Allowed'),
+        ):
+            if total_column == 'TOER Allowed':
+                st.subheader("TOER Allowed Component Breakdown")
+            rows = []
+            for game_label, game_stats in labelled_games:
+                stats = getattr(game_stats, stats_attribute)
+                rows.append({
+                    game_column: game_label,
+                    'Opponent': game_stats.opponent.abbreviation,
+                    'Location': game_stats.location.value,
+                    **self._toer_component_scores(stats),
+                    total_column: stats.toer,
                 })
-            
-            # Create DataFrame and display
-            breakdown_df = pd.DataFrame(breakdown_data)
-            
-            # Format numeric columns for display
-            format_dict = {
-                'Yds/Play': '{:.2f}',
-                'Turnovers': '{:.2f}',
-                'Pass Comp%': '{:.2f}',
-                'Rush YPC': '{:.2f}',
-                'Sacks': '{:.2f}',
-                '3rd Down%': '{:.2f}',
-                'Success%': '{:.2f}',
-                '1st Downs': '{:.2f}',
-                'Pts/Drive': '{:.2f}',
-                'RZ TD%': '{:.2f}',
-                'Pen Yards': '{:.2f}',
-                'TOER': '{:.2f}'
-            }
-            
+            breakdown_df = pd.DataFrame(rows)
             st.dataframe(
-                breakdown_df.style.format(format_dict, na_rep='-'),
+                breakdown_df,
                 width="stretch",
                 hide_index=True,
-                height=len(breakdown_df) * 35 + 38
+                placeholder="-",
+                column_config={
+                    column: st.column_config.NumberColumn(column, format='%.2f')
+                    for column in breakdown_df.columns[3:]
+                },
+                height=len(breakdown_df) * 35 + 38,
             )
-            return
-        
-        for week_display, game_stat in games_with_weeks:
-            # Calculate individual component scores for this game
-            ypp_score = TOERCalculator.calculate_yards_per_play_score(game_stat.offensive_stats.yards_per_play)
-            turnovers_score = TOERCalculator.calculate_turnovers_score(float(game_stat.offensive_stats.turnovers))
-            completion_score = TOERCalculator.calculate_completion_pct_score(game_stat.offensive_stats.completion_pct)
-            rush_ypc_score = TOERCalculator.calculate_rush_ypc_score(game_stat.offensive_stats.rush_ypc)
-            sacks_score = TOERCalculator.calculate_sacks_score(float(game_stat.offensive_stats.sacks))
-            third_down_score = TOERCalculator.calculate_third_down_score(game_stat.offensive_stats.third_down_pct)
-            success_rate_score = TOERCalculator.calculate_success_rate_score(game_stat.offensive_stats.success_rate)
-            first_downs_score = TOERCalculator.calculate_first_downs_score(float(game_stat.offensive_stats.first_downs))
-            ppd_score = TOERCalculator.calculate_ppd_score(game_stat.offensive_stats.points_per_drive)
-            redzone_score = TOERCalculator.calculate_redzone_score(game_stat.offensive_stats.redzone_td_pct)
-            penalty_score = TOERCalculator.calculate_penalty_yards_adjustment(float(game_stat.offensive_stats.penalty_yards))
-            
-            breakdown_data.append({
-                'Week': week_display,
-                'Opponent': game_stat.opponent.abbreviation,
-                'Location': game_stat.location.value,
-                'Yds/Play': ypp_score,
-                'Turnovers': turnovers_score,
-                'Pass Comp%': completion_score,
-                'Rush YPC': rush_ypc_score,
-                'Sacks': sacks_score,
-                '3rd Down%': third_down_score,
-                'Success%': success_rate_score,
-                '1st Downs': first_downs_score,
-                'Pts/Drive': ppd_score,
-                'RZ TD%': redzone_score,
-                'Pen Yards': penalty_score,
-                'TOER': game_stat.offensive_stats.toer
-            })
-        
-        # Create DataFrame
-        breakdown_df = pd.DataFrame(breakdown_data)
-        
-        # Format numeric columns for display
-        format_dict = {
-            'Yds/Play': '{:.2f}',
-            'Turnovers': '{:.2f}',
-            'Pass Comp%': '{:.2f}',
-            'Rush YPC': '{:.2f}',
-            'Sacks': '{:.2f}',
-            '3rd Down%': '{:.2f}',
-            'Success%': '{:.2f}',
-            '1st Downs': '{:.2f}',
-            'Pts/Drive': '{:.2f}',
-            'RZ TD%': '{:.2f}',
-            'Pen Yards': '{:.2f}',
-            'TOER': '{:.2f}'
+
+    @staticmethod
+    def _toer_component_scores(stats: OffensiveStats) -> dict[str, int]:
+        """Use the same domain scorers for offense and opponent offense."""
+        return {
+            'Yds/Play': TOERCalculator.calculate_yards_per_play_score(stats.yards_per_play),
+            'Turnovers': TOERCalculator.calculate_turnovers_score(stats.turnovers),
+            'Pass Comp%': TOERCalculator.calculate_completion_pct_score(stats.completion_pct),
+            'Rush YPC': TOERCalculator.calculate_rush_ypc_score(stats.rush_ypc),
+            'Sacks': TOERCalculator.calculate_sacks_score(stats.sacks),
+            '3rd Down%': TOERCalculator.calculate_third_down_score(stats.third_down_pct),
+            'Success%': TOERCalculator.calculate_success_rate_score(stats.success_rate),
+            '1st Downs': TOERCalculator.calculate_first_downs_score(stats.first_downs),
+            'Pts/Drive': TOERCalculator.calculate_ppd_score(stats.points_per_drive),
+            'RZ TD%': TOERCalculator.calculate_redzone_score(stats.redzone_td_pct),
+            'Pen Yards': TOERCalculator.calculate_penalty_yards_adjustment(stats.penalty_yards),
         }
-        
-        st.dataframe(
-            breakdown_df.style.format(format_dict, na_rep='-'),
-            width="stretch",
-            hide_index=True,
-            height=len(breakdown_df) * 35 + 38
-        )
-        
-        st.subheader("TOER Allowed Component Breakdown")
-        
-        toer_allowed_data = []
-        
-        for week_display, game_stat in games_with_weeks:
-            # Get TOER Allowed value
-            toer_allowed = game_stat.defensive_stats.toer
 
-            # Get actual opponent offensive stats from game data (now in defensive_stats)
-            defensive_stats = game_stat.defensive_stats
-
-            # Calculate component scores using actual opponent stats
-            ypp_score = TOERCalculator.calculate_yards_per_play_score(defensive_stats.yards_per_play)
-            turnovers_score = TOERCalculator.calculate_turnovers_score(float(defensive_stats.turnovers))
-            completion_score = TOERCalculator.calculate_completion_pct_score(defensive_stats.completion_pct)
-            rush_ypc_score = TOERCalculator.calculate_rush_ypc_score(defensive_stats.rush_ypc)
-            sacks_score = TOERCalculator.calculate_sacks_score(float(defensive_stats.sacks))
-            third_down_score = TOERCalculator.calculate_third_down_score(defensive_stats.third_down_pct)
-            success_rate_score = TOERCalculator.calculate_success_rate_score(defensive_stats.success_rate)
-            first_downs_score = TOERCalculator.calculate_first_downs_score(float(defensive_stats.first_downs))
-            ppd_score = TOERCalculator.calculate_ppd_score(defensive_stats.points_per_drive)
-            redzone_score = TOERCalculator.calculate_redzone_score(defensive_stats.redzone_td_pct)
-            penalty_score = TOERCalculator.calculate_penalty_yards_adjustment(float(defensive_stats.penalty_yards))
-
-            toer_allowed_row = {
-                'Week': week_display,
-                'Opponent': game_stat.opponent.abbreviation,
-                'Location': game_stat.location.value,
-                'Yds/Play': ypp_score,
-                'Turnovers': turnovers_score,
-                'Pass Comp%': completion_score,
-                'Rush YPC': rush_ypc_score,
-                'Sacks': sacks_score,
-                '3rd Down%': third_down_score,
-                'Success%': success_rate_score,
-                '1st Downs': first_downs_score,
-                'Pts/Drive': ppd_score,
-                'RZ TD%': redzone_score,
-                'Pen Yards': penalty_score,
-                'TOER Allowed': toer_allowed
-            }
-
-            toer_allowed_data.append(toer_allowed_row)
-
-        # Create DataFrame for TOER Allowed
-        toer_allowed_df = pd.DataFrame(toer_allowed_data)
-        
-        # Format numeric columns for display
-        format_dict = {
-            'Yds/Play': '{:.2f}',
-            'Turnovers': '{:.2f}',
-            'Pass Comp%': '{:.2f}',
-            'Rush YPC': '{:.2f}',
-            'Sacks': '{:.2f}',
-            '3rd Down%': '{:.2f}',
-            'Success%': '{:.2f}',
-            '1st Downs': '{:.2f}',
-            'Pts/Drive': '{:.2f}',
-            'RZ TD%': '{:.2f}',
-            'Pen Yards': '{:.2f}',
-            'TOER Allowed': '{:.2f}'
-        }
-        
-        st.dataframe(
-            toer_allowed_df.style.format(format_dict, na_rep='-'),
-            width="stretch",
-            hide_index=True,
-            height=len(toer_allowed_df) * 35 + 38
-        )
-        
     def _render_methodology_tab(self, analysis_response: TeamAnalysisResponse):
         """Render the methodology documentation tab."""
         self._methodology_renderer.render_methodology_page(analysis_response)
 
     @staticmethod
     def _games_with_week_labels(analysis_response: TeamAnalysisResponse):
-        """Label the selected, available games in order without adding empty weeks."""
+        """Use weeks only when every row has metadata; otherwise use game numbers.
+
+        Falling back as a whole preserves all rows when legacy responses have
+        partial metadata instead of silently excluding the unlabelled games.
+        """
+        if any(game_stat.game is None for game_stat in analysis_response.game_stats):
+            return []
         regular_season_weeks = get_regular_season_weeks(analysis_response.season.year)
         games = sorted(
-            (game_stat for game_stat in analysis_response.game_stats if game_stat.game is not None),
+            analysis_response.game_stats,
             key=lambda game_stat: game_stat.game.week,
         )
         return [

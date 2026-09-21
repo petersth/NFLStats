@@ -83,6 +83,8 @@ class TeamAnalysisController:
                 league_averages=analysis.league_averages,
                 configuration=deepcopy(request.configuration),
                 season_type_filter=request.season_type_filter,
+                source_data_timestamp=analysis.source_data_timestamp,
+                source_data_expires_at=analysis.source_data_expires_at,
             )
             
         except (DataNotFoundError, DataValidationError, UseCaseError):

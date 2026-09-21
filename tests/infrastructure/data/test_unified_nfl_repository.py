@@ -109,3 +109,36 @@ class TestUnifiedNFLRepositoryDataLoading:
         assert result["week"].dtype == "int8"
         assert pd.api.types.is_bool_dtype(result["pass_attempt"])
         assert isinstance(result["posteam"].dtype, pd.CategoricalDtype)
+
+
+@pytest.mark.parametrize("season,ttl", [(2026, 600), (2025, 1800)])
+def test_raw_cache_uses_source_deadline_after_loading(monkeypatch, season, ttl):
+    clock = [1000.0]
+    monkeypatch.setattr("src.infrastructure.cache.simple_cache.time.time", lambda: clock[0])
+    monkeypatch.setattr(
+        "src.utils.cache_policy.get_current_nfl_season_info",
+        lambda: {"current_season": 2026, "season_status": "in_progress"},
+    )
+    loads = []
+
+    def load_source(year):
+        loads.append(year)
+        clock[0] += 30  # Fetch time must not shorten the newly loaded source's TTL.
+        return _required_pbp_frame(season=[year])
+
+    monkeypatch.setattr("src.infrastructure.data.unified_nfl_repository.nfl.load_pbp", load_source)
+    repository = UnifiedNFLRepository()
+    original = repository.get_play_by_play_snapshot(season)
+    assert original.expires_at == 1030 + ttl
+    assert repository.get_cached_play_by_play_data(season)[0] is original.data
+
+    clock[0] = original.expires_at - 0.001
+    assert repository.get_play_by_play_snapshot(season) is original
+    assert loads == [season]
+
+    clock[0] = original.expires_at
+    assert repository.get_cached_play_by_play_data(season) is None
+    updated = repository.get_play_by_play_snapshot(season)
+    assert updated.expires_at == clock[0] + ttl
+    assert updated is not original
+    assert loads == [season, season]

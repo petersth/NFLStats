@@ -27,7 +27,7 @@ class CacheEntry:
         ttl = self.ttl if self.ttl is not None else default_ttl
         if ttl is None:
             return False
-        return (time.time() - self.created_at) > ttl
+        return (time.time() - self.created_at) >= ttl
 
 
 class SimpleCache:

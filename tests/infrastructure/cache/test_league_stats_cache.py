@@ -60,7 +60,7 @@ def test_rankings_refresh_with_aggregate_snapshot(monkeypatch, refresh_reason):
         "src.infrastructure.cache.simple_cache.time.time", lambda: clock[0]
     )
     monkeypatch.setattr(
-        "src.infrastructure.cache.league_stats_cache.get_current_nfl_season_info",
+        "src.utils.cache_policy.get_current_nfl_season_info",
         lambda: {"current_season": 2026, "season_status": "in_progress"},
     )
     initial = {"DET": SimpleNamespace(toer=90), "GB": SimpleNamespace(toer=80)}

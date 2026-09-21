@@ -59,7 +59,7 @@ def lifecycle(monkeypatch):
     clock = [10_000.0]
     monkeypatch.setattr("src.infrastructure.cache.simple_cache.time.time", lambda: clock[0])
     monkeypatch.setattr(
-        "src.infrastructure.cache.league_stats_cache.get_current_nfl_season_info",
+        "src.utils.cache_policy.get_current_nfl_season_info",
         lambda: {"current_season": 2026, "season_status": "in_progress"},
     )
     current_season_loads = [0]
@@ -79,19 +79,21 @@ def lifecycle(monkeypatch):
     cache = LeagueStatsCache(repository, calculator)
     orchestrator = CalculationOrchestrator(calculator, cache)
 
-    def analyze(team="DET", configuration=None):
+    def analyze(team="DET", configuration=None, season_year=2026):
         return orchestrator.calculate_team_analysis(
-            Team.from_abbreviation(team), Season(2026), "REG", configuration or {},
+            Team.from_abbreviation(team), Season(season_year), "REG", configuration or {},
         )
 
     return SimpleNamespace(
         clock=clock, repository=repository, loader=loader, analyze=analyze,
+        cache=cache, calculator=calculator,
         current_season_loads=current_season_loads,
     )
 
 
 def _assert_consistent_snapshot(analysis, weeks):
     expected_count = len(weeks)
+    assert analysis.source_data_timestamp.strftime("%Y-%m-%d") == f"2026-09-{max(weeks) * 7:02d}"
     assert analysis.season_stats.games_played == expected_count
     assert [game.game.week for game in analysis.game_stats] == list(weeks)
     assert analysis.team_record.total_games == expected_count
@@ -111,20 +113,21 @@ def test_staggered_configuration_cache_expiry_preserves_one_analysis_snapshot(li
     _assert_consistent_snapshot(original, (1,))
     original_rankings = original.raw_rankings.copy()
 
-    # A new configuration creates its aggregate 25 minutes into the raw-data TTL.
-    lifecycle.clock[0] += 1500
+    assert original.source_data_expires_at == 10_600
+    # Changing filters near the deadline must not extend the old source's life.
+    lifecycle.clock[0] += 599
     configuration = {"include_spikes_completion": False}
-    _assert_consistent_snapshot(lifecycle.analyze(configuration=configuration), (1,))
-
-    # The raw cache expires first. A different team has no separate UI cache.
-    lifecycle.clock[0] += 301
-    _assert_consistent_snapshot(lifecycle.analyze("GB", configuration), (1,))
+    filtered = lifecycle.analyze(configuration=configuration)
+    _assert_consistent_snapshot(filtered, (1,))
+    assert filtered.source_data_expires_at == original.source_data_expires_at
     assert lifecycle.current_season_loads[0] == 1
 
-    # Once this aggregate expires, every component advances to week two together.
-    lifecycle.clock[0] += 300
+    # At the original source deadline, a different team/filter refreshes every
+    # component together, even though that aggregate is only one second old.
+    lifecycle.clock[0] += 1
     updated = lifecycle.analyze("GB", configuration)
     _assert_consistent_snapshot(updated, (1, 2))
+    assert updated.source_data_expires_at == 11_200
     assert updated.team_record.regular_season_wins == 1
     assert updated.team_record.regular_season_losses == 1
     assert lifecycle.current_season_loads[0] == 2
@@ -148,4 +151,52 @@ def test_raw_season_lru_eviction_does_not_split_an_existing_analysis(lifecycle):
 
     lifecycle.clock[0] += 601
     _assert_consistent_snapshot(lifecycle.analyze("GB"), (1, 2))
+    assert lifecycle.current_season_loads[0] == 2
+
+
+def test_historical_filters_share_the_original_thirty_minute_deadline(lifecycle):
+    original = lifecycle.analyze(season_year=2025)
+    assert original.source_data_expires_at == 11_800
+
+    lifecycle.clock[0] += 900
+    filtered = lifecycle.analyze(
+        configuration={"include_qb_kneels_rushing": False}, season_year=2025,
+    )
+    assert filtered.source_data_expires_at == original.source_data_expires_at
+    assert lifecycle.loader.call_count == 1
+
+    lifecycle.clock[0] += 899
+    assert lifecycle.analyze(season_year=2025).source_data_expires_at == 11_800
+    assert lifecycle.loader.call_count == 1
+
+    lifecycle.clock[0] += 1
+    refreshed = lifecycle.analyze(
+        configuration={"include_qb_kneels_rushing": False}, season_year=2025,
+    )
+    assert refreshed.source_data_expires_at == 13_600
+    assert lifecycle.loader.call_count == 2
+
+
+def test_calculation_time_does_not_extend_source_freshness(lifecycle, monkeypatch):
+    original = lifecycle.analyze()
+    lifecycle.clock[0] += 590
+    process_games = lifecycle.calculator.process_all_games
+
+    def slow_process(data):
+        result = process_games(data)
+        lifecycle.clock[0] += 11
+        return result
+
+    monkeypatch.setattr(lifecycle.calculator, "process_all_games", slow_process)
+    configuration = {"include_spikes_completion": False}
+    late = lifecycle.analyze(configuration=configuration)
+    _assert_consistent_snapshot(late, (1,))
+    assert late.source_data_expires_at == original.source_data_expires_at
+    # This completed analysis remains internally coherent, but has no reusable
+    # entry because its source expired during processing.
+    key = lifecycle.cache.get_cache_key(
+        2026, "REG", lifecycle.cache.get_config_hash(configuration)
+    )
+    assert lifecycle.cache._memory_cache.get(key) is None
+    _assert_consistent_snapshot(lifecycle.analyze(configuration=configuration), (1, 2))
     assert lifecycle.current_season_loads[0] == 2

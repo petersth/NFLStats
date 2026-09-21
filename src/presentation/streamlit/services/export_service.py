@@ -23,6 +23,11 @@ class ExportService:
     season totals and rankings. JSON keeps all raw season inputs and each game's
     offensive and opponent-offensive metrics for reproducible comparisons.
     """
+
+    @property
+    def excel_available(self) -> bool:
+        """Check the optional writer without generating a workbook."""
+        return EXCEL_AVAILABLE
     
     def export_to_csv(self, analysis_response: TeamAnalysisResponse) -> bytes:
         """Export analysis data to CSV format."""

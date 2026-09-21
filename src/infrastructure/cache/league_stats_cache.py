@@ -14,7 +14,7 @@ from ...config.nfl_constants import VALID_TEAMS
 from ...utils.league_stats_utils import extract_stats_for_averaging, calculate_league_averages
 from ...utils.configuration_utils import apply_configuration_to_data
 from ...utils.ranking_utils import calculate_team_rankings, calculate_all_rankings
-from ...utils.season_utils import get_current_nfl_season_info
+from ...utils.cache_policy import get_season_cache_ttl
 from .simple_cache import SimpleCache
 
 logger = logging.getLogger(__name__)
@@ -26,6 +26,8 @@ class LeagueAnalysisSnapshot:
 
     The repository frame is shared, not copied for each configuration. Consumers
     must treat it as read-only and filter/copy before applying configuration.
+    ``source_data_expires_at`` is the source's original Unix-time deadline, so a
+    later filter/team calculation cannot give older data a new freshness window.
     """
 
     team_stats: Dict
@@ -33,6 +35,7 @@ class LeagueAnalysisSnapshot:
     data_timestamp: datetime
     complete_pbp_data: pd.DataFrame
     game_results: Dict
+    source_data_expires_at: Optional[float] = None
 
 
 class LeagueStatsCache:
@@ -48,18 +51,19 @@ class LeagueStatsCache:
         self._nfl_data_repo = nfl_data_repo
         self._statistics_calculator = statistics_calculator
         
-        # Initialize caches with different TTL strategies and memory limits
+        # Derived analyses inherit the source deadline; rankings memoize a
+        # specific statistics dictionary and can never substitute older ranks.
         self._memory_cache = SimpleCache(
-            default_ttl=1800,   # 30 minutes for computed statistics (reduced from 1 day)
-            max_size=10         # Limit concurrent season computations (reduced from 100)
+            default_ttl=1800,   # Upper bound; source freshness can shorten this
+            max_size=10         # Limit concurrent season/filter computations
         )
         
         self._rankings_cache = SimpleCache(
-            default_ttl=1800,   # 30 minutesfor rankings (reduced from 1 day)
-            max_size=50         # More rankings entries (reduced from 500)
+            default_ttl=1800,   # Memory retention, not a separate freshness policy
+            max_size=50
         )
 
-        logger.info("Initialized LeagueStatsCache with 30-minute statistics caches")
+        logger.info("Initialized LeagueStatsCache with source-bounded freshness")
     
     def get_cached_play_data(self, season_year: int, season_type: str = 'ALL') -> Optional[pd.DataFrame]:
         """Get cached raw play-by-play data if available.
@@ -110,7 +114,13 @@ class LeagueStatsCache:
     ) -> Optional[Dict]:
         """Return game results from the currently cached aggregate snapshot."""
         cache_key = self.get_cache_key(season_year, season_type, config_hash)
-        snapshot = self._memory_cache.get(cache_key)
+        snapshot = self._memory_cache.get(
+            cache_key,
+            validator=lambda result: (
+                result.source_data_expires_at is None
+                or time.time() < result.source_data_expires_at
+            ),
+        )
         return snapshot.game_results if snapshot is not None else None
     
     # === Main Interface Methods ===
@@ -162,24 +172,27 @@ class LeagueStatsCache:
                     and isinstance(result.game_results, dict) and bool(result.game_results)
                 )
             
-            # Use adaptive TTL based on season with memory optimization
-            season_info = get_current_nfl_season_info()
-            is_live_season = (
-                season_year == season_info['current_season']
-                and season_info['season_status'] in {'in_progress', 'playoffs'}
-            )
-            ttl = 600 if is_live_season else 1800
-            
-            # Check if data was already cached before calling get_or_compute
-            was_cached = cache_key in self._memory_cache._cache
-            
-            result = self._memory_cache.get_or_compute(
-                key=cache_key,
-                compute_func=compute_stats,
-                validator=validate_stats,
-                ttl=ttl
-            )
-            
+            def reusable_snapshot(result):
+                return validate_stats(result) and (
+                    result.source_data_expires_at is None
+                    or time.time() < result.source_data_expires_at
+                )
+
+            result = self._memory_cache.get(cache_key, validator=reusable_snapshot)
+            was_cached = result is not None
+            if result is None:
+                result = compute_stats()
+                if not validate_stats(result):
+                    raise ValueError(f"Computed value for key '{cache_key}' failed validation")
+                ttl = get_season_cache_ttl(season_year)
+                if result.source_data_expires_at is not None:
+                    ttl = min(ttl, result.source_data_expires_at - time.time())
+                # Computing a late configuration does not restart the source's
+                # freshness window. An already-expired calculation can be shown
+                # coherently once, but must not become a reusable cache entry.
+                if ttl > 0:
+                    self._memory_cache.set(cache_key, result, ttl=ttl)
+
             # Ensure rankings are cached
             self._ensure_rankings_cached(cache_key, result.team_stats)
             
@@ -330,9 +343,8 @@ class LeagueStatsCache:
         fetch_start = time.time()
         if progress_callback:
             progress_callback.update(0.4, "Fetching NFL data from nflverse...")
-        pbp_data, data_timestamp = self._nfl_data_repo.get_play_by_play_data(
-            season_year, progress_callback
-        )
+        source = self._nfl_data_repo.get_play_by_play_snapshot(season_year, progress_callback)
+        pbp_data, data_timestamp = source.data, source.latest_game_date
         logger.info("NFL data fetch took %.2fs", time.time() - fetch_start)
 
         if pbp_data is None or len(pbp_data) == 0:
@@ -408,6 +420,7 @@ class LeagueStatsCache:
             data_timestamp=data_timestamp,
             complete_pbp_data=pbp_data,
             game_results=game_results_by_team,
+            source_data_expires_at=source.expires_at,
         )
 
     @staticmethod

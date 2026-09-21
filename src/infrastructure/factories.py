@@ -29,19 +29,3 @@ def create_calculation_orchestrator():
         statistics_calculator=stats_calculator,
         league_cache=league_cache
     )
-
-def create_core_services():
-    """Create core domain services."""
-    return {
-        'stats_calculator': NFLStatsCalculator()
-    }
-
-def get_configured_cache() -> LeagueStatsCache:
-    """Get a configured cache instance using optimized SimpleCache."""
-    stats_calculator = NFLStatsCalculator()
-    data_repository = UnifiedNFLRepository()
-    
-    return LeagueStatsCache(
-        nfl_data_repo=data_repository,
-        statistics_calculator=stats_calculator
-    )

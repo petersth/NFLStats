@@ -180,8 +180,9 @@ class SidebarManager:
     def _render_data_status_sidebar(self, analysis_response):
         """Render data status information in sidebar."""
         try:
-            # Get data timestamp from repository instead of trying to parse game dates
-            data_timestamp = self._get_data_timestamp(analysis_response.season.year)
+            # This timestamp belongs to the displayed snapshot, including when
+            # its temporary resource has already been released (cache disabled).
+            data_timestamp = analysis_response.source_data_timestamp
             
             if data_timestamp:
                 import pandas as pd
@@ -206,37 +207,3 @@ class SidebarManager:
             st.error(f"Data status error: {str(e)}")
             import logging
             logging.getLogger(__name__).debug(f"Could not render data status in sidebar: {e}")
-    
-    def _get_data_timestamp(self, season_year: int):
-        """Get data timestamp from the shared league cache."""
-        try:
-            import streamlit as st
-            
-            # Use the same persistent cache instance that the main app uses
-            cache_key = "calculation_orchestrator"
-            
-            if hasattr(st, 'session_state') and hasattr(st.session_state, 'league_cache_instances'):
-                if cache_key in st.session_state.league_cache_instances:
-                    orchestrator = st.session_state.league_cache_instances[cache_key]
-                    
-                    # The orchestrator has a league_cache attribute which has the NFL data repository
-                    if hasattr(orchestrator, 'league_cache') and orchestrator.league_cache:
-                        league_cache = orchestrator.league_cache
-                        
-                        if hasattr(league_cache, '_nfl_data_repo') and league_cache._nfl_data_repo:
-                            timestamp = league_cache._nfl_data_repo.get_data_timestamp(season_year)
-                            if timestamp:
-                                return timestamp
-            
-            # If no cached data available, return None (we don't want to fetch just for timestamp)
-            return None
-            
-        except ImportError as e:
-            import logging
-            logging.getLogger(__name__).warning(f"Could not import dependencies for data timestamp: {e}")
-            return None
-        except Exception as e:
-            import logging
-            logging.getLogger(__name__).warning(f"Could not get data timestamp for season {season_year}: {e}")
-            return None
-    
