@@ -56,3 +56,31 @@ def get_team_mark_abbreviation(team_abbr: str, season_year: Optional[int] = None
         if team_abbr == "LV" and 1995 <= season_year <= 2019:
             return "OAK"
     return team_abbr
+
+
+def get_team_banner_colors(team_abbr: str, season_year: Optional[int] = None) -> dict[str, str]:
+    """Derive an accessible banner from the stored team palette, without I/O.
+
+    Primary and trim remain exact palette colors. Text is placed over a
+    darkened primary so even yellow/gold teams have consistent contrast.
+    """
+    colors = TEAM_DATA.get(str(team_abbr).upper(), {}).get(
+        "colors", ["#334155", "#94A3B8"]
+    )
+    primary, secondary = colors[:2]
+    if str(team_abbr).upper() == "TEN" and season_year is not None and season_year < 2026:
+        primary, secondary = "#0C2340", "#4B92DB"
+
+    def shade(color: str, factor: float) -> str:
+        return "#" + "".join(f"{round(int(color[i:i + 2], 16) * factor):02x}" for i in (1, 3, 5))
+
+    def luminance(color: str) -> float:
+        channels = [int(color[i:i + 2], 16) / 255 for i in (1, 3, 5)]
+        linear = [c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4 for c in channels]
+        return sum(c * weight for c, weight in zip(linear, (0.2126, 0.7152, 0.0722)))
+
+    factor = 1.0
+    while 1.05 / (luminance(shade(primary, factor)) + 0.05) < 6.0:
+        factor -= 0.025
+    return {"primary": primary, "secondary": secondary,
+            "surface": shade(primary, factor), "deep": shade(primary, 0.20)}

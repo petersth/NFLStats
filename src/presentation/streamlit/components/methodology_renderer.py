@@ -15,6 +15,24 @@ class MethodologyRenderer:
         self.analysis_response = analysis_response
         st.header("Statistical Methodology")
         st.markdown("This page documents how each statistic is calculated, including data sources, filters, and formulas.")
+        with st.expander("Total Offensive Efficiency Rating (TOER)"):
+            st.markdown(
+                "Each game combines ten component scores with a penalty-yard adjustment. "
+                "Each component can earn up to 10 points; turnovers and sacks can also subtract points. "
+                "Penalties adjust the total by −10 to +5 points. The total is limited to 0–100 "
+                "for each game, then the game ratings are averaged over the selected season scope."
+            )
+            st.markdown(
+                "TOER allowed applies the same calculation to opponent offenses. "
+                "League ranks and season statistics provide context; scoring thresholds apply to "
+                "individual game values. Average input points are calculated before each game's "
+                "total is limited to 0–100."
+            )
+            st.markdown(
+                "The league averages for TOER and TOER allowed weight each team by games played. "
+                "Each team-game counts equally, so both league averages match over the same games, "
+                "even when teams have played different numbers of games."
+            )
         self._render_selected_settings()
         
         # Create tabs for different sections

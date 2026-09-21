@@ -21,24 +21,37 @@ class SidebarState:
     cache_nfl_data: bool = False
     
 class SidebarManager:
-    """Manages the sidebar UI and state."""
+    """Manages team/season controls and their analysis state."""
     
     def __init__(self, app_state, notification_service):
         self._app_state = app_state
         self._notification_service = notification_service
     
     def render(self) -> SidebarState:
-        """Render sidebar and return state."""
-        with st.sidebar:
-            st.markdown("**Team & season**")
+        """Render a compact filter toolbar and return the selected scope."""
+        with st.container(key="analysis_filters", horizontal=True, vertical_alignment="center"):
+            with st.container(key="filter_brand", width=112):
+                st.markdown(
+                    '<div class="app-wordmark">NFL<span>STATS</span></div>',
+                    unsafe_allow_html=True,
+                )
+            # Reserve visual positions first; resolve the season before team
+            # names while keeping the team selector first in the toolbar.
+            team_column = st.container(key="filter_team", width=280)
+            season_column = st.container(key="filter_season", width=112)
+            type_column = st.container(key="filter_type", width=240)
+            settings_column = st.container(key="filter_settings", width=184)
             
             # Select season first so we can show correct team names
             season_info = get_current_nfl_season_info()
-            season_year = st.selectbox(
-                "Select Season",
-                options=season_info['available_seasons'],
-                index=0
-            )
+            with season_column:
+                season_year = st.selectbox(
+                    "Select Season",
+                    options=season_info['available_seasons'],
+                    index=0,
+                    key="season_selector",
+                    label_visibility="collapsed",
+                )
             
             team_options = self._get_team_options(season_year)
             
@@ -53,13 +66,15 @@ class SidebarManager:
             if current_team and current_team in team_options:
                 default_index = list(team_options.keys()).index(current_team)
             
-            team_abbreviation = st.selectbox(
-                "Select Team",
-                options=list(team_options.keys()),
-                format_func=lambda x: team_options[x],
-                index=default_index,
-                key='team_selector'
-            )
+            with team_column:
+                team_abbreviation = st.selectbox(
+                    "Select Team",
+                    options=list(team_options.keys()),
+                    format_func=lambda x: team_options[x],
+                    index=default_index,
+                    key='team_selector',
+                    label_visibility="collapsed",
+                )
             
             # Store the selected team in session state for persistence
             st.session_state.selected_team = team_abbreviation
@@ -70,26 +85,31 @@ class SidebarManager:
                 "Regular Season + Playoffs": "ALL"
             }
             
-            season_type_filter = st.selectbox(
-                "Season Type",
-                options=list(season_type_options.keys()),
-                index=0
-            )
+            with type_column:
+                season_type_filter = st.selectbox(
+                    "Season Type",
+                    options=list(season_type_options.keys()),
+                    index=0,
+                    key="season_type_selector",
+                    label_visibility="collapsed",
+                )
             
             season_type_value = season_type_options[season_type_filter]
             
-            with st.expander("Analysis settings", expanded=False):
-                configuration = self._render_configuration()
-                cache_nfl_data = st.checkbox(
-                    "Cache NFL data for session",
-                    value=True,
-                    disabled=False,
-                    help=(
-                        "Cache NFL data and completed analyses for up to 30 minutes. "
-                        "Unchecking immediately refreshes the current selection and "
-                        "uses fresh nflverse data for subsequent analyses."
+            with settings_column:
+                with st.popover("Analysis settings", icon=":material/tune:", width="stretch"):
+                    st.markdown("**Analysis settings**")
+                    configuration = self._render_configuration()
+                    cache_nfl_data = st.checkbox(
+                        "Cache NFL data for session",
+                        value=True,
+                        disabled=False,
+                        help=(
+                            "Cache NFL data and completed analyses for up to 30 minutes. "
+                            "Unchecking immediately refreshes the current selection and "
+                            "uses fresh nflverse data for subsequent analyses."
+                        )
                     )
-                )
             
             config_changed = self._check_config_changed(configuration)
             

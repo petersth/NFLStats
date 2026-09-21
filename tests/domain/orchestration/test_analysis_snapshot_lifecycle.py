@@ -108,6 +108,38 @@ def _assert_consistent_snapshot(analysis, weeks):
     )
 
 
+def test_league_rating_benchmarks_match_with_unequal_game_counts(monkeypatch):
+    first_game = _season_source(2024, (1,)).to_dicts()
+    second_game = _season_source(2024, (2,)).to_dicts()
+    for row in second_game:
+        for key, value in row.items():
+            if value == 'GB':
+                row[key] = 'MIN'
+        row['game_id'] = row['game_id'].replace('_GB_', '_MIN_')
+        if row['posteam'] == 'DET':
+            row.update(complete_pass=0, yards_gained=0)
+    source = pl.DataFrame(first_game + second_game)
+    monkeypatch.setattr(
+        'src.infrastructure.data.unified_nfl_repository.nfl.load_pbp', lambda year: source,
+    )
+    cache = LeagueStatsCache(UnifiedNFLRepository(), NFLStatsCalculator())
+    snapshot = cache.get_or_compute_analysis_snapshot(2024, 'REG', 'test', {})
+
+    assert {team: stats.games_played for team, stats in snapshot.team_stats.items()} == {
+        'DET': 2, 'GB': 1, 'MIN': 1,
+    }
+    games = snapshot.game_results['DET']
+    expected = sum(
+        game.home_team_offensive_stats.toer + game.away_team_offensive_stats.toer
+        for game in games
+    ) / 4
+    assert snapshot.league_averages['toer'] == pytest.approx(expected)
+    assert snapshot.league_averages['toer_allowed'] == pytest.approx(expected)
+    # This fixture must exercise the original unequal-weighting discrepancy.
+    unweighted = sum(stats.toer for stats in snapshot.team_stats.values()) / 3
+    assert unweighted != pytest.approx(expected)
+
+
 def test_staggered_configuration_cache_expiry_preserves_one_analysis_snapshot(lifecycle):
     original = lifecycle.analyze()
     _assert_consistent_snapshot(original, (1,))

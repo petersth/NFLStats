@@ -117,34 +117,39 @@ class TabManager:
         # Compact headings keep all statistics visible on a desktop. Full
         # definitions belong in the column tooltips, not in wider headings.
         metric_columns = [
-            ('Yds/Play', 76, '%.2f', 'Offensive yards per play in this game.'),
-            ('Turnovers', 82, '%.0f', 'Offensive turnovers in this game.'),
-            ('Pass Comp%', 96, '%.2f%%', 'Pass completion percentage in this game.'),
-            ('Rush YPC', 84, '%.2f', 'Rushing yards per carry in this game.'),
-            ('Sacks', 58, '%.0f', 'Sacks allowed by the offense in this game.'),
-            ('3rd Down%', 92, '%.2f%%', 'Third-down conversion percentage in this game.'),
-            ('Success%', 84, '%.2f%%', 'Percentage of successful plays in this game under the selected settings. See Methodology for definitions.'),
-            ('1st Downs', 82, '%.0f', 'Offensive first downs in this game.'),
-            ('Pts/Drive', 80, '%.2f', 'Offensive points scored per drive in this game.'),
-            ('RZ TD%', 78, '%.2f%%', 'Percentage of red-zone trips ending in an offensive touchdown in this game.'),
-            ('Pen Yards', 80, '%.0f', 'Offensive penalty yards in this game.'),
-            ('TOER', 62, '%.2f', 'Total Offensive Efficiency Rating for this game.'),
-            ('TOER Allowed', 108, '%.2f', "Opponent's Total Offensive Efficiency Rating against this defense in this game."),
+            ('Yds/Play', 64, '%.2f', 'Offensive yards per play in this game.'),
+            ('Turnovers', 48, '%.0f', 'Offensive turnovers in this game.'),
+            ('Pass Comp%', 72, '%.2f%%', 'Pass completion percentage in this game.'),
+            ('Rush YPC', 62, '%.2f', 'Rushing yards per carry in this game.'),
+            ('Sacks', 52, '%.0f', 'Sacks allowed by the offense in this game.'),
+            ('3rd Down%', 70, '%.2f%%', 'Third-down conversion percentage in this game.'),
+            ('Success%', 72, '%.2f%%', 'Percentage of successful plays in this game under the selected settings. See Methodology for definitions.'),
+            ('1st Downs', 52, '%.0f', 'Offensive first downs in this game.'),
+            ('Pts/Drive', 66, '%.2f', 'Offensive points scored per drive in this game.'),
+            ('RZ TD%', 68, '%.2f%%', 'Percentage of red-zone trips ending in an offensive touchdown in this game.'),
+            ('Pen Yards', 54, '%.0f', 'Offensive penalty yards in this game.'),
+            ('TOER', 58, '%.2f', 'Total Offensive Efficiency Rating for this game.'),
+            ('TOER Allowed', 70, '%.2f', "Opponent's Total Offensive Efficiency Rating against this defense in this game."),
         ]
         column_config = {
             game_column: (
                 st.column_config.TextColumn(
-                    'Week', width=60, pinned=True,
+                    'Wk', width=45, pinned=True,
                     help='Regular-season week, or P1/P2/… for postseason weeks.',
                 ) if game_column == 'Week' else
-                st.column_config.NumberColumn('Game', width=60, pinned=True, format='%.0f')
+                st.column_config.NumberColumn('Game', width=45, pinned=True, format='%.0f')
             ),
-            'Opponent': st.column_config.TextColumn('Opponent', width=90, pinned=True),
-            'Location': st.column_config.TextColumn('Location', width=75),
+            'Opponent': st.column_config.TextColumn('Opp', width=55, pinned=True, help='Opponent'),
+            'Location': st.column_config.TextColumn('Site', width=60, help='Home, away, or neutral site'),
+        }
+        compact_labels = {
+            'Turnovers': 'TO', 'Pass Comp%': 'Comp%', 'Rush YPC': 'Yds/car',
+            '3rd Down%': '3rd%', '1st Downs': '1st', 'Pen Yards': 'Pen yd',
+            'TOER Allowed': 'Allowed',
         }
         column_config.update({
             column: st.column_config.NumberColumn(
-                column, width=column_width, format=number_format, help=help_text,
+                compact_labels.get(column, column), width=column_width, format=number_format, help=help_text,
             )
             for column, column_width, number_format, help_text in metric_columns
         })
@@ -155,6 +160,8 @@ class TabManager:
             hide_index=True,
             placeholder="-",
             column_config=column_config,
+            column_order=[game_column, "Opponent", "Location", "TOER", "TOER Allowed",
+                          *[name for name, *_ in metric_columns if name not in ("TOER", "TOER Allowed")]],
             height=len(display_df) * 35 + 38
         )
     

@@ -81,7 +81,7 @@ class StreamlitController:
                 page_title="NFL Team Statistics Dashboard",
                 page_icon=":material/bar_chart:",
                 layout="wide",
-                initial_sidebar_state="expanded"
+                initial_sidebar_state="collapsed"
             )
             
             inject_custom_css()
@@ -239,7 +239,11 @@ class StreamlitController:
             season_type_filter=selections.season_type_filter,
             team_record=analysis_response.team_record,
             game_stats=analysis_response.game_stats,
-            season_stats=analysis_response.season_stats
+            season_stats=analysis_response.season_stats,
+            toer_rank=(analysis_response.rankings or {}).get('toer'),
+            league_toer=(analysis_response.league_averages or {}).get('toer'),
+            toer_allowed_rank=(analysis_response.rankings or {}).get('toer_allowed'),
+            league_toer_allowed=(analysis_response.league_averages or {}).get('toer_allowed'),
         )
         
         # Create container for season metrics that can be cleared
@@ -287,10 +291,9 @@ class StreamlitController:
         """)
     
     def _rerender_sidebar_with_data_status(self, analysis_response):
-        """Force re-render sidebar with data status information."""
+        """Show the displayed snapshot's source date beneath the analysis."""
         try:
-            # Force a sidebar rerender with the analysis data
-            with st.sidebar:
+            with st.container(key="analysis_source_status"):
                 self.sidebar_manager._render_data_status_sidebar(analysis_response)
         except Exception as e:
             logger.debug(f"Could not rerender sidebar with data status: {e}")
@@ -304,7 +307,7 @@ class StreamlitController:
             ## Welcome to the NFL Statistics Dashboard
             
             ### Getting Started
-            1. **Select a team** from the sidebar
+            1. **Select a team** in the filters above
             2. **Choose a season** to analyze
             3. **Choose a season type** and adjust **Analysis settings** if needed
 
@@ -323,7 +326,7 @@ class StreamlitController:
             - Use **Analysis settings** to include or exclude QB kneels and spikes
             """)
             
-            st.info("Start by selecting a team from the sidebar.")
+            st.info("Start by selecting a team in the filters above.")
 
 
 def main():

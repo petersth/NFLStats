@@ -128,10 +128,33 @@ files. Clone a fresh Git copy in a different directory if you want Git updates.
 
 ## Using the Application
 
-1. **Select a Team**: Use the dropdown menu in the sidebar to choose an NFL team
+1. **Select a Team**: Use the team dropdown at the top of the page to choose an NFL team
 2. **Choose Season**: Select which season's data you want to analyze
 3. **View Statistics**: Navigate through different tabs to see various performance metrics
 4. **Export Data**: Use the export buttons to save data in different formats
+
+The overview presents TOER and TOER allowed in matching score blocks on a 0–100
+scale, each with its own league rank and average. Lower TOER allowed ranks better;
+ties share a rank. Both use the teams in the selected season scope and analysis settings.
+The two league rating averages are weighted by games played, so each team-game
+counts equally and TOER and TOER allowed share the same league benchmark.
+The **Methodology** tab explains the calculation:
+score the inputs for each game, add the penalty adjustment, limit each game
+rating to 0–100, then average the game ratings for the selected season scope.
+
+**TOER inputs** groups all 11 offensive inputs into four categories with
+equal-sized cards. Each card shows
+its league rank and league average for the selected analysis. The segmented rank
+scale runs from last on the left to first on the right, with one segment per rank.
+The marker sits at the center of the team's rank segment; the fill includes only
+whole segments. Green, slate, and coral identify the top quarter, middle half,
+and bottom quarter of the ranked teams.
+The arrow beside each average indicates whether higher or lower values are better.
+Open any card to see its definition, average input points, point range, game
+values with their TOER points, and the actual scoring rules. Average input points
+are calculated before each game's total is limited to 0–100; the season-average
+statistics and league ranks provide context rather than being scored directly.
+Open **Analysis settings** above the team banner to adjust kneels, spikes, and caching.
 
 ## Troubleshooting
 

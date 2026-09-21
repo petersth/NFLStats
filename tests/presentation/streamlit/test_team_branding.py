@@ -64,3 +64,23 @@ def test_missing_or_invalid_asset_uses_fallback(monkeypatch, tmp_path):
         assert team_branding.get_team_logo_data_uri("DET", 2026) is None
     finally:
         team_branding._load_logo.cache_clear()
+
+
+def test_all_team_banner_backgrounds_support_readable_white_text():
+    def luminance(color):
+        values = [int(color[i:i + 2], 16) / 255 for i in (1, 3, 5)]
+        values = [v / 12.92 if v <= 0.04045 else ((v + .055) / 1.055) ** 2.4 for v in values]
+        return sum(v * w for v, w in zip(values, (.2126, .7152, .0722)))
+
+    for team, data in TEAM_DATA.items():
+        palette = team_branding.get_team_banner_colors(team, 2026)
+        assert palette['primary'] == data['colors'][0]
+        assert palette['secondary'] == data['colors'][1]
+        for key in ('surface', 'deep'):
+            assert 1.05 / (luminance(palette[key]) + .05) >= 6.0, (team, key)
+
+
+def test_banner_handles_unknown_teams_and_titans_identity_change():
+    assert team_branding.get_team_banner_colors('<script>')['primary'] == '#334155'
+    assert team_branding.get_team_banner_colors('TEN', 2025)['primary'] == '#0C2340'
+    assert team_branding.get_team_banner_colors('TEN', 2026)['primary'] == '#4495D2'

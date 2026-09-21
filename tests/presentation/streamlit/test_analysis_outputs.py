@@ -7,6 +7,7 @@ from io import BytesIO
 import json
 from types import SimpleNamespace
 from unittest.mock import MagicMock, Mock
+from xml.etree import ElementTree
 
 import pandas as pd
 import pytest
@@ -172,18 +173,16 @@ def test_game_log_shows_all_original_statistics_together(monkeypatch, response):
 
     columns = ui.dataframe.call_args.kwargs['column_config']
     assert columns['Week']['pinned'] is True
-    assert columns['Week']['width'] == 60
+    assert columns['Week']['width'] == 45
     assert columns['Opponent']['pinned'] is True
-    assert columns['Opponent']['width'] == 90
-    assert {key: columns[key]['label'] for key in expected if key in columns} == {
-        'Week': 'Week', 'Opponent': 'Opponent', 'Location': 'Location', 'Yds/Play': 'Yds/Play',
-        'Turnovers': 'Turnovers', 'Pass Comp%': 'Pass Comp%',
-        'Rush YPC': 'Rush YPC', 'Sacks': 'Sacks',
-        '3rd Down%': '3rd Down%', 'Success%': 'Success%',
-        '1st Downs': '1st Downs', 'Pts/Drive': 'Pts/Drive',
-        'RZ TD%': 'RZ TD%', 'Pen Yards': 'Pen Yards',
-        'TOER': 'TOER', 'TOER Allowed': 'TOER Allowed',
-    }
+    assert columns['Opponent']['width'] == 55
+    assert sum(column['width'] for column in columns.values()) <= 1000
+    order = ui.dataframe.call_args.kwargs['column_order']
+    assert order[:5] == ['Week', 'Opponent', 'Location', 'TOER', 'TOER Allowed']
+    assert set(order) == set(expected)
+    assert columns['Turnovers']['label'] == 'TO'
+    assert columns['TOER Allowed']['label'] == 'Allowed'
+    assert "Opponent's" in columns['TOER Allowed']['help']
     for key in ('Pass Comp%', '3rd Down%', 'Success%', 'RZ TD%'):
         number_format = columns[key]['type_config']['format']
         assert number_format == '%.2f%%'
@@ -210,7 +209,7 @@ def test_game_log_without_game_metadata_keeps_all_statistics(monkeypatch, respon
     assert len(frame.columns) == 16
     columns = ui.dataframe.call_args.kwargs['column_config']
     assert columns['Game']['pinned'] is True
-    assert columns['Game']['width'] == 60
+    assert columns['Game']['width'] == 45
     assert columns['Game']['type_config']['format'] == '%.0f'
     assert 'Week' not in columns
 
@@ -237,10 +236,27 @@ def test_comparison_and_metric_cards_use_actual_rank_cohort(monkeypatch, respons
 
     assert ui.dataframe.call_args.args[0]['Rank'].tolist() == ['14/14']
     assert ui.dataframe.call_args.args[0]['Metric'].tolist() == ['Yards / play']
-    assert '#14/14' in ui.markdown.call_args.args[0]
+    assert '14th of 14' in ui.markdown.call_args.args[0]
     rendered = '\n'.join(call.args[0] for call in ui.markdown.call_args_list)
     assert 'Worst in cohort' not in rendered
     ui.error.assert_not_called()
+
+
+def test_header_pairs_each_rating_with_its_own_league_context(monkeypatch, response):
+    ui = _streamlit()
+    monkeypatch.setattr(metrics_renderer, 'st', ui)
+    metrics_renderer.MetricsRenderer().render_team_header(
+        response.team, response.season, season_stats=response.season_stats,
+        toer_rank=calculate_performance_rank(2, 14), league_toer=55.5,
+        toer_allowed_rank=calculate_performance_rank(10, 14), league_toer_allowed=48.2,
+    )
+    rendered = ui.markdown.call_args.args[0]
+    offense, defense = rendered.split('aria-label="Defensive TOER allowed"')
+    assert 'title="League rank">Rank <strong>2 of 14</strong>' in offense
+    assert 'title="League average">Avg <strong>55.5</strong>' in offense
+    assert 'title="League rank">Rank <strong>10 of 14</strong>' in defense
+    assert 'title="League average">Avg <strong>48.2</strong>' in defense
+    assert 'No data available' not in rendered
 
 
 @pytest.mark.parametrize('config_name,included', [('nfl_official', True), ('analytics_clean', False)])
@@ -724,3 +740,31 @@ def test_rank_descriptions_scale_to_cohort(rank, total, description, label):
     assert result.description == description
     assert result.percentile == label
     assert result.is_above_average == (rank == 1 or rank <= total / 2)
+
+
+@pytest.mark.parametrize('rank,expected', [(1,'1st'),(2,'2nd'),(3,'3rd'),(11,'11th'),(12,'12th'),(13,'13th'),(21,'21st'),(22,'22nd'),(23,'23rd'),(32,'32nd')])
+def test_metric_rank_is_explicit_and_uses_ordinal_suffix(rank, expected):
+    rendered = metrics_renderer.MetricsRenderer._metric_with_rank_html(
+        'Turnovers / game', '0.50', calculate_performance_rank(rank, 32)
+    )
+    assert f'{expected} of 32' in rendered
+    assert '0.50' in rendered
+    assert f'Rank {rank} of 32 teams' in rendered
+
+
+@pytest.mark.parametrize('rank,total', [(1, 32), (21, 32), (32, 32), (7, 14), (1, 1)])
+@pytest.mark.parametrize('higher_is_better', [True, False])
+def test_rank_bar_marks_one_whole_rank_slot(rank, total, higher_is_better):
+    rendered = metrics_renderer.MetricsRenderer._metric_with_rank_html(
+        'Metric', '34.62%', calculate_performance_rank(rank, total),
+        higher_is_better=higher_is_better,
+    )
+    card = ElementTree.fromstring(rendered)
+    track = card.find(".//div[@class='season-rank-track']")
+    slots = list(track)
+    assert [int(slot.get('data-rank')) for slot in slots] == list(range(total, 0, -1))
+    current = [slot for slot in slots if 'is-current' in slot.get('class').split()]
+    assert len(current) == 1
+    assert int(current[0].get('data-rank')) == rank
+    filled = [int(slot.get('data-rank')) for slot in slots if 'is-filled' in slot.get('class').split()]
+    assert filled == list(range(total, rank - 1, -1))

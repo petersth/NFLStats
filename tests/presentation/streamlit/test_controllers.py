@@ -17,8 +17,8 @@ def test_controller_consumes_orchestrated_league_context_without_another_lookup(
         season_stats=object(),
         game_stats=[],
         team_record=None,
-        raw_rankings={"toer": 1},
-        league_averages={"toer": 50.0},
+        raw_rankings={"toer": 1, "toer_allowed": 3},
+        league_averages={"toer": 50.0, "toer_allowed": 45.0},
         league_team_count=32,
         source_data_timestamp=datetime(2025, 9, 7),
         source_data_expires_at=12345.0,
@@ -33,7 +33,9 @@ def test_controller_consumes_orchestrated_league_context_without_another_lookup(
     ))
 
     assert response.rankings["toer"].rank == 1
-    assert response.league_averages == {"toer": 50.0}
+    assert response.rankings["toer_allowed"].rank == 3
+    assert response.rankings["toer_allowed"].total_teams == 32
+    assert response.league_averages == {"toer": 50.0, "toer_allowed": 45.0}
     assert response.source_data_timestamp == datetime(2025, 9, 7)
     assert response.source_data_expires_at == 12345.0
     orchestrator.calculate_team_analysis.assert_called_once()

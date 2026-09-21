@@ -2,12 +2,14 @@
 
 import streamlit as st
 import html
+from math import isfinite
 from typing import Optional, List
 from ....application import TeamAnalysisResponse
 from ....domain import Team, Season, SeasonStats, PerformanceRank, TeamRecord, NFLMetrics
 from ....utils.team_code_mapper import get_team_display_name
+from .metric_details import metric_details_html
 from ..metric_labels import get_metric_label
-from .team_branding import get_team_logo_data_uri, get_team_mark_abbreviation
+from .team_branding import get_team_logo_data_uri, get_team_mark_abbreviation, get_team_banner_colors
 
 
 class MetricsRenderer:
@@ -18,8 +20,12 @@ class MetricsRenderer:
     
     def render_team_header(self, team: Team, season: Season, season_type_filter: str = "ALL", 
                           team_record: Optional[TeamRecord] = None, game_stats: Optional[List] = None,
-                          season_stats: Optional['SeasonStats'] = None):
-        """Render an integrated page header with season context and ratings."""
+                          season_stats: Optional['SeasonStats'] = None,
+                          toer_rank: Optional[PerformanceRank] = None,
+                          league_toer: Optional[float] = None,
+                          toer_allowed_rank: Optional[PerformanceRank] = None,
+                          league_toer_allowed: Optional[float] = None):
+        """Present offensive and allowed TOER with matching score layouts."""
         season_type_text = {
             "ALL": "All games",
             "REG": "Regular season",
@@ -45,10 +51,10 @@ class MetricsRenderer:
             if total_playoff_games > 0:
                 record_items.append(f"{team_record.playoff_wins}-{team_record.playoff_losses} playoffs")
             metadata.extend(record_items or ["Season has not started"])
-        elif game_stats:
+        elif game_stats and season_stats is None:
             games_count = len(game_stats)
             metadata.append(f"{games_count} {'game' if games_count == 1 else 'games'} analyzed")
-        else:
+        elif season_stats is None:
             metadata.append("No data available")
 
         safe_name = html.escape(get_team_display_name(team.abbreviation, season.year))
@@ -58,39 +64,51 @@ class MetricsRenderer:
         # identifies the team for screen readers, so the mark is decorative.
         logo_uri = get_team_logo_data_uri(team.abbreviation, season.year)
         if logo_uri:
-            team_mark = f'<img src="{html.escape(logo_uri, quote=True)}" alt="" width="48" height="48">'
+            team_mark = f'<img src="{html.escape(logo_uri, quote=True)}" alt="" width="72" height="72">'
         else:
             abbreviation = html.escape(get_team_mark_abbreviation(team.abbreviation, season.year))
             team_mark = f'<span class="season-team-monogram">{abbreviation}</span>'
         
-        # Use the same typography for both ratings without qualitative colors.
         toer_display = ""
+        sample_html = ""
         if season_stats is not None:
+            games_count = season_stats.games_played
+            sample = f'{games_count} {"game" if games_count == 1 else "games"}'
+            sample_html = f'<span class="season-sample">{sample}</span>'
             ratings = (
-                ("Offense", "TOER", season_stats.toer,
-                 "Total Offensive Efficiency Rating; higher is better"),
-                ("Defense", "TOER allowed", season_stats.toer_allowed,
-                 "Opponent Total Offensive Efficiency Rating; lower is better"),
+                ('TOER', season_stats.toer, toer_rank, league_toer, 'primary', 'h1',
+                 'Offensive TOER', 'Total Offensive Efficiency Rating', 'Higher', '↑'),
+                ('TOER allowed', season_stats.toer_allowed, toer_allowed_rank, league_toer_allowed,
+                 'secondary', 'h2', 'Defensive TOER allowed', 'Opponent offensive efficiency', 'Lower', '↓'),
             )
             rating_items = []
-            for side, label, value, description in ratings:
+            for label, value, rank, average, style, heading, accessible_name, description, direction, arrow in ratings:
+                rank_text = f'{rank.rank} of {rank.total_teams}' if rank is not None else '—'
+                average_text = f'{average:.1f}' if average is not None and isfinite(average) else '—'
                 rating_items.append(
-                    f'<div class="season-rating" title="{html.escape(description)}">'
-                    f'<div class="season-rating-label">{side} · {label}</div>'
+                    f'<section class="season-rating season-rating-{style}" aria-label="{accessible_name}">'
+                    f'<{heading} title="{description}; {direction.lower()} is better">{label} '
+                    f'<span class="season-rating-direction" aria-label="{direction} is better">{arrow}</span></{heading}>'
                     f'<div class="season-rating-value">{value:.1f}</div>'
-                    '</div>'
+                    '<div class="season-rating-context">'
+                    f'<span title="League rank">Rank <strong>{rank_text}</strong></span>'
+                    f'<span title="League average">Avg <strong>{average_text}</strong></span></div></section>'
                 )
             toer_display = '<div class="season-team-ratings">' + ''.join(rating_items) + '</div>'
 
+        palette = get_team_banner_colors(team.abbreviation, season.year)
+        banner_style = ";".join(f"--team-{key}:{value}" for key, value in palette.items())
         header_html = f"""
         <div class="season-header">
-        <header class="season-team-header">
+        <header class="season-team-header" style="{banner_style}">
+            <div class="season-team-topline">
             <div class="season-team-identity">
                 <div class="season-team-logo" aria-hidden="true">{team_mark}</div>
                 <div class="season-team-name">
                     <h2>{safe_name}</h2>
-                    <div class="season-team-metadata">{metadata_html}</div>
+                    <div class="season-team-metadata">{metadata_html}{sample_html}</div>
                 </div>
+            </div>
             </div>
             {toer_display}
         </header>
@@ -132,9 +150,10 @@ class MetricsRenderer:
                 )
     
     def render_season_metrics(self, analysis_response: TeamAnalysisResponse):
-        """Group related season metrics with equal visual weight."""
+        """Render eleven equally sized, individually explorable metric cards."""
         season_stats = analysis_response.season_stats
         rankings = analysis_response.rankings or {}
+        league_averages = analysis_response.league_averages or {}
         metric_groups = (
             ("Efficiency", (
                 NFLMetrics.POINTS_PER_DRIVE,
@@ -157,47 +176,109 @@ class MetricsRenderer:
             )),
         )
 
-        groups_html = []
+        groups = []
         for title, metrics in metric_groups:
-            metrics_html = []
+            cards = []
             for metric in metrics:
                 label = get_metric_label(metric.key, season=True)
                 value = f"{getattr(season_stats, metric.key):.2f}"
                 if metric.unit == "%":
                     value += "%"
-                metrics_html.append(self._metric_with_rank_html(label, value, rankings.get(metric.key)))
-            groups_html.append(
-                '<section class="season-metric-group">'
-                f'<h3>{html.escape(title)}</h3>'
-                + ''.join(metrics_html) + '</section>'
+                average = league_averages.get(metric.key)
+                average_display = (
+                    f'{average:.2f}{"%" if metric.unit == "%" else ""}'
+                    if average is not None and isfinite(average) else None
+                )
+                cards.append(self._metric_with_rank_html(
+                    label, value, rankings.get(metric.key),
+                    league_average=average_display, higher_is_better=metric.higher_is_better,
+                    detail_html=metric_details_html(metric, analysis_response),
+                ))
+            groups.append(
+                f'<section class="season-metric-group" aria-label="{html.escape(title)}">'
+                f'<h3>{html.escape(title)}</h3>{"".join(cards)}</section>'
             )
 
         st.markdown(
             '<div class="season-overview" role="region" aria-label="Season statistics">'
-            '<div class="season-overview-heading">Season overview</div>'
-            f'<div class="season-metrics">{"".join(groups_html)}</div>'
+            '<div class="season-overview-heading"><h2>Offensive metrics</h2>'
+            '<div class="season-overview-legend" aria-label="League rank color key">'
+            '<span><i class="rank-key is-strong"></i>Top quarter</span>'
+            '<span><i class="rank-key is-neutral"></i>Middle half</span>'
+            '<span><i class="rank-key is-weak"></i>Bottom quarter</span></div></div>'
+            f'<div class="season-metrics">{"".join(groups)}</div>'
             '</div>',
             unsafe_allow_html=True,
         )
 
     @staticmethod
     def _metric_with_rank_html(
-        label: str, value: str, performance_rank: Optional[PerformanceRank] = None
+        label: str, value: str, performance_rank: Optional[PerformanceRank] = None,
+        *, league_average: Optional[str] = None, higher_is_better: bool = True,
+        detail_html: str = "",
     ) -> str:
         """Format a metric consistently, with or without a league ranking."""
-        rank_html = ""
+        tone = 'is-neutral'
+        rank_html = '<span class="season-metric-rank">Rank unavailable</span>'
+        rail_html = (
+            '<div class="season-rank-rail is-unavailable" aria-hidden="true">'
+            '<div class="season-rank-track is-unavailable"></div></div>'
+        )
         if performance_rank is not None:
-            safe_rank = html.escape(str(performance_rank.rank))
+            rank = performance_rank.rank
+            suffix = "th" if 11 <= rank % 100 <= 13 else {1: "st", 2: "nd", 3: "rd"}.get(rank % 10, "th")
+            safe_rank = html.escape(str(rank))
             safe_total = html.escape(str(performance_rank.total_teams))
             rank_html = (
-                f'<span class="season-metric-rank" '
+                f'<span class="season-metric-rank" title="{safe_rank}{suffix} of {safe_total}" '
                 f'aria-label="Rank {safe_rank} of {safe_total} teams">'
-                f'#{safe_rank}/{safe_total}</span>'
+                f'<strong>{safe_rank}<small>{suffix}</small></strong>'
+                f'<span>of {safe_total}</span></span>'
             )
+            total = performance_rank.total_teams
+            if total > 1:
+                tone = 'is-strong' if rank / total <= 0.25 else 'is-weak' if rank / total > 0.75 else 'is-neutral'
+            if total >= 1:
+                # Each grid cell is one rank. The marker belongs to that cell,
+                # so neither its position nor the fill can land between ranks.
+                segments = ''.join(
+                    f'<span class="season-rank-segment'
+                    f'{" is-filled" if slot_rank >= rank else ""}'
+                    f'{" is-current" if slot_rank == rank else ""}" '
+                    f'data-rank="{slot_rank}" title="Rank {slot_rank} of {total}"></span>'
+                    for slot_rank in range(total, 0, -1)
+                )
+                rail_html = (
+                    '<div class="season-rank-rail" aria-hidden="true">'
+                    f'<span class="season-rank-endpoint">{total}</span>'
+                    f'<div class="season-rank-track" style="--rank-count:{total}">'
+                    f'{segments}</div><span class="season-rank-endpoint">1</span></div>'
+                )
+        average_html = (
+            f'League avg <strong>{html.escape(league_average)}</strong>'
+            if league_average is not None else 'League avg unavailable'
+        )
+        direction = 'Higher is better' if higher_is_better else 'Lower is better'
+        safe_value = html.escape(str(value))
+        if safe_value.endswith('%'):
+            safe_value = safe_value[:-1] + '<span class="season-metric-unit">%</span>'
+        opening = f'<details class="season-metric {tone}"><summary>' if detail_html else f'<div class="season-metric {tone}">'
+        closing = (
+            f'</summary><div class="season-metric-detail">{detail_html}</div></details>'
+            if detail_html else '</div>'
+        )
+        disclosure = (
+            '<svg class="metric-chevron" viewBox="0 0 24 24" aria-hidden="true" focusable="false">'
+            '<path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="1.75" '
+            'stroke-linecap="round" stroke-linejoin="round" /></svg>'
+        ) if detail_html else ''
         return (
-            '<div class="season-metric">'
-            f'<div class="season-metric-label">{html.escape(str(label))}</div>'
+            opening
+            + f'<div class="season-metric-label">{html.escape(str(label))}{disclosure}</div>'
             '<div class="season-metric-reading">'
-            f'<span class="season-metric-value">{html.escape(str(value))}</span>'
-            f'{rank_html}</div></div>'
+            f'<span class="season-metric-value">{safe_value}</span>'
+            f'{rank_html}</div>'
+            f'<div class="season-metric-context"><span>{average_html}</span>'
+            f'<span title="{direction}" aria-label="{direction}">{"↑" if higher_is_better else "↓"} better</span>'
+            f'</div>{rail_html}{closing}'
         )
