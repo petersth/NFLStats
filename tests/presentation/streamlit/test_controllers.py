@@ -159,7 +159,6 @@ def test_rendering_cached_analysis_preserves_expiry_and_then_recomputes(monkeypa
     monkeypatch.setattr(streamlit_utils, "st", SimpleNamespace(session_state=session_state))
     ui = SimpleNamespace(empty=MagicMock(), info=Mock(), error=Mock())
     monkeypatch.setattr(streamlit_controller, "st", ui)
-    monkeypatch.setattr(streamlit_controller, "inject_team_colors", Mock())
     monkeypatch.setattr(
         streamlit_controller,
         "get_current_nfl_season_info",

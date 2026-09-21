@@ -9,6 +9,7 @@ from unittest.mock import MagicMock, Mock
 
 import pandas as pd
 import pytest
+from streamlit import column_config
 
 from src.application.dto import TeamAnalysisRequest, TeamAnalysisResponse
 from src.domain.entities import Game, GameStats, GameType, Location, OffensiveStats, Season, SeasonStats, Team
@@ -50,6 +51,7 @@ def _streamlit():
     ui.get_option.side_effect = lambda key: "light" if key == "theme.base" else "#1f77b4"
     ui.tabs.side_effect = lambda labels: [MagicMock() for _ in labels]
     ui.columns.side_effect = lambda count: [MagicMock() for _ in range(count)]
+    ui.column_config = column_config
     return ui
 
 
@@ -75,8 +77,8 @@ def test_controller_preserves_an_independent_settings_snapshot(response):
 
 @pytest.mark.parametrize('filter_name,expected_weeks', [
     ('POST', ['P2']),
-    ('ALL', [str(week) for week in range(1, 19)] + ['P2']),
-    ('REG', [str(week) for week in range(1, 19)]),
+    ('ALL', ['P2']),
+    ('REG', ['1']),
 ])
 def test_game_and_toer_tables_only_create_rows_for_selected_season_type(monkeypatch, response, filter_name, expected_weeks):
     ui = _streamlit()
@@ -93,8 +95,128 @@ def test_game_and_toer_tables_only_create_rows_for_selected_season_type(monkeypa
     assert len(frames) == 3
     for frame in frames:
         assert frame['Week'].tolist() == expected_weeks
-        if filter_name == 'POST':
-            assert frame['Opponent'].tolist() == ['WAS']
+        assert frame['Opponent'].tolist() == ['WAS']
+
+
+@pytest.mark.parametrize('year,last_regular_week', [(2020, 17), (2024, 18)])
+def test_game_and_toer_tables_sort_available_games_and_preserve_scores(monkeypatch, response, year, last_regular_week):
+    ui = _streamlit()
+    monkeypatch.setattr(tab_manager, 'st', ui)
+    response.season = Season(year)
+    response.season_type_filter = 'ALL'
+    original = response.game_stats[0]
+    # Include a gap and an absent playoff round, with source games out of order.
+    weeks = [last_regular_week + 2, 3, last_regular_week, 1]
+    response.game_stats = [
+        replace(
+            original,
+            game=replace(original.game, season=response.season, week=week,
+                         game_type=GameType.REGULAR if week <= last_regular_week else GameType.PLAYOFF),
+            offensive_stats=replace(original.offensive_stats, toer=float(week)),
+            defensive_stats=replace(original.defensive_stats, toer=float(week + 20)),
+        )
+        for week in weeks
+    ]
+    manager = object.__new__(tab_manager.TabManager)
+    manager._render_game_log_tab(response)
+    manager._render_toer_breakdown_tab(response)
+
+    frames = [call.args[0].data for call in ui.dataframe.call_args_list]
+    assert len(frames) == 3
+    for frame in frames:
+        assert frame['Week'].tolist() == ['1', '3', str(last_regular_week), 'P2']
+        assert frame['Opponent'].tolist() == ['WAS'] * 4
+    for frame in frames[:2]:
+        assert frame['TOER'].tolist() == sorted(weeks)
+    for frame in (frames[0], frames[2]):
+        assert frame['TOER Allowed'].tolist() == [week + 20 for week in sorted(weeks)]
+    assert '4 games</span>' in ui.markdown.call_args_list[0].args[0]
+
+
+def test_game_log_shows_all_original_statistics_together(monkeypatch, response):
+    ui = _streamlit()
+    monkeypatch.setattr(tab_manager, 'st', ui)
+    response.game_stats[0].offensive_stats = replace(
+        response.game_stats[0].offensive_stats,
+        turnovers=2, completion_pct=67.89, rush_ypc=4.56, sacks=3,
+        third_down_pct=41.23, first_downs=24, points_per_drive=2.78,
+        redzone_td_pct=66.67, penalty_yards=35,
+    )
+    expected = {
+        'Week': 'P2', 'Opponent': 'WAS', 'Location': 'Home', 'Yds/Play': 6.1,
+        'Turnovers': 2, 'Pass Comp%': 67.89, 'Rush YPC': 4.56, 'Sacks': 3,
+        '3rd Down%': 41.23, 'Success%': 50.0, '1st Downs': 24, 'Pts/Drive': 2.78,
+        'RZ TD%': 66.67, 'Pen Yards': 35, 'TOER': 90.0, 'TOER Allowed': 65.0,
+    }
+
+    object.__new__(tab_manager.TabManager)._render_game_log_tab(response)
+
+    frame = ui.dataframe.call_args.args[0].data
+    assert frame.columns.tolist() == list(expected)
+    assert frame.iloc[0].to_dict() == expected
+    ui.dataframe.assert_called_once()
+    ui.segmented_control.assert_not_called()
+    ui.radio.assert_not_called()
+    ui.caption.assert_not_called()
+    heading = ui.markdown.call_args.args[0]
+    assert '<div class="game-log-heading"><h3>Game log</h3>' in heading
+    assert '<span title="Games with available statistics">1 game</span>' in heading
+
+    columns = ui.dataframe.call_args.kwargs['column_config']
+    assert columns['Week']['pinned'] is True
+    assert columns['Week']['width'] == 60
+    assert columns['Opponent']['pinned'] is True
+    assert columns['Opponent']['width'] == 90
+    assert {key: columns[key]['label'] for key in expected if key in columns} == {
+        'Week': 'Week', 'Opponent': 'Opponent', 'Yds/Play': 'Yards / play',
+        'Turnovers': 'Turnovers', 'Pass Comp%': 'Completion rate',
+        'Rush YPC': 'Rush yards / carry', 'Sacks': 'Sacks allowed',
+        '3rd Down%': '3rd down rate', 'Success%': 'Success rate',
+        '1st Downs': '1st downs', 'Pts/Drive': 'Points / drive',
+        'RZ TD%': 'Red zone TD rate', 'Pen Yards': 'Penalty yards',
+        'TOER': 'TOER', 'TOER Allowed': 'TOER allowed',
+    }
+    for key in ('Pass Comp%', '3rd Down%', 'Success%', 'RZ TD%'):
+        number_format = columns[key]['type_config']['format']
+        assert number_format == '%.2f%%'
+        assert number_format % frame.iloc[0][key] == f'{expected[key]:.2f}%'
+    for key in ('Turnovers', 'Sacks', '1st Downs', 'Pen Yards'):
+        assert columns[key]['type_config']['format'] == '%.0f'
+        assert 'this game' in columns[key]['help']
+    for key in ('Yds/Play', 'Rush YPC', 'Pts/Drive', 'TOER', 'TOER Allowed'):
+        assert columns[key]['type_config']['format'] == '%.2f'
+
+
+def test_game_log_without_game_metadata_keeps_all_statistics(monkeypatch, response):
+    ui = _streamlit()
+    monkeypatch.setattr(tab_manager, 'st', ui)
+    response.game_stats[0].game = None
+
+    object.__new__(tab_manager.TabManager)._render_game_log_tab(response)
+
+    frame = ui.dataframe.call_args.args[0].data
+    assert frame['Game'].tolist() == [1]
+    assert 'Week' not in frame
+    assert frame['TOER'].tolist() == [90.0]
+    assert frame['TOER Allowed'].tolist() == [65.0]
+    assert len(frame.columns) == 16
+    columns = ui.dataframe.call_args.kwargs['column_config']
+    assert columns['Game']['pinned'] is True
+    assert columns['Game']['width'] == 60
+    assert columns['Game']['type_config']['format'] == '%.0f'
+    assert 'Week' not in columns
+
+
+def test_empty_game_log_has_no_table(monkeypatch, response):
+    ui = _streamlit()
+    monkeypatch.setattr(tab_manager, 'st', ui)
+    response.game_stats = []
+
+    object.__new__(tab_manager.TabManager)._render_game_log_tab(response)
+
+    ui.info.assert_called_once_with('No game data available.')
+    ui.dataframe.assert_not_called()
+    assert '<h3>Game log</h3>' in ui.markdown.call_args.args[0]
 
 
 def test_comparison_and_metric_cards_use_actual_rank_cohort(monkeypatch, response):
@@ -103,11 +225,14 @@ def test_comparison_and_metric_cards_use_actual_rank_cohort(monkeypatch, respons
     monkeypatch.setattr(metrics_renderer, 'st', ui)
     manager = object.__new__(tab_manager.TabManager)
     manager._render_league_comparison_tab(response)
-    metrics_renderer.MetricsRenderer()._render_metric_with_rank('Yards/Play', '6.10', response.rankings['avg_yards_per_play'])
+    metrics_renderer.MetricsRenderer().render_season_metrics(response)
 
     assert ui.dataframe.call_args.args[0]['Rank'].tolist() == ['14/14']
+    assert ui.dataframe.call_args.args[0]['Metric'].tolist() == ['Yards / play']
     assert '#14/14' in ui.markdown.call_args.args[0]
-    assert 'Worst in cohort' in ui.error.call_args.args[0]
+    rendered = '\n'.join(call.args[0] for call in ui.markdown.call_args_list)
+    assert 'Worst in cohort' not in rendered
+    ui.error.assert_not_called()
 
 
 @pytest.mark.parametrize('config_name,included', [('nfl_official', True), ('analytics_clean', False)])
@@ -169,7 +294,9 @@ def test_historical_names_match_header_methodology_and_exports(monkeypatch, resp
     response.season = Season(year)
     metrics_renderer.MetricsRenderer().render_team_header(response.team, response.season)
     header = '\n'.join(call.args[0] for call in ui.markdown.call_args_list)
-    assert f'{expected_name} {year}' in header
+    assert f'<h2>{expected_name}</h2>' in header
+    metadata = header.split('<div class="season-team-metadata">', 1)[1].split('</div>', 1)[0]
+    assert str(year) in metadata
     ui.markdown.reset_mock()
     methodology_renderer.MethodologyRenderer().render_methodology_page(response)
     text = '\n'.join(call.args[0] for call in ui.markdown.call_args_list)

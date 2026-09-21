@@ -2,19 +2,17 @@
 
 import streamlit as st
 import html
-import logging
-from typing import Optional, Dict, List
+from typing import Optional, List
 from ....application import TeamAnalysisResponse
 from ....domain import Team, Season, SeasonStats, PerformanceRank, TeamRecord, NFLMetrics
-from ....utils import ranking_utils
 from ....utils.season_utils import get_regular_season_games
 from ....utils.team_code_mapper import get_team_display_name
-
-logger = logging.getLogger(__name__)
+from ..metric_labels import get_metric_label
+from .team_branding import get_team_logo_data_uri, get_team_mark_abbreviation
 
 
 class MetricsRenderer:
-    """Renders season metrics with performance indicators."""
+    """Renders season metrics with numeric league rankings."""
     
     def __init__(self):
         pass
@@ -22,134 +20,85 @@ class MetricsRenderer:
     def render_team_header(self, team: Team, season: Season, season_type_filter: str = "ALL", 
                           team_record: Optional[TeamRecord] = None, game_stats: Optional[List] = None,
                           season_stats: Optional['SeasonStats'] = None):
-        """Render team header with branding and record information."""
-        # Get season type display text
+        """Render an integrated page header with season context and ratings."""
         season_type_text = {
-            "ALL": "",
-            "REG": " (Regular Season)", 
-            "POST": " (Playoffs)"
-        }.get(season_type_filter, "")
-        
-        primary_color = team.colors[0] if team.colors else "#013369"
-        secondary_color = team.colors[1] if len(team.colors) > 1 else primary_color
-        
-        # Record display - always show full season record regardless of filter
-        record_text = ""
+            "ALL": "All games",
+            "REG": "Regular season",
+            "POST": "Playoffs",
+        }.get(season_type_filter, "All games")
+        metadata = [str(season.year), season_type_text]
+
+        # Keep the full season record even when the statistics are filtered.
+        # Explicit record labels distinguish it from the selected game scope.
         if team_record:
-            # Build record content first to avoid empty paragraphs
-            record_content = ""
-            
-            # Always show regular season record if it exists
-            total_reg_games = team_record.regular_season_wins + team_record.regular_season_losses + getattr(team_record, 'regular_season_ties', 0)
+            record_items = []
+            ties = getattr(team_record, 'regular_season_ties', 0)
+            total_reg_games = team_record.regular_season_wins + team_record.regular_season_losses + ties
+            total_playoff_games = team_record.playoff_wins + team_record.playoff_losses
+            label_regular_record = season_type_filter != "REG" or total_playoff_games > 0
             if total_reg_games > 0:
-                if hasattr(team_record, 'regular_season_ties') and team_record.regular_season_ties > 0:
-                    record_content += f"{team_record.regular_season_wins}-{team_record.regular_season_losses}-{team_record.regular_season_ties} Regular Season"
-                else:
-                    record_content += f"{team_record.regular_season_wins}-{team_record.regular_season_losses} Regular Season"
-                
-                # Add note if incomplete data (less than expected games)
+                regular_record = f"{team_record.regular_season_wins}-{team_record.regular_season_losses}"
+                if ties:
+                    regular_record += f"-{ties}"
+                if label_regular_record:
+                    regular_record += " regular season"
+                record_items.append(regular_record)
                 expected_games = get_regular_season_games(season.year)
                 if total_reg_games < expected_games:
-                    record_content += f" ({total_reg_games} of {expected_games} games)"
-            
-            # Always show playoff record if they made playoffs
-            if team_record.playoff_wins + team_record.playoff_losses > 0:
-                if record_content:
-                    record_content += f" • {team_record.playoff_wins}-{team_record.playoff_losses} Playoffs"
-                else:
-                    record_content += f"{team_record.playoff_wins}-{team_record.playoff_losses} Playoffs"
-            
-            # Only create paragraph if we have content
-            if record_content:
-                safe_record_content = html.escape(record_content)
-                record_text = f"<p style='margin: 5px 0 0 0; opacity: 0.9; font-size: 0.9em;'>{safe_record_content}</p>"
-            else:
-                record_text = f"<p style='margin: 5px 0 0 0; opacity: 0.9; font-size: 0.9em;'>Season has not started</p>"
-        elif game_stats and len(game_stats) > 0:
-            # Fallback to games analyzed
+                    games_label = "regular-season games" if label_regular_record else "games"
+                    record_items.append(f"{total_reg_games} of {expected_games} {games_label}")
+            if total_playoff_games > 0:
+                record_items.append(f"{team_record.playoff_wins}-{team_record.playoff_losses} playoffs")
+            metadata.extend(record_items or ["Season has not started"])
+        elif game_stats:
             games_count = len(game_stats)
-            safe_games_text = html.escape(f"{games_count} games analyzed")
-            record_text = f"<p style='margin: 5px 0 0 0; opacity: 0.9; font-size: 0.9em;'>{safe_games_text}</p>"
+            metadata.append(f"{games_count} {'game' if games_count == 1 else 'games'} analyzed")
         else:
-            record_text = f"<p style='margin: 5px 0 0 0; opacity: 0.9; font-size: 0.9em;'>No data available</p>"
-        
-        # Sanitize all user-controlled content
-        safe_logo = html.escape(str(team.logo))
+            metadata.append("No data available")
+
         safe_name = html.escape(get_team_display_name(team.abbreviation, season.year))
-        safe_season_text = html.escape(str(season_type_text))
+        metadata_html = ''.join(f'<span>{html.escape(item)}</span>' for item in metadata)
+
+        # Bundled marks need no runtime image requests. The adjacent heading
+        # identifies the team for screen readers, so the mark is decorative.
+        logo_uri = get_team_logo_data_uri(team.abbreviation, season.year)
+        if logo_uri:
+            team_mark = f'<img src="{html.escape(logo_uri, quote=True)}" alt="" width="48" height="48">'
+        else:
+            abbreviation = html.escape(get_team_mark_abbreviation(team.abbreviation, season.year))
+            team_mark = f'<span class="season-team-monogram">{abbreviation}</span>'
         
-        # Add TOER display if available
+        # Use the same typography for both ratings without qualitative colors.
         toer_display = ""
-        if season_stats and hasattr(season_stats, 'toer'):
-            toer_value = season_stats.toer
-            safe_toer_value = html.escape(f"{toer_value:.1f}")
-            
-            # Also get TOER Allowed if available
-            toer_allowed_value = getattr(season_stats, 'toer_allowed', 0.0)
-            safe_toer_allowed_value = html.escape(f"{toer_allowed_value:.1f}")
-            
-            toer_display = f"""<div style="margin-left: auto; display: flex; gap: 20px; padding: 0 20px;">
-                    <div style="text-align: center;">
-                        <div style="
-                            background: linear-gradient(135deg, rgba(0,30,0,0.5), rgba(0,0,0,0.5)); 
-                            border: 3px solid rgba(255,255,255,0.4);
-                            border-radius: 50%; 
-                            width: 90px;
-                            height: 90px;
-                            display: flex;
-                            flex-direction: column;
-                            align-items: center;
-                            justify-content: center;
-                            backdrop-filter: blur(5px);
-                            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-                            position: relative;
-                        ">
-                            <div style="font-size: 0.55em; opacity: 0.8; margin-bottom: -2px; letter-spacing: 1px; text-transform: uppercase;">Offense</div>
-                            <div style="font-size: 2.0em; font-weight: 900; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); line-height: 1; margin: 2px 0;">
-                                {safe_toer_value}
-                            </div>
-                            <div style="font-size: 0.5em; opacity: 0.7; letter-spacing: 0.5px;">TOER</div>
-                        </div>
-                    </div>
-                    <div style="text-align: center;">
-                        <div style="
-                            background: linear-gradient(135deg, rgba(30,0,0,0.5), rgba(0,0,0,0.5)); 
-                            border: 3px solid rgba(255,255,255,0.4);
-                            border-radius: 50%; 
-                            width: 90px;
-                            height: 90px;
-                            display: flex;
-                            flex-direction: column;
-                            align-items: center;
-                            justify-content: center;
-                            backdrop-filter: blur(5px);
-                            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-                            position: relative;
-                        ">
-                            <div style="font-size: 0.55em; opacity: 0.8; margin-bottom: -2px; letter-spacing: 1px; text-transform: uppercase;">Defense</div>
-                            <div style="font-size: 2.0em; font-weight: 900; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); line-height: 1; margin: 2px 0;">
-                                {safe_toer_allowed_value}
-                            </div>
-                            <div style="font-size: 0.5em; opacity: 0.7; letter-spacing: 0.5px;">TOER ALLOWED</div>
-                        </div>
-                    </div>
-                </div>"""
-        
+        if season_stats is not None:
+            ratings = (
+                ("Offense", "TOER", season_stats.toer,
+                 "Total Offensive Efficiency Rating; higher is better"),
+                ("Defense", "TOER allowed", season_stats.toer_allowed,
+                 "Opponent Total Offensive Efficiency Rating; lower is better"),
+            )
+            rating_items = []
+            for side, label, value, description in ratings:
+                rating_items.append(
+                    f'<div class="season-rating" title="{html.escape(description)}">'
+                    f'<div class="season-rating-label">{side} · {label}</div>'
+                    f'<div class="season-rating-value">{value:.1f}</div>'
+                    '</div>'
+                )
+            toer_display = '<div class="season-team-ratings">' + ''.join(rating_items) + '</div>'
+
         header_html = f"""
-        <div style="background: linear-gradient(135deg, {primary_color}, {secondary_color}); 
-                    padding: 15px; 
-                    border-radius: 12px; 
-                    margin-bottom: 20px; 
-                    color: white; 
-                    box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-            <div style="display: flex; align-items: center; gap: 15px;">
-                <div style="font-size: 2em;">{safe_logo}</div>
-                <div style="flex-grow: 1;">
-                    <h2 style="margin: 0; font-size: 1.5em;">{safe_name} {season.year}{safe_season_text}</h2>
-                    {record_text}
+        <div class="season-header">
+        <header class="season-team-header">
+            <div class="season-team-identity">
+                <div class="season-team-logo" aria-hidden="true">{team_mark}</div>
+                <div class="season-team-name">
+                    <h2>{safe_name}</h2>
+                    <div class="season-team-metadata">{metadata_html}</div>
                 </div>
-                {toer_display}
             </div>
+            {toer_display}
+        </header>
         </div>
         """
         
@@ -188,121 +137,72 @@ class MetricsRenderer:
                 )
     
     def render_season_metrics(self, analysis_response: TeamAnalysisResponse):
-        """Render the main season metrics display."""
+        """Group related season metrics with equal visual weight."""
         season_stats = analysis_response.season_stats
         rankings = analysis_response.rankings or {}
-        
-        col1, col2, col3, col4 = st.columns(4)
-        
-        # Define metric layout using centralized definitions
-        metric_layout = [
-            # Column 1
-            [
-                ('games_played', lambda: st.metric(NFLMetrics.GAMES_PLAYED.short_name, season_stats.games_played)),
-                ('avg_yards_per_play', lambda: self._render_metric_with_rank(
-                    NFLMetrics.AVG_YARDS_PER_PLAY.short_name,
-                    f"{season_stats.avg_yards_per_play:.2f}",
-                    rankings.get('avg_yards_per_play')
-                )),
-                ('rush_ypc', lambda: self._render_metric_with_rank(
-                    NFLMetrics.RUSH_YPC.short_name,
-                    f"{season_stats.rush_ypc:.2f}",
-                    rankings.get('rush_ypc')
-                ))
-            ],
-            # Column 2  
-            [
-                ('points_per_drive', lambda: self._render_metric_with_rank(
-                    NFLMetrics.POINTS_PER_DRIVE.short_name,
-                    f"{season_stats.points_per_drive:.2f}",
-                    rankings.get('points_per_drive')
-                )),
-                ('success_rate', lambda: self._render_metric_with_rank(
-                    NFLMetrics.SUCCESS_RATE.short_name,
-                    f"{season_stats.success_rate:.2f}%",
-                    rankings.get('success_rate')
-                )),
-                ('third_down_pct', lambda: self._render_metric_with_rank(
-                    NFLMetrics.THIRD_DOWN_PCT.short_name,
-                    f"{season_stats.third_down_pct:.2f}%",
-                    rankings.get('third_down_pct')
-                ))
-            ],
-            # Column 3
-            [
-                ('completion_pct', lambda: self._render_metric_with_rank(
-                    NFLMetrics.COMPLETION_PCT.short_name,
-                    f"{season_stats.completion_pct:.2f}%",
-                    rankings.get('completion_pct')
-                )),
-                ('redzone_td_pct', lambda: self._render_metric_with_rank(
-                    NFLMetrics.REDZONE_TD_PCT.short_name,
-                    f"{season_stats.redzone_td_pct:.2f}%",
-                    rankings.get('redzone_td_pct')
-                )),
-                ('first_downs_per_game', lambda: self._render_metric_with_rank(
-                    NFLMetrics.FIRST_DOWNS_PER_GAME.short_name,
-                    f"{season_stats.first_downs_per_game:.2f}",
-                    rankings.get('first_downs_per_game')
-                ))
-            ],
-            # Column 4
-            [
-                ('turnovers_per_game', lambda: self._render_metric_with_rank(
-                    NFLMetrics.TURNOVERS_PER_GAME.short_name,
-                    f"{season_stats.turnovers_per_game:.2f}",
-                    rankings.get('turnovers_per_game')
-                )),
-                ('sacks_per_game', lambda: self._render_metric_with_rank(
-                    NFLMetrics.SACKS_PER_GAME.short_name,
-                    f"{season_stats.sacks_per_game:.2f}",
-                    rankings.get('sacks_per_game')
-                )),
-                ('penalty_yards_per_game', lambda: self._render_metric_with_rank(
-                    NFLMetrics.PENALTY_YARDS_PER_GAME.short_name,
-                    f"{season_stats.penalty_yards_per_game:.2f}",
-                    rankings.get('penalty_yards_per_game')
-                ))
-            ]
-        ]
-        
-        # Render each column
-        columns = [col1, col2, col3, col4]
-        for col_idx, column_metrics in enumerate(metric_layout):
-            with columns[col_idx]:
-                for metric_key, render_func in column_metrics:
-                    render_func()
-    
-    def _render_metric_with_rank(self, label: str, value: str, performance_rank: Optional = None):
-        """Render a metric with optional performance ranking."""
-        if performance_rank:
-            # Determine color based on performance
-            good_descriptions = ['Best in NFL', 'Best in cohort', 'Elite', 'Excellent', 'Above Average']
-            bad_descriptions = ['Below Average', 'Poor', 'Worst in NFL', 'Worst in cohort']
-            
-            if performance_rank.description in good_descriptions:
-                color = '#28a745'  # Green
-            elif performance_rank.description in bad_descriptions:
-                color = '#dc3545'  # Red
-            else:
-                color = '#6c757d'  # Gray
-            
-            # Create custom metric display with ranking - sanitize all content
-            safe_label = html.escape(str(label))
-            safe_value = html.escape(str(value))
-            safe_description = html.escape(str(performance_rank.description))
+        metric_groups = (
+            ("Efficiency", (
+                NFLMetrics.POINTS_PER_DRIVE,
+                NFLMetrics.AVG_YARDS_PER_PLAY,
+                NFLMetrics.SUCCESS_RATE,
+            )),
+            ("Passing & rushing", (
+                NFLMetrics.COMPLETION_PCT,
+                NFLMetrics.RUSH_YPC,
+            )),
+            ("Conversions", (
+                NFLMetrics.THIRD_DOWN_PCT,
+                NFLMetrics.REDZONE_TD_PCT,
+                NFLMetrics.FIRST_DOWNS_PER_GAME,
+            )),
+            ("Negative plays", (
+                NFLMetrics.TURNOVERS_PER_GAME,
+                NFLMetrics.SACKS_PER_GAME,
+                NFLMetrics.PENALTY_YARDS_PER_GAME,
+            )),
+        )
+
+        groups_html = []
+        for title, metrics in metric_groups:
+            metrics_html = []
+            for metric in metrics:
+                label = get_metric_label(metric.key, season=True)
+                value = f"{getattr(season_stats, metric.key):.2f}"
+                if metric.unit == "%":
+                    value += "%"
+                metrics_html.append(self._metric_with_rank_html(label, value, rankings.get(metric.key)))
+            groups_html.append(
+                '<section class="season-metric-group">'
+                f'<h3>{html.escape(title)}</h3>'
+                + ''.join(metrics_html) + '</section>'
+            )
+
+        st.markdown(
+            '<div class="season-overview" role="region" aria-label="Season statistics">'
+            '<div class="season-overview-heading">Season overview</div>'
+            f'<div class="season-metrics">{"".join(groups_html)}</div>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+
+    @staticmethod
+    def _metric_with_rank_html(
+        label: str, value: str, performance_rank: Optional[PerformanceRank] = None
+    ) -> str:
+        """Format a metric consistently, with or without a league ranking."""
+        rank_html = ""
+        if performance_rank is not None:
             safe_rank = html.escape(str(performance_rank.rank))
             safe_total = html.escape(str(performance_rank.total_teams))
-            
-            st.markdown(f"""
-            <div style="margin-bottom: 1rem;">
-                <div style="font-size: 0.8em; color: #666; margin-bottom: 0.2rem;">{safe_label}</div>
-                <div style="font-size: 1.5em; font-weight: bold; line-height: 1;">{safe_value}</div>
-                <div style="font-size: 0.75em; color: {color}; margin-top: 0.2rem;">
-                    #{safe_rank}/{safe_total} - {safe_description}
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-        else:
-            # Fallback to standard Streamlit metric when no ranking available
-            st.metric(label, value)
+            rank_html = (
+                f'<span class="season-metric-rank" '
+                f'aria-label="Rank {safe_rank} of {safe_total} teams">'
+                f'#{safe_rank}/{safe_total}</span>'
+            )
+        return (
+            '<div class="season-metric">'
+            f'<div class="season-metric-label">{html.escape(str(label))}</div>'
+            '<div class="season-metric-reading">'
+            f'<span class="season-metric-value">{html.escape(str(value))}</span>'
+            f'{rank_html}</div></div>'
+        )

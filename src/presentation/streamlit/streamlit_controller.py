@@ -12,7 +12,7 @@ from .components.sidebar_manager import SidebarManager
 from .components.metrics_renderer import MetricsRenderer
 from .components.tab_manager import TabManager
 from .components.progress_manager import create_data_loading_progress
-from .styling.app_styling import inject_custom_css, inject_team_colors
+from .styling.app_styling import inject_custom_css
 from ...infrastructure.cache.session_cleanup_manager import register_session_cleanup, register_orchestrator_for_cleanup
 from ...utils.config_hasher import get_config_hash
 from ...utils.season_utils import get_current_nfl_season_info
@@ -107,9 +107,6 @@ class StreamlitController:
     def _render_team_analysis_with_sidebar(self, selections) -> None:
         """Render the main team analysis interface with sidebar updates."""
         try:
-            
-            # Inject team colors
-            inject_team_colors(selections.team_abbreviation)
             
             # Create analysis request
             request = TeamAnalysisRequest(

@@ -3,7 +3,7 @@
 import streamlit as st
 from dataclasses import dataclass
 from typing import Dict
-from ....config import NFL_TEAMS, TEAM_DATA
+from ....config import NFL_TEAMS
 from ....utils.season_utils import get_current_nfl_season_info
 from ....utils.configuration_utils import get_configuration
 from ....domain.services import get_data_status
@@ -30,11 +30,7 @@ class SidebarManager:
     def render(self) -> SidebarState:
         """Render sidebar and return state."""
         with st.sidebar:
-            # Session status at the top
-            from .session_monitor import render_session_cleanup_status
-            render_session_cleanup_status()
-            
-            st.subheader("Team & Season")
+            st.markdown("**Team & season**")
             
             # Select season first so we can show correct team names
             season_info = get_current_nfl_season_info()
@@ -68,8 +64,6 @@ class SidebarManager:
             # Store the selected team in session state for persistence
             st.session_state.selected_team = team_abbreviation
             
-            self._render_team_info(team_abbreviation, season_year)
-            
             season_type_options = {
                 "Regular Season": "REG", 
                 "Playoffs": "POST",
@@ -84,22 +78,18 @@ class SidebarManager:
             
             season_type_value = season_type_options[season_type_filter]
             
-            st.divider()
-            
-            configuration = self._render_configuration()
-            
-            st.markdown("#### Cache Settings")
-
-            cache_nfl_data = st.checkbox(
-                "Cache NFL data for session",
-                value=True,
-                disabled=False,
-                help=(
-                    "Cache NFL data and completed analyses for up to 30 minutes. "
-                    "Unchecking immediately refreshes the current selection and "
-                    "uses fresh nflverse data for subsequent analyses."
+            with st.expander("Analysis settings", expanded=False):
+                configuration = self._render_configuration()
+                cache_nfl_data = st.checkbox(
+                    "Cache NFL data for session",
+                    value=True,
+                    disabled=False,
+                    help=(
+                        "Cache NFL data and completed analyses for up to 30 minutes. "
+                        "Unchecking immediately refreshes the current selection and "
+                        "uses fresh nflverse data for subsequent analyses."
+                    )
                 )
-            )
             
             config_changed = self._check_config_changed(configuration)
             
@@ -156,40 +146,10 @@ class SidebarManager:
         sorted_options = dict(sorted(team_options.items(), key=lambda x: x[1]))
         return sorted_options
     
-    def _render_team_info(self, team_abbreviation: str, season_year: int):
-        """Render team information display."""
-        from ....utils.team_code_mapper import get_team_display_name
-        
-        if team_abbreviation and team_abbreviation in TEAM_DATA:
-            team_info = TEAM_DATA[team_abbreviation]
-            primary_color = team_info['colors'][0]
-            secondary_color = team_info['colors'][1] if len(team_info['colors']) > 1 else primary_color
-            
-            # Get the historically accurate team name
-            display_name = get_team_display_name(team_abbreviation, season_year)
-            
-            st.markdown(f"""
-            <div style="text-align: center; 
-                        padding: 15px; 
-                        background: linear-gradient(135deg, {primary_color}, {secondary_color}); 
-                        border-radius: 10px; 
-                        margin-bottom: 15px;
-                        color: white;
-                        box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-                <div style="font-size: 1.8em; margin-bottom: 8px;">{team_info['logo']}</div>
-                <div style="font-size: 1.1em; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);">{display_name}</div>
-            </div>
-            """, unsafe_allow_html=True)
-    
     def _render_configuration(self) -> Dict:
         """Render configuration UI."""
-        st.markdown("### Statistics Configuration")
-        
         # Always use custom configuration
         configuration = get_configuration('custom')
-        
-        # Play Exclusion Settings
-        st.markdown("#### Play Exclusions")
         
         include_qb_kneels = st.checkbox(
             "Include QB kneels",
@@ -220,10 +180,6 @@ class SidebarManager:
     def _render_data_status_sidebar(self, analysis_response):
         """Render data status information in sidebar."""
         try:
-            # Add divider before data status
-            st.divider()
-            st.subheader("Data Status")
-            
             # Get data timestamp from repository instead of trying to parse game dates
             data_timestamp = self._get_data_timestamp(analysis_response.season.year)
             
@@ -237,17 +193,14 @@ class SidebarManager:
                 # Get data status
                 data_status = get_data_status(latest_game_date, analysis_response.season)
                 
-                # Always show data status in sidebar
-                if data_status.status_type == "success":
-                    st.success(f"📅 {data_status.status_message}")
-                elif data_status.status_type == "warning":
-                    st.warning(f"📅 {data_status.status_message}")
-                else:
-                    st.info(f"📅 {data_status.status_message}")
-                
-                st.caption(f"Latest game: {data_status.latest_game_date}")
+                if data_status.status_type == "warning":
+                    st.warning(data_status.status_message)
+                elif data_status.status_type == "error":
+                    st.error(data_status.status_message)
+
+                st.caption(f"Latest game in source: {data_status.latest_game_date}")
             else:
-                st.info("📅 Data status: Unable to determine data timestamp")
+                st.caption("Latest game in source: unavailable")
                     
         except Exception as e:
             st.error(f"Data status error: {str(e)}")
