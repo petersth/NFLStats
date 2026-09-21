@@ -168,13 +168,13 @@ def test_game_log_shows_all_original_statistics_together(monkeypatch, response):
     assert columns['Opponent']['pinned'] is True
     assert columns['Opponent']['width'] == 90
     assert {key: columns[key]['label'] for key in expected if key in columns} == {
-        'Week': 'Week', 'Opponent': 'Opponent', 'Yds/Play': 'Yards / play',
-        'Turnovers': 'Turnovers', 'Pass Comp%': 'Completion rate',
-        'Rush YPC': 'Rush yards / carry', 'Sacks': 'Sacks allowed',
-        '3rd Down%': '3rd down rate', 'Success%': 'Success rate',
-        '1st Downs': '1st downs', 'Pts/Drive': 'Points / drive',
-        'RZ TD%': 'Red zone TD rate', 'Pen Yards': 'Penalty yards',
-        'TOER': 'TOER', 'TOER Allowed': 'TOER allowed',
+        'Week': 'Week', 'Opponent': 'Opponent', 'Location': 'Location', 'Yds/Play': 'Yds/Play',
+        'Turnovers': 'Turnovers', 'Pass Comp%': 'Pass Comp%',
+        'Rush YPC': 'Rush YPC', 'Sacks': 'Sacks',
+        '3rd Down%': '3rd Down%', 'Success%': 'Success%',
+        '1st Downs': '1st Downs', 'Pts/Drive': 'Pts/Drive',
+        'RZ TD%': 'RZ TD%', 'Pen Yards': 'Pen Yards',
+        'TOER': 'TOER', 'TOER Allowed': 'TOER Allowed',
     }
     for key in ('Pass Comp%', '3rd Down%', 'Success%', 'RZ TD%'):
         number_format = columns[key]['type_config']['format']

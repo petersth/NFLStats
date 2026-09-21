@@ -112,22 +112,22 @@ class TabManager:
             unsafe_allow_html=True,
         )
 
-        # Labels and number formatting affect presentation only; source keys and
-        # values remain available to the table's native column controls.
+        # Compact headings keep all statistics visible on a desktop. Full
+        # definitions belong in the column tooltips, not in wider headings.
         metric_columns = [
-            ('Yds/Play', 'avg_yards_per_play', '%.2f', 'Offensive yards per play in this game.'),
-            ('Turnovers', 'turnovers_per_game', '%.0f', 'Offensive turnovers in this game.'),
-            ('Pass Comp%', 'completion_pct', '%.2f%%', 'Pass completion percentage in this game.'),
-            ('Rush YPC', 'rush_ypc', '%.2f', 'Rushing yards per carry in this game.'),
-            ('Sacks', 'sacks_per_game', '%.0f', 'Sacks allowed by the offense in this game.'),
-            ('3rd Down%', 'third_down_pct', '%.2f%%', 'Third-down conversion percentage in this game.'),
-            ('Success%', 'success_rate', '%.2f%%', 'Percentage of successful plays in this game under the selected settings. See Methodology for definitions.'),
-            ('1st Downs', 'first_downs_per_game', '%.0f', 'Offensive first downs in this game.'),
-            ('Pts/Drive', 'points_per_drive', '%.2f', 'Offensive points scored per drive in this game.'),
-            ('RZ TD%', 'redzone_td_pct', '%.2f%%', 'Percentage of red-zone trips ending in an offensive touchdown in this game.'),
-            ('Pen Yards', 'penalty_yards_per_game', '%.0f', 'Offensive penalty yards in this game.'),
-            ('TOER', 'toer', '%.2f', 'Total Offensive Efficiency Rating for this game.'),
-            ('TOER Allowed', 'toer_allowed', '%.2f', "Opponent's Total Offensive Efficiency Rating against this defense in this game."),
+            ('Yds/Play', 76, '%.2f', 'Offensive yards per play in this game.'),
+            ('Turnovers', 82, '%.0f', 'Offensive turnovers in this game.'),
+            ('Pass Comp%', 96, '%.2f%%', 'Pass completion percentage in this game.'),
+            ('Rush YPC', 84, '%.2f', 'Rushing yards per carry in this game.'),
+            ('Sacks', 58, '%.0f', 'Sacks allowed by the offense in this game.'),
+            ('3rd Down%', 92, '%.2f%%', 'Third-down conversion percentage in this game.'),
+            ('Success%', 84, '%.2f%%', 'Percentage of successful plays in this game under the selected settings. See Methodology for definitions.'),
+            ('1st Downs', 82, '%.0f', 'Offensive first downs in this game.'),
+            ('Pts/Drive', 80, '%.2f', 'Offensive points scored per drive in this game.'),
+            ('RZ TD%', 78, '%.2f%%', 'Percentage of red-zone trips ending in an offensive touchdown in this game.'),
+            ('Pen Yards', 80, '%.0f', 'Offensive penalty yards in this game.'),
+            ('TOER', 62, '%.2f', 'Total Offensive Efficiency Rating for this game.'),
+            ('TOER Allowed', 108, '%.2f', "Opponent's Total Offensive Efficiency Rating against this defense in this game."),
         ]
         column_config = {
             game_column: (
@@ -138,12 +138,13 @@ class TabManager:
                 st.column_config.NumberColumn('Game', width=60, pinned=True, format='%.0f')
             ),
             'Opponent': st.column_config.TextColumn('Opponent', width=90, pinned=True),
+            'Location': st.column_config.TextColumn('Location', width=75),
         }
         column_config.update({
             column: st.column_config.NumberColumn(
-                get_metric_label(metric_key, season=False), format=number_format, help=help_text,
+                column, width=column_width, format=number_format, help=help_text,
             )
-            for column, metric_key, number_format, help_text in metric_columns
+            for column, column_width, number_format, help_text in metric_columns
         })
         
         st.dataframe(

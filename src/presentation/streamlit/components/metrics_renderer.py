@@ -5,7 +5,6 @@ import html
 from typing import Optional, List
 from ....application import TeamAnalysisResponse
 from ....domain import Team, Season, SeasonStats, PerformanceRank, TeamRecord, NFLMetrics
-from ....utils.season_utils import get_regular_season_games
 from ....utils.team_code_mapper import get_team_display_name
 from ..metric_labels import get_metric_label
 from .team_branding import get_team_logo_data_uri, get_team_mark_abbreviation
@@ -43,10 +42,6 @@ class MetricsRenderer:
                 if label_regular_record:
                     regular_record += " regular season"
                 record_items.append(regular_record)
-                expected_games = get_regular_season_games(season.year)
-                if total_reg_games < expected_games:
-                    games_label = "regular-season games" if label_regular_record else "games"
-                    record_items.append(f"{total_reg_games} of {expected_games} {games_label}")
             if total_playoff_games > 0:
                 record_items.append(f"{team_record.playoff_wins}-{team_record.playoff_losses} playoffs")
             metadata.extend(record_items or ["Season has not started"])
