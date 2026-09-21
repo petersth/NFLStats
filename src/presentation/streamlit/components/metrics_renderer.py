@@ -220,10 +220,6 @@ class MetricsRenderer:
         """Format a metric consistently, with or without a league ranking."""
         tone = 'is-neutral'
         rank_html = '<span class="season-metric-rank">Rank unavailable</span>'
-        rail_html = (
-            '<div class="season-rank-rail is-unavailable" aria-hidden="true">'
-            '<div class="season-rank-track is-unavailable"></div></div>'
-        )
         if performance_rank is not None:
             rank = performance_rank.rank
             suffix = "th" if 11 <= rank % 100 <= 13 else {1: "st", 2: "nd", 3: "rd"}.get(rank % 10, "th")
@@ -238,22 +234,6 @@ class MetricsRenderer:
             total = performance_rank.total_teams
             if total > 1:
                 tone = 'is-strong' if rank / total <= 0.25 else 'is-weak' if rank / total > 0.75 else 'is-neutral'
-            if total >= 1:
-                # Each grid cell is one rank. The marker belongs to that cell,
-                # so neither its position nor the fill can land between ranks.
-                segments = ''.join(
-                    f'<span class="season-rank-segment'
-                    f'{" is-filled" if slot_rank >= rank else ""}'
-                    f'{" is-current" if slot_rank == rank else ""}" '
-                    f'data-rank="{slot_rank}" title="Rank {slot_rank} of {total}"></span>'
-                    for slot_rank in range(total, 0, -1)
-                )
-                rail_html = (
-                    '<div class="season-rank-rail" aria-hidden="true">'
-                    f'<span class="season-rank-endpoint">{total}</span>'
-                    f'<div class="season-rank-track" style="--rank-count:{total}">'
-                    f'{segments}</div><span class="season-rank-endpoint">1</span></div>'
-                )
         average_html = (
             f'League avg <strong>{html.escape(league_average)}</strong>'
             if league_average is not None else 'League avg unavailable'
@@ -280,5 +260,5 @@ class MetricsRenderer:
             f'{rank_html}</div>'
             f'<div class="season-metric-context"><span>{average_html}</span>'
             f'<span title="{direction}" aria-label="{direction}">{"↑" if higher_is_better else "↓"} better</span>'
-            f'</div>{rail_html}{closing}'
+            f'</div>{closing}'
         )

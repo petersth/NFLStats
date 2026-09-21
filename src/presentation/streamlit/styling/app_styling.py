@@ -181,37 +181,6 @@ def inject_custom_css():
     }
     .season-metric-context strong { font-weight: 550; font-variant-numeric: tabular-nums; }
     .season-metric-context > span:last-child { white-space: nowrap; }
-    .season-rank-rail {
-        display: grid; grid-template-columns: auto minmax(0, 1fr) auto;
-        align-items: center; gap: 0.5rem; margin-top: 0.375rem;
-        min-height: 1rem;
-    }
-    .season-rank-endpoint {
-        font-size: 0.6875rem; line-height: 1; opacity: 0.7;
-        font-variant-numeric: tabular-nums;
-    }
-    .season-rank-track {
-        display: grid; grid-template-columns: repeat(var(--rank-count, 32), minmax(0, 1fr));
-        gap: 2px; height: 7px;
-    }
-    .season-rank-segment {
-        position: relative; min-width: 0;
-        background: color-mix(in srgb, currentColor 12%, transparent);
-    }
-    .season-rank-segment.is-filled {
-        background: color-mix(in srgb, var(--rank-accent) 65%, transparent);
-    }
-    .season-rank-segment.is-current { background: var(--rank-accent); }
-    .season-rank-segment.is-current::after {
-        content: ''; position: absolute; top: -3px; left: 50%; width: 3px; height: 13px;
-        border-radius: 2px; background: var(--rank-accent); transform: translateX(-50%);
-        box-shadow: 0 0 0 2px color-mix(in srgb, var(--rank-accent) 12%, transparent);
-    }
-    .season-rank-rail.is-unavailable { grid-template-columns: minmax(0, 1fr); }
-    .season-rank-track.is-unavailable {
-        background: color-mix(in srgb, currentColor 12%, transparent);
-        opacity: 0.3;
-    }
     .metric-chevron {
         width: 1rem; height: 1rem; opacity: 0.7;
         transition: transform 160ms ease; flex-shrink: 0;

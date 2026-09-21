@@ -7,7 +7,6 @@ from io import BytesIO
 import json
 from types import SimpleNamespace
 from unittest.mock import MagicMock, Mock
-from xml.etree import ElementTree
 
 import pandas as pd
 import pytest
@@ -750,21 +749,3 @@ def test_metric_rank_is_explicit_and_uses_ordinal_suffix(rank, expected):
     assert f'{expected} of 32' in rendered
     assert '0.50' in rendered
     assert f'Rank {rank} of 32 teams' in rendered
-
-
-@pytest.mark.parametrize('rank,total', [(1, 32), (21, 32), (32, 32), (7, 14), (1, 1)])
-@pytest.mark.parametrize('higher_is_better', [True, False])
-def test_rank_bar_marks_one_whole_rank_slot(rank, total, higher_is_better):
-    rendered = metrics_renderer.MetricsRenderer._metric_with_rank_html(
-        'Metric', '34.62%', calculate_performance_rank(rank, total),
-        higher_is_better=higher_is_better,
-    )
-    card = ElementTree.fromstring(rendered)
-    track = card.find(".//div[@class='season-rank-track']")
-    slots = list(track)
-    assert [int(slot.get('data-rank')) for slot in slots] == list(range(total, 0, -1))
-    current = [slot for slot in slots if 'is-current' in slot.get('class').split()]
-    assert len(current) == 1
-    assert int(current[0].get('data-rank')) == rank
-    filled = [int(slot.get('data-rank')) for slot in slots if 'is-filled' in slot.get('class').split()]
-    assert filled == list(range(total, rank - 1, -1))
