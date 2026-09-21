@@ -127,6 +127,7 @@ class StreamlitController:
             analysis_response = self._get_reusable_analysis(
                 request, selections, cache_key
             )
+            computed_analysis = analysis_response is None
             
             if analysis_response is None:
                 # Reset analysis state to clear stale UI elements
@@ -146,7 +147,8 @@ class StreamlitController:
                 main_content.empty()
                 
             if analysis_response:
-                if request.cache_nfl_data:
+                # A rerun must not restart the lifetime of an existing response.
+                if request.cache_nfl_data and computed_analysis:
                     season_info = get_current_nfl_season_info()
                     is_live_season = (
                         request.season_year == season_info['current_season']

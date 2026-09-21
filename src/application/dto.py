@@ -1,6 +1,6 @@
 # src/application/dto.py - Data Transfer Objects with comprehensive validation
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Any
 from enum import Enum
 from ..domain.entities import Team, Season, GameStats, SeasonStats, PerformanceRank, TeamRecord
@@ -74,6 +74,14 @@ class TeamAnalysisResponse:
     team_record: Optional[TeamRecord] = None
     rankings: Optional[Dict[str, PerformanceRank]] = None
     league_averages: Optional[Dict[str, float]] = None
+    configuration: Dict[str, Any] = field(default_factory=dict)
+    season_type_filter: str = "ALL"
+
+    @property
+    def team_display_name(self) -> str:
+        """Use the same season-aware franchise name across analysis surfaces."""
+        from ..utils.team_code_mapper import get_team_display_name
+        return get_team_display_name(self.team.abbreviation, self.season.year)
 
 
 @dataclass

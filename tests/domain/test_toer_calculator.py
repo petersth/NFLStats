@@ -6,15 +6,17 @@ Tests all scoring methods, edge cases, validation, and the main calculate_toer m
 """
 
 import pytest
+from pathlib import Path
+
+import pandas as pd
 from src.domain.toer_calculator import TOERCalculator, TOERValidationError
 
 
 class TestTOERCalculatorValidation:
     """Test input validation for all TOER calculator methods."""
     
-    def test_validate_negative_yards_per_play(self):
-        with pytest.raises(TOERValidationError, match="yards_per_play cannot be negative"):
-            TOERCalculator.calculate_yards_per_play_score(-1.0)
+    def test_negative_yards_per_play_receives_lowest_score(self):
+        assert TOERCalculator.calculate_yards_per_play_score(-1.0) == 0
     
     def test_validate_unrealistic_yards_per_play(self):
         with pytest.raises(TOERValidationError, match="yards_per_play seems unrealistic"):
@@ -36,9 +38,8 @@ class TestTOERCalculatorValidation:
         with pytest.raises(TOERValidationError, match="completion_percentage must be between 0 and 100"):
             TOERCalculator.calculate_completion_pct_score(105.0)
     
-    def test_validate_negative_rush_ypc(self):
-        with pytest.raises(TOERValidationError, match="rush_yards_per_carry cannot be negative"):
-            TOERCalculator.calculate_rush_ypc_score(-2.0)
+    def test_negative_rush_ypc_receives_lowest_score(self):
+        assert TOERCalculator.calculate_rush_ypc_score(-2.25) == 0
     
     def test_validate_unrealistic_rush_ypc(self):
         with pytest.raises(TOERValidationError, match="rush_yards_per_carry seems unrealistic"):
@@ -96,6 +97,39 @@ class TestTOERCalculatorValidation:
     def test_validate_unrealistic_penalty_yards(self):
         with pytest.raises(TOERValidationError, match="penalty_yards seems unrealistic"):
             TOERCalculator.calculate_penalty_yards_adjustment(350)
+
+    @pytest.mark.parametrize("value", [float('nan'), float('inf'), float('-inf')])
+    @pytest.mark.parametrize("method", [
+        TOERCalculator.calculate_yards_per_play_score,
+        TOERCalculator.calculate_turnovers_score,
+        TOERCalculator.calculate_completion_pct_score,
+        TOERCalculator.calculate_rush_ypc_score,
+        TOERCalculator.calculate_sacks_score,
+        TOERCalculator.calculate_third_down_score,
+        TOERCalculator.calculate_success_rate_score,
+        TOERCalculator.calculate_first_downs_score,
+        TOERCalculator.calculate_ppd_score,
+        TOERCalculator.calculate_redzone_score,
+        TOERCalculator.calculate_penalty_yards_adjustment,
+    ])
+    def test_non_finite_inputs_cannot_be_scored(self, method, value):
+        with pytest.raises(TOERValidationError, match="must be a finite number"):
+            method(value)
+
+    @pytest.mark.parametrize("method", [
+        TOERCalculator.calculate_turnovers_score,
+        TOERCalculator.calculate_sacks_score,
+        TOERCalculator.calculate_penalty_yards_adjustment,
+    ])
+    def test_discrete_counts_require_whole_numbers(self, method):
+        with pytest.raises(TOERValidationError, match="must be a whole number"):
+            method(1.5)
+        assert method(2.0) == method(2)
+
+    @pytest.mark.parametrize("value", [None, True, '4.5'])
+    def test_non_numeric_values_raise_domain_validation_error(self, value):
+        with pytest.raises(TOERValidationError, match="must be a finite number"):
+            TOERCalculator.calculate_rush_ypc_score(value)
 
 
 class TestYardsPerPlayScoring:
@@ -492,9 +526,9 @@ class TestTOERCalculation:
     
     def test_toer_with_invalid_inputs_during_calculation(self):
         """Invalid composite inputs must not look like a real zero-rated game."""
-        with pytest.raises(TOERValidationError, match="yards_per_play cannot be negative"):
+        with pytest.raises(TOERValidationError, match="yards_per_play must be a finite number"):
             TOERCalculator.calculate_toer(
-                avg_yards_per_play=-1.0,
+                avg_yards_per_play=float('nan'),
                 turnovers=0,
                 completion_pct=65.0,
                 rush_ypc=4.5,
@@ -510,7 +544,19 @@ class TestTOERCalculation:
     def test_individual_methods_raise_validation_errors(self):
         """Test that individual scoring methods raise validation errors properly."""
         with pytest.raises(TOERValidationError):
-            TOERCalculator.calculate_yards_per_play_score(-1.0)
+            TOERCalculator.calculate_yards_per_play_score(float('inf'))
+
+    def test_detroit_2007_negative_rushing_game_can_be_calculated(self):
+        """Real nflverse plays: DET at ARI, Nov. 11, 2007, eight rushes/-18 yards."""
+        from src.domain.nfl_stats_calculator import NFLStatsCalculator
+
+        fixture = Path(__file__).parents[1] / 'fixtures' / 'det_ari_2007_offense.csv'
+        plays = pd.read_csv(fixture)
+        stats = NFLStatsCalculator().calculate_offensive_stats(plays, 'DET')
+
+        assert stats.rush_ypc == -2.25
+        assert TOERCalculator.calculate_rush_ypc_score(stats.rush_ypc) == 0
+        assert 0 <= stats.toer <= 100
 
 
 class TestEdgeCases:

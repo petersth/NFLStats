@@ -1,0 +1,246 @@
+game_id,play_id,posteam,drive,down,yardline_100,play_type,touchdown,td_team,two_point_attempt,field_goal_result,desc
+2024_01_GB_PHI,40.0,GB,1.0,,35.0,kickoff,0.0,,0.0,,"10-B.Mann kicks 65 yards from PHI 35 to end zone, Touchback to the GB 30. PENALTY on PHI-22-K.Ringo, Illegal Formation, 5 yards, enforced at GB 30."
+2024_01_GB_PHI,68.0,GB,1.0,1.0,65.0,run,0.0,,0.0,,"(15:00) 8-J.Jacobs up the middle to GB 34 for -1 yards (19-J.Sweat, 93-M.Williams)."
+2024_01_GB_PHI,90.0,GB,1.0,2.0,66.0,pass,0.0,,0.0,,(14:21) (Shotgun) 10-J.Love pass short right to 9-C.Watson to GB 39 for 5 yards (2-D.Slay; 29-A.Maddox).
+2024_01_GB_PHI,115.0,GB,1.0,3.0,61.0,pass,0.0,,0.0,,"(13:39) (No Huddle, Shotgun) 10-J.Love pass short left to 87-R.Doubs pushed ob at PHI 42 for 19 yards (29-A.Maddox; 32-R.Blankenship)."
+2024_01_GB_PHI,145.0,GB,1.0,1.0,42.0,run,0.0,,0.0,,"(12:59) 8-J.Jacobs left guard to PHI 38 for 4 yards (53-Z.Baun, 27-Q.Mitchell)."
+2024_01_GB_PHI,167.0,GB,1.0,2.0,38.0,run,0.0,,0.0,,"(12:17) 8-J.Jacobs left tackle to PHI 38 for no gain (53-Z.Baun, 3-N.Smith)."
+2024_01_GB_PHI,189.0,GB,1.0,3.0,38.0,no_play,,,,,"(12:01) (No Huddle) 10-J.Love pass deep left to 11-J.Reed for 38 yards, TOUCHDOWN NULLIFIED by Penalty. Penalty on PHI, Defensive Too Many Men on Field, offsetting, enforced at PHI 38 - No Play. Penalty on GB, Offensive Too Many Men on Field, offsetting."
+2024_01_GB_PHI,226.0,GB,1.0,3.0,38.0,pass,0.0,,0.0,,(11:52) (Shotgun) 10-J.Love pass incomplete deep left to 9-C.Watson.
+2024_01_GB_PHI,249.0,GB,1.0,4.0,38.0,no_play,0.0,,0.0,,"(11:47) (Shotgun) PENALTY on GB-50-Z.Tom, False Start, 5 yards, enforced at PHI 38 - No Play."
+2024_01_GB_PHI,280.0,GB,1.0,4.0,43.0,punt,0.0,,0.0,,"(11:47) 19-D.Whelan punts 33 yards to PHI 10, Center-42-M.Orzech, out of bounds."
+2024_01_GB_PHI,378.0,GB,3.0,1.0,19.0,pass,0.0,,0.0,,"(10:46) (Shotgun) 10-J.Love sacked at PHI 24 for -5 yards (53-Z.Baun). PENALTY on PHI-98-J.Carter, Unnecessary Roughness, 12 yards, enforced at PHI 24."
+2024_01_GB_PHI,409.0,GB,3.0,1.0,12.0,run,0.0,,0.0,,(10:19) (Shotgun) 8-J.Jacobs right tackle to PHI 12 for no gain (8-C.Gardner-Johnson).
+2024_01_GB_PHI,431.0,GB,3.0,2.0,12.0,no_play,0.0,,0.0,,"(9:39) 10-J.Love pass short right to 88-L.Musgrave to PHI 13 for -1 yards (8-C.Gardner-Johnson; 2-D.Slay). PENALTY on GB-63-R.Walker, Offensive Holding, 10 yards, enforced at PHI 12 - No Play."
+2024_01_GB_PHI,467.0,GB,3.0,2.0,22.0,pass,0.0,,0.0,,(9:17) (Shotgun) 10-J.Love pass incomplete short middle to 13-D.Wicks.
+2024_01_GB_PHI,490.0,GB,3.0,3.0,22.0,pass,0.0,,0.0,,(9:13) (Shotgun) 10-J.Love pass short left to 8-J.Jacobs to PHI 13 for 9 yards (29-A.Maddox; 59-T.Booker).
+2024_01_GB_PHI,515.0,GB,3.0,4.0,13.0,field_goal,0.0,,0.0,made,"(8:30) 44-B.Narveson 31 yard field goal is GOOD, Center-42-M.Orzech, Holder-19-D.Whelan."
+2024_01_GB_PHI,639.0,GB,5.0,1.0,13.0,no_play,0.0,,0.0,,"(7:06) 8-J.Jacobs right end to PHI 5 for 8 yards (2-D.Slay). PENALTY on GB-85-T.Kraft, Offensive Holding, 10 yards, enforced at PHI 13 - No Play."
+2024_01_GB_PHI,672.0,GB,5.0,1.0,23.0,pass,0.0,,0.0,,(6:43) (Shotgun) 10-J.Love pass short right to 11-J.Reed to PHI 14 for 9 yards (32-R.Blankenship; 53-Z.Baun).
+2024_01_GB_PHI,711.0,GB,5.0,2.0,14.0,pass,0.0,,0.0,,(5:58) (Shotgun) 10-J.Love pass short right to 87-R.Doubs to PHI 4 for 10 yards (2-D.Slay).
+2024_01_GB_PHI,736.0,GB,5.0,3.0,4.0,run,0.0,,0.0,,"(5:27) 8-J.Jacobs up the middle to PHI 5 for -1 yards (17-N.Dean, 55-B.Graham)."
+2024_01_GB_PHI,758.0,GB,5.0,4.0,5.0,run,0.0,,0.0,,(4:44) 8-J.Jacobs right tackle to PHI 3 for 2 yards (8-C.Gardner-Johnson; 53-Z.Baun).
+2024_01_GB_PHI,780.0,GB,5.0,1.0,3.0,no_play,0.0,,0.0,,"(3:58) (Shotgun) 10-J.Love pass incomplete short left to 9-C.Watson (32-R.Blankenship). PENALTY on GB-87-R.Doubs, Offensive Pass Interference, 10 yards, enforced at PHI 3 - No Play."
+2024_01_GB_PHI,821.0,GB,5.0,1.0,13.0,pass,0.0,,0.0,,"(3:53) (Shotgun) 10-J.Love pass short right to 85-T.Kraft pushed ob at PHI 5 for 8 yards (8-C.Gardner-Johnson, 98-J.Carter)."
+2024_01_GB_PHI,851.0,GB,5.0,2.0,5.0,pass,0.0,,0.0,,(3:15) 10-J.Love pass incomplete short right [19-J.Sweat].
+2024_01_GB_PHI,874.0,GB,5.0,3.0,5.0,pass,0.0,,0.0,,(3:09) (Shotgun) 10-J.Love pass incomplete short right to 9-C.Watson.
+2024_01_GB_PHI,897.0,GB,5.0,4.0,5.0,field_goal,0.0,,0.0,made,"(3:04) 44-B.Narveson 23 yard field goal is GOOD, Center-42-M.Orzech, Holder-19-D.Whelan."
+2024_01_GB_PHI,1285.0,GB,7.0,,35.0,kickoff,0.0,,0.0,,"10-B.Mann kicks 65 yards from PHI 35 to end zone, Touchback to the GB 30."
+2024_01_GB_PHI,1309.0,GB,7.0,1.0,70.0,pass,0.0,,0.0,,(12:38) 10-J.Love pass incomplete deep middle to 13-D.Wicks.
+2024_01_GB_PHI,1332.0,GB,7.0,2.0,70.0,run,0.0,,0.0,,(12:33) (Shotgun) 31-Em.Wilson left tackle to GB 44 for 14 yards (32-R.Blankenship).
+2024_01_GB_PHI,1354.0,GB,7.0,1.0,56.0,run,0.0,,0.0,,(11:57) (Shotgun) 31-Em.Wilson left end to GB 49 for 5 yards (53-Z.Baun).
+2024_01_GB_PHI,1376.0,GB,7.0,2.0,51.0,run,0.0,,0.0,,(11:13) (Shotgun) 31-Em.Wilson up the middle to PHI 33 for 18 yards (53-Z.Baun).
+2024_01_GB_PHI,1398.0,GB,7.0,1.0,33.0,run,1.0,GB,0.0,,"(10:24) (Shotgun) 11-J.Reed right end for 33 yards, TOUCHDOWN."
+2024_01_GB_PHI,1428.0,GB,7.0,,15.0,extra_point,0.0,,0.0,,"44-B.Narveson extra point is GOOD, Center-42-M.Orzech, Holder-19-D.Whelan. PENALTY on PHI-98-J.Carter, Defensive Offside, 1 yard, enforced at PHI 15 - No Play."
+2024_01_GB_PHI,1454.0,GB,7.0,,1.0,run,0.0,,1.0,,77-J.Morgan reported in as eligible. TWO-POINT CONVERSION ATTEMPT. 8-J.Jacobs rushes left tackle. ATTEMPT FAILS.
+2024_01_GB_PHI,1734.0,GB,9.0,,35.0,kickoff,0.0,,0.0,,"10-B.Mann kicks 65 yards from PHI 35 to end zone, Touchback to the GB 30."
+2024_01_GB_PHI,1758.0,GB,9.0,1.0,70.0,pass,0.0,,0.0,,(5:34) (Shotgun) 10-J.Love pass incomplete short right to 8-J.Jacobs.
+2024_01_GB_PHI,1790.0,GB,9.0,2.0,70.0,pass,0.0,,0.0,,(5:29) (Shotgun) 10-J.Love pass incomplete deep left to 88-L.Musgrave (27-Q.Mitchell).
+2024_01_GB_PHI,1813.0,GB,9.0,3.0,70.0,pass,1.0,GB,0.0,,"(5:22) (Shotgun) 10-J.Love pass deep right to 11-J.Reed for 70 yards, TOUCHDOWN."
+2024_01_GB_PHI,1846.0,GB,9.0,,15.0,no_play,0.0,,0.0,,"(Kick formation) PENALTY on GB-63-R.Walker, False Start, 5 yards, enforced at PHI 15 - No Play."
+2024_01_GB_PHI,1877.0,GB,9.0,,20.0,extra_point,0.0,,0.0,,"44-B.Narveson extra point is GOOD, Center-42-M.Orzech, Holder-19-D.Whelan."
+2024_01_GB_PHI,2422.0,GB,12.0,,35.0,kickoff,0.0,,0.0,,"10-B.Mann kicks 65 yards from PHI 35 to end zone, Touchback to the GB 30."
+2024_01_GB_PHI,2439.0,GB,12.0,1.0,70.0,pass,0.0,,0.0,,(14:09) 10-J.Love pass incomplete deep left.
+2024_01_GB_PHI,2462.0,GB,12.0,2.0,70.0,run,0.0,,0.0,,"(13:59) (Shotgun) 8-J.Jacobs right guard to GB 35 for 5 yards (2-D.Slay). FUMBLES (2-D.Slay), recovered by GB-80-B.Melton at GB 39."
+2024_01_GB_PHI,2500.0,GB,12.0,3.0,61.0,no_play,0.0,,0.0,,"(13:31) (No Huddle, Shotgun) 10-J.Love pass incomplete short left to 80-B.Melton. PENALTY on PHI-53-Z.Baun, Roughing the Passer, 16 yards, enforced at GB 39 - No Play. Penalty on PHI-27-Q.Mitchell, Defensive Pass Interference, declined."
+2024_01_GB_PHI,2534.0,GB,12.0,1.0,45.0,pass,0.0,,0.0,,(13:25) (Shotgun) 10-J.Love pass short left to 85-T.Kraft pushed ob at PHI 16 for 29 yards (32-R.Blankenship).
+2024_01_GB_PHI,2564.0,GB,12.0,1.0,16.0,run,0.0,,0.0,,(12:46) (Shotgun) 8-J.Jacobs left guard to PHI 15 for 1 yard (8-C.Gardner-Johnson; 53-Z.Baun).
+2024_01_GB_PHI,2586.0,GB,12.0,2.0,15.0,pass,0.0,,0.0,,(12:06) (Shotgun) 10-J.Love pass incomplete short right to 85-T.Kraft [98-J.Carter].
+2024_01_GB_PHI,2609.0,GB,12.0,3.0,15.0,no_play,0.0,,0.0,,"(12:02) (Shotgun) 10-J.Love pass incomplete short right to 13-D.Wicks. PENALTY on PHI-29-A.Maddox, Defensive Pass Interference, 13 yards, enforced at PHI 15 - No Play."
+2024_01_GB_PHI,2643.0,GB,12.0,1.0,2.0,pass,1.0,GB,0.0,,"(11:58) (Shotgun) 10-J.Love pass short left to 9-C.Watson for 2 yards, TOUCHDOWN."
+2024_01_GB_PHI,2669.0,GB,12.0,,15.0,extra_point,0.0,,0.0,,"44-B.Narveson extra point is GOOD, Center-42-M.Orzech, Holder-19-D.Whelan."
+2024_01_GB_PHI,2793.0,GB,14.0,1.0,80.0,pass,0.0,,0.0,,(10:26) (Shotgun) 10-J.Love pass short left to 87-R.Doubs pushed ob at GB 32 for 12 yards (27-Q.Mitchell).
+2024_01_GB_PHI,2823.0,GB,14.0,1.0,68.0,no_play,0.0,,0.0,,"(9:47) (Shotgun) 31-Em.Wilson right guard to GB 36 for 4 yards (53-Z.Baun). PENALTY on GB, Illegal Shift, 5 yards, enforced at GB 32 - No Play."
+2024_01_GB_PHI,2856.0,GB,14.0,1.0,73.0,pass,0.0,,0.0,,(9:23) 10-J.Love pass incomplete deep left to 11-J.Reed.
+2024_01_GB_PHI,2879.0,GB,14.0,2.0,73.0,pass,0.0,,0.0,,(9:18) (Shotgun) 10-J.Love pass incomplete short middle to 87-R.Doubs.
+2024_01_GB_PHI,2902.0,GB,14.0,3.0,73.0,pass,0.0,,0.0,,"(9:13) (Shotgun) 10-J.Love pass incomplete short left to 31-Em.Wilson (17-N.Dean). Penalty on GB, Illegal Shift, declined."
+2024_01_GB_PHI,2936.0,GB,14.0,4.0,73.0,no_play,,,,,"(9:09) 19-D.Whelan punts 56 yards to PHI 17, Center-42-M.Orzech. 18-B.Covey to PHI 30 for 13 yards (45-Er.Wilson). Penalty on GB-58-I.McDuffie, Illegal Formation, offsetting, enforced at GB 27 - No Play. Penalty on PHI-36-T.McCollum, Illegal Blindside Block, offsetting."
+2024_01_GB_PHI,2973.0,GB,14.0,4.0,73.0,punt,0.0,,0.0,,"(8:56) 19-D.Whelan punts 41 yards to PHI 32, Center-42-M.Orzech, fair catch by 18-B.Covey."
+2024_01_GB_PHI,3099.0,GB,16.0,1.0,87.0,run,0.0,,0.0,,(7:21) 8-J.Jacobs up the middle to GB 22 for 9 yards (32-R.Blankenship; 0-B.Huff).
+2024_01_GB_PHI,3128.0,GB,16.0,2.0,78.0,no_play,0.0,,0.0,,"(6:38) 8-J.Jacobs left end to GB 29 for 7 yards (8-C.Gardner-Johnson; 27-Q.Mitchell). PENALTY on GB-63-R.Walker, Offensive Holding, 10 yards, enforced at GB 22 - No Play."
+2024_01_GB_PHI,3161.0,GB,16.0,2.0,88.0,pass,0.0,,0.0,,(6:15) (Shotgun) 10-J.Love pass short middle intended for 88-L.Musgrave INTERCEPTED by 32-R.Blankenship at GB 25. 32-R.Blankenship to GB 24 for 1 yard (13-D.Wicks).
+2024_01_GB_PHI,3305.0,GB,18.0,,35.0,kickoff,0.0,,0.0,,"10-B.Mann kicks 65 yards from PHI 35 to end zone, Touchback to the GB 30."
+2024_01_GB_PHI,3329.0,GB,18.0,1.0,70.0,pass,0.0,,0.0,,(4:26) (Shotgun) 10-J.Love pass short left to 87-R.Doubs to GB 39 for 9 yards (17-N.Dean).
+2024_01_GB_PHI,3354.0,GB,18.0,2.0,61.0,run,0.0,,0.0,,(3:51) (Shotgun) 8-J.Jacobs up the middle to GB 42 for 3 yards (53-Z.Baun).
+2024_01_GB_PHI,3376.0,GB,18.0,1.0,58.0,pass,0.0,,0.0,,(3:11) (Shotgun) 10-J.Love pass incomplete short left to 13-D.Wicks (27-Q.Mitchell).
+2024_01_GB_PHI,3399.0,GB,18.0,2.0,58.0,pass,0.0,,0.0,,(3:07) (Shotgun) 10-J.Love pass short right to 8-J.Jacobs to PHI 47 for 11 yards (98-J.Carter; 8-C.Gardner-Johnson). PHI-8-C.Gardner-Johnson was injured during the play. PHI-27-Q.Mitchell was injured during the play.
+2024_01_GB_PHI,3427.0,GB,18.0,1.0,47.0,run,0.0,,0.0,,(2:33) 8-J.Jacobs right guard to PHI 25 for 22 yards (32-R.Blankenship).
+2024_01_GB_PHI,3452.0,GB,18.0,1.0,25.0,run,0.0,,0.0,,(1:52) 8-J.Jacobs right end to PHI 25 for no gain (53-Z.Baun). ** Injury Update: PHI-8-C.Gardner-Johnson has returned to the game.
+2024_01_GB_PHI,3474.0,GB,18.0,2.0,25.0,pass,0.0,,0.0,,(1:10) (Shotgun) 10-J.Love pass short left to 31-Em.Wilson to PHI 25 for no gain (53-Z.Baun).
+2024_01_GB_PHI,3511.0,GB,18.0,3.0,25.0,pass,0.0,,0.0,,(:26) (Shotgun) 10-J.Love pass incomplete short left to 11-J.Reed.
+2024_01_GB_PHI,3534.0,GB,18.0,4.0,25.0,field_goal,0.0,,0.0,missed,"(:21) 44-B.Narveson 43 yard field goal is No Good, Hit Right Upright, Center-42-M.Orzech, Holder-19-D.Whelan."
+2024_01_GB_PHI,3742.0,GB,20.0,1.0,87.0,run,0.0,,0.0,,(12:53) (Shotgun) 8-J.Jacobs left tackle pushed ob at GB 45 for 32 yards (17-N.Dean). ** Injury Update: PHI-27-Q.Mitchell has returned to the game.
+2024_01_GB_PHI,3776.0,GB,20.0,1.0,55.0,run,0.0,,0.0,,(12:15) (Shotgun) 8-J.Jacobs left tackle to GB 44 for -1 yards (17-N.Dean).
+2024_01_GB_PHI,3798.0,GB,20.0,2.0,56.0,pass,0.0,,0.0,,(11:37) (Shotgun) 10-J.Love pass short left to 9-C.Watson to 50 for 6 yards (27-Q.Mitchell).
+2024_01_GB_PHI,3826.0,GB,20.0,3.0,50.0,pass,0.0,,0.0,,"(10:56) (No Huddle, Shotgun) 10-J.Love pass deep left to 11-J.Reed to PHI 24 for 26 yards (32-R.Blankenship)."
+2024_01_GB_PHI,3851.0,GB,20.0,1.0,24.0,run,0.0,,0.0,,"(10:11) 31-Em.Wilson left guard to PHI 15 for 9 yards (27-Q.Mitchell, 98-J.Carter)."
+2024_01_GB_PHI,3873.0,GB,20.0,2.0,15.0,pass,0.0,,0.0,,(9:30) 10-J.Love pass short right to 31-Em.Wilson to PHI 13 for 2 yards (53-Z.Baun).
+2024_01_GB_PHI,3898.0,GB,20.0,1.0,13.0,run,0.0,,0.0,,(8:49) (Shotgun) 8-J.Jacobs right guard to PHI 8 for 5 yards (53-Z.Baun; 32-R.Blankenship).
+2024_01_GB_PHI,3920.0,GB,20.0,2.0,8.0,pass,0.0,,0.0,,(8:06) 10-J.Love pass incomplete short left.
+2024_01_GB_PHI,3943.0,GB,20.0,3.0,8.0,pass,0.0,,0.0,,(8:01) (Shotgun) 10-J.Love pass incomplete short middle to 87-R.Doubs [97-M.Ojomo].
+2024_01_GB_PHI,3966.0,GB,20.0,4.0,8.0,field_goal,0.0,,0.0,made,"(7:56) 44-B.Narveson 26 yard field goal is GOOD, Center-42-M.Orzech, Holder-19-D.Whelan."
+2024_01_GB_PHI,4560.0,GB,22.0,,35.0,kickoff,0.0,,0.0,,"10-B.Mann kicks 73 yards from PHI 35 to GB -8. 25-K.Nixon to GB 16 for 24 yards (28-W.Shipley, 3-N.Smith)."
+2024_01_GB_PHI,4583.0,GB,22.0,1.0,84.0,pass,0.0,,0.0,,(:22) (Shotgun) 10-J.Love pass deep left to 11-J.Reed pushed ob at GB 49 for 33 yards (27-Q.Mitchell).
+2024_01_GB_PHI,4608.0,GB,22.0,1.0,51.0,run,0.0,,0.0,,"(:15) (No Huddle, Shotgun) 8-J.Jacobs left end ran ob at PHI 47 for 4 yards (53-Z.Baun). GB-10-J.Love was injured during the play. GB-71-J.Myers was injured during the play."
+2024_01_GB_PHI,4648.0,GB,22.0,2.0,47.0,pass,0.0,,0.0,,(:06) (Shotgun) 2-M.Willis pass incomplete short left to 87-R.Doubs.
+2024_01_GB_PHI,4681.0,GB,22.0,3.0,47.0,pass,0.0,,0.0,,(:03) (Shotgun) 2-M.Willis sacked at GB 49 for -4 yards (53-Z.Baun).
+2024_01_GB_PHI,4701.0,GB,22.0,,,,,,,,END GAME
+2025_03_DET_BAL,345.0,BAL,2.0,,35.0,kickoff,0.0,,0.0,,"39-J.Bates kicks 65 yards from DET 35 to landing zone to end zone, Touchback to the BAL 20."
+2025_03_DET_BAL,374.0,BAL,2.0,1.0,80.0,pass,0.0,,0.0,,(9:16) 8-L.Jackson pass short right to 89-M.Andrews to BAL 39 for 19 yards (32-B.Branch).
+2025_03_DET_BAL,399.0,BAL,2.0,1.0,61.0,no_play,0.0,,0.0,,"(8:36) PENALTY on DET-97-A.Hutchinson, Neutral Zone Infraction, 5 yards, enforced at BAL 39 - No Play."
+2025_03_DET_BAL,423.0,BAL,2.0,1.0,56.0,run,0.0,,0.0,,(8:18) 22-D.Henry right end to DET 49 for 7 yards (55-D.Barnes).
+2025_03_DET_BAL,445.0,BAL,2.0,1.0,49.0,run,0.0,,0.0,,(7:38) (Shotgun) 8-L.Jackson left end to DET 37 for 12 yards (31-K.Joseph).
+2025_03_DET_BAL,467.0,BAL,2.0,1.0,37.0,pass,0.0,,0.0,,(6:56) (Shotgun) 8-L.Jackson pass short left to 89-M.Andrews pushed ob at DET 29 for 8 yards (31-K.Joseph).
+2025_03_DET_BAL,497.0,BAL,2.0,2.0,29.0,run,0.0,,0.0,,(6:22) (Shotgun) 22-D.Henry right guard to DET 28 for 1 yard (55-D.Barnes; 34-A.Anzalone).
+2025_03_DET_BAL,519.0,BAL,2.0,3.0,28.0,run,1.0,BAL,0.0,,"(5:47) 22-D.Henry right guard for 28 yards, TOUCHDOWN. Penalty on DET-95-P.O'Connor, Defensive Offside, declined."
+2025_03_DET_BAL,553.0,BAL,2.0,,15.0,extra_point,0.0,,0.0,,"33-T.Loop extra point is GOOD, Center-46-N.Moore, Holder-11-J.Stout."
+2025_03_DET_BAL,723.0,BAL,4.0,1.0,73.0,pass,0.0,,0.0,,(3:16) 8-L.Jackson pass short middle to 88-C.Kolar to BAL 34 for 7 yards (55-D.Barnes).
+2025_03_DET_BAL,760.0,BAL,4.0,2.0,66.0,run,0.0,,0.0,,(2:43) (Shotgun) 22-D.Henry left tackle to BAL 34 for no gain (46-J.Campbell).
+2025_03_DET_BAL,782.0,BAL,4.0,3.0,66.0,pass,0.0,,0.0,,(2:00) (Shotgun) 8-L.Jackson pass incomplete short left to 43-J.Hill.
+2025_03_DET_BAL,805.0,BAL,4.0,4.0,66.0,punt,0.0,,0.0,,"(1:55) 11-J.Stout punts 63 yards to DET 3, Center-46-N.Moore. 11-K.Raymond to DET 7 for 4 yards (27-T.Tampa). PENALTY on DET-4-D.Reed, Offensive Holding, 1 yard, enforced at DET 3."
+2025_03_DET_BAL,1341.0,BAL,6.0,,35.0,kickoff,0.0,,0.0,,39-J.Bates kicks 59 yards from DET 35 to BAL 6. 26-R.Ali to BAL 49 for 43 yards (39-J.Bates).
+2025_03_DET_BAL,1371.0,BAL,6.0,1.0,51.0,run,0.0,,0.0,,(5:48) (Shotgun) 22-D.Henry right guard to DET 47 for 4 yards (78-T.Lacy).
+2025_03_DET_BAL,1393.0,BAL,6.0,2.0,47.0,run,0.0,,0.0,,(5:11) (Shotgun) 8-L.Jackson right end to DET 47 for no gain (55-D.Barnes).
+2025_03_DET_BAL,1415.0,BAL,6.0,3.0,47.0,pass,0.0,,0.0,,(4:29) (Shotgun) 8-L.Jackson pass short left to 7-R.Bateman ran ob at DET 37 for 10 yards.
+2025_03_DET_BAL,1445.0,BAL,6.0,1.0,37.0,pass,0.0,,0.0,,(3:49) (Shotgun) 8-L.Jackson pass deep left to 81-D.Walker pushed ob at DET 3 for 34 yards (6-T.Arnold).
+2025_03_DET_BAL,1475.0,BAL,6.0,1.0,3.0,run,0.0,,0.0,,(3:18) 22-D.Henry right guard to DET 1 for 2 yards (4-D.Reed).
+2025_03_DET_BAL,1497.0,BAL,6.0,2.0,1.0,run,0.0,,0.0,,(2:43) 66-B.Cleveland reported in as eligible. 22-D.Henry up the middle to DET 1 for no gain (52-Z.Cunningham).
+2025_03_DET_BAL,1521.0,BAL,6.0,3.0,1.0,run,0.0,,0.0,,(2:00) 68-J.Noteboom reported in as eligible. 22-D.Henry right end to DET 2 for -1 yards (52-Z.Cunningham).
+2025_03_DET_BAL,1552.0,BAL,6.0,4.0,2.0,pass,0.0,,0.0,,"(1:30) (Shotgun) 8-L.Jackson sacked at DET 9 for -7 yards (46-J.Campbell). FUMBLES (46-J.Campbell), touched at DET 11, and recovers at DET 20."
+2025_03_DET_BAL,1755.0,BAL,8.0,1.0,49.0,run,0.0,,0.0,,(:56) (Shotgun) 8-L.Jackson scrambles right end pushed ob at DET 36 for 13 yards (4-D.Reed).
+2025_03_DET_BAL,1794.0,BAL,8.0,1.0,36.0,pass,0.0,,0.0,,(:48) (Shotgun) 8-L.Jackson pass short right to 43-J.Hill pushed ob at DET 32 for 4 yards (46-J.Campbell).
+2025_03_DET_BAL,1824.0,BAL,8.0,2.0,32.0,pass,0.0,,0.0,,(:38) (Shotgun) 8-L.Jackson pass short left to 10-D.Hopkins pushed ob at DET 19 for 13 yards (21-A.Robertson).
+2025_03_DET_BAL,1849.0,BAL,8.0,1.0,19.0,no_play,0.0,,0.0,,"(:32) (Shotgun) 8-L.Jackson pass incomplete deep left to 10-D.Hopkins. PENALTY on DET-6-T.Arnold, Defensive Pass Interference, 16 yards, enforced at DET 19 - No Play."
+2025_03_DET_BAL,1888.0,BAL,8.0,1.0,3.0,pass,1.0,BAL,0.0,,"(:27) 8-L.Jackson pass short left to 7-R.Bateman for 3 yards, TOUCHDOWN."
+2025_03_DET_BAL,1914.0,BAL,8.0,,15.0,extra_point,0.0,,0.0,,"33-T.Loop extra point is GOOD, Center-46-N.Moore, Holder-11-J.Stout."
+2025_03_DET_BAL,2103.0,BAL,10.0,,35.0,kickoff,0.0,,0.0,,39-J.Bates kicks 64 yards from DET 35 to BAL 1. 26-R.Ali to BAL 27 for 26 yards (15-G.Stuard; 53-T.Nowaske).
+2025_03_DET_BAL,2131.0,BAL,10.0,1.0,73.0,pass,0.0,,0.0,,(14:55) (Shotgun) 8-L.Jackson pass short left to 22-D.Henry to BAL 34 for 7 yards (46-J.Campbell).
+2025_03_DET_BAL,2161.0,BAL,10.0,2.0,66.0,run,0.0,,0.0,,(14:13) 22-D.Henry right tackle to BAL 36 for 2 yards (46-J.Campbell).
+2025_03_DET_BAL,2183.0,BAL,10.0,3.0,64.0,no_play,0.0,,0.0,,"(13:38) PENALTY on DET-51-R.Lopez, Neutral Zone Infraction, 6 yards, enforced at BAL 36 - No Play."
+2025_03_DET_BAL,2207.0,BAL,10.0,1.0,58.0,pass,0.0,,0.0,,(13:27) 8-L.Jackson pass incomplete deep right to 88-C.Kolar (32-B.Branch).
+2025_03_DET_BAL,2230.0,BAL,10.0,2.0,58.0,pass,0.0,,0.0,,(13:22) (Shotgun) 8-L.Jackson pass short left to 89-M.Andrews to BAL 46 for 4 yards (46-J.Campbell).
+2025_03_DET_BAL,2255.0,BAL,10.0,3.0,54.0,pass,0.0,,0.0,,(12:40) (Shotgun) 8-L.Jackson pass short middle to 4-Z.Flowers to DET 48 for 6 yards (32-B.Branch; 55-D.Barnes).
+2025_03_DET_BAL,2280.0,BAL,10.0,1.0,48.0,run,0.0,,0.0,,(12:00) 22-D.Henry left guard to DET 44 for 4 yards (46-J.Campbell).
+2025_03_DET_BAL,2302.0,BAL,10.0,2.0,44.0,pass,0.0,,0.0,,(11:20) 8-L.Jackson pass short middle to 88-C.Kolar to DET 29 for 15 yards (31-K.Joseph).
+2025_03_DET_BAL,2327.0,BAL,10.0,1.0,29.0,pass,0.0,,0.0,,(10:27) 8-L.Jackson pass deep right to 89-M.Andrews to DET 10 for 19 yards (32-B.Branch).
+2025_03_DET_BAL,2352.0,BAL,10.0,1.0,10.0,pass,0.0,,0.0,,(9:44) 22-D.Henry pass incomplete short right to 16-T.Wallace (4-D.Reed).
+2025_03_DET_BAL,2375.0,BAL,10.0,2.0,10.0,pass,0.0,,0.0,,(9:38) (Shotgun) 8-L.Jackson sacked at DET 14 for -4 yards (96-A.Muhammad).
+2025_03_DET_BAL,2404.0,BAL,10.0,3.0,14.0,pass,1.0,BAL,0.0,,"(8:55) (Shotgun) 8-L.Jackson pass short right to 89-M.Andrews for 14 yards, TOUCHDOWN."
+2025_03_DET_BAL,2430.0,BAL,10.0,,15.0,extra_point,0.0,,0.0,,"33-T.Loop extra point is GOOD, Center-46-N.Moore, Holder-11-J.Stout."
+2025_03_DET_BAL,2666.0,BAL,12.0,,35.0,kickoff,0.0,,0.0,,"39-J.Bates kicks 61 yards from DET 35 to BAL 4, out of bounds. PENALTY on DET-39-J.Bates, Kickoff Out of Bounds, placed at BAL 40."
+2025_03_DET_BAL,2700.0,BAL,12.0,1.0,60.0,pass,0.0,,0.0,,(5:13) (Shotgun) 8-L.Jackson pass short left to 4-Z.Flowers to BAL 47 for 7 yards (32-B.Branch).
+2025_03_DET_BAL,2725.0,BAL,12.0,2.0,53.0,pass,0.0,,0.0,,(4:36) 8-L.Jackson sacked at BAL 40 for -7 yards (96-A.Muhammad).
+2025_03_DET_BAL,2745.0,BAL,12.0,3.0,60.0,pass,0.0,,0.0,,(3:51) (Shotgun) 8-L.Jackson pass incomplete short right to 7-R.Bateman.
+2025_03_DET_BAL,2768.0,BAL,12.0,4.0,60.0,punt,0.0,,0.0,,"(3:47) 11-J.Stout punts 56 yards to DET 4, Center-46-N.Moore, downed by BAL-81-D.Walker."
+2025_03_DET_BAL,2996.0,BAL,14.0,,35.0,kickoff,0.0,,0.0,,39-J.Bates kicks 52 yards from DET 35 to BAL 13. 26-R.Ali to BAL 28 for 15 yards (23-R.Ya-Sin).
+2025_03_DET_BAL,3026.0,BAL,14.0,1.0,72.0,run,0.0,,0.0,,(14:52) (Shotgun) 8-L.Jackson right tackle to BAL 31 for 3 yards (34-A.Anzalone).
+2025_03_DET_BAL,3048.0,BAL,14.0,2.0,69.0,pass,0.0,,0.0,,(14:15) (Shotgun) 8-L.Jackson pass incomplete short right to 4-Z.Flowers.
+2025_03_DET_BAL,3071.0,BAL,14.0,3.0,69.0,pass,0.0,,0.0,,(14:11) (Shotgun) 8-L.Jackson pass deep middle to 7-R.Bateman to DET 49 for 20 yards (21-A.Robertson).
+2025_03_DET_BAL,3096.0,BAL,14.0,1.0,49.0,run,0.0,,0.0,,"(13:26) 22-D.Henry right end to DET 46 for 3 yards (46-J.Campbell). PENALTY on DET-32-B.Branch, Low Block, 15 yards, enforced at DET 46."
+2025_03_DET_BAL,3134.0,BAL,14.0,1.0,31.0,no_play,0.0,,0.0,,"(12:57) PENALTY on BAL-88-C.Kolar, False Start, 5 yards, enforced at DET 31 - No Play."
+2025_03_DET_BAL,3158.0,BAL,14.0,1.0,36.0,pass,0.0,,0.0,,(12:57) (Shotgun) 8-L.Jackson pass incomplete short left to 10-D.Hopkins.
+2025_03_DET_BAL,3181.0,BAL,14.0,2.0,36.0,pass,0.0,,0.0,,(12:54) (Shotgun) 8-L.Jackson pass deep middle to 7-R.Bateman to DET 20 for 16 yards (32-B.Branch).
+2025_03_DET_BAL,3206.0,BAL,14.0,1.0,20.0,run,0.0,,0.0,,(12:14) (Shotgun) 8-L.Jackson right guard to DET 19 for 1 yard (98-D.Reader).
+2025_03_DET_BAL,3228.0,BAL,14.0,2.0,19.0,pass,0.0,,0.0,,(11:35) (Shotgun) 8-L.Jackson sacked at DET 23 for -4 yards (53-T.Nowaske).
+2025_03_DET_BAL,3263.0,BAL,14.0,3.0,23.0,pass,0.0,,0.0,,(10:38) (Shotgun) 8-L.Jackson sacked at DET 23 for 0 yards (55-D.Barnes).
+2025_03_DET_BAL,3283.0,BAL,14.0,4.0,23.0,field_goal,0.0,,0.0,made,"(9:44) 33-T.Loop 41 yard field goal is GOOD, Center-46-N.Moore, Holder-11-J.Stout."
+2025_03_DET_BAL,3445.0,BAL,16.0,1.0,79.0,run,0.0,,0.0,,"(8:31) (Shotgun) 22-D.Henry up the middle to BAL 21 for no gain (97-A.Hutchinson). FUMBLES (97-A.Hutchinson), touched at BAL 22, RECOVERED by DET-4-D.Reed at BAL 19. 4-D.Reed to BAL 16 for 3 yards (8-L.Jackson)."
+2025_03_DET_BAL,3610.0,BAL,18.0,,35.0,kickoff,0.0,,0.0,,39-J.Bates kicks 55 yards from DET 35 to BAL 10. 26-R.Ali to BAL 31 for 21 yards (95-P.O'Connor; 55-D.Barnes).
+2025_03_DET_BAL,3640.0,BAL,18.0,1.0,69.0,pass,0.0,,0.0,,(6:30) (Shotgun) 8-L.Jackson sacked at BAL 25 for -6 yards (97-A.Hutchinson).
+2025_03_DET_BAL,3660.0,BAL,18.0,2.0,75.0,pass,0.0,,0.0,,(5:49) (Shotgun) 8-L.Jackson pass short left to 43-J.Hill to BAL 29 for 4 yards (6-T.Arnold; 34-A.Anzalone).
+2025_03_DET_BAL,3685.0,BAL,18.0,3.0,71.0,run,0.0,,0.0,,(5:05) (Shotgun) 8-L.Jackson scrambles left guard to BAL 32 for 3 yards (96-A.Muhammad).
+2025_03_DET_BAL,3707.0,BAL,18.0,4.0,68.0,punt,0.0,,0.0,,"(4:32) 11-J.Stout punts 38 yards to DET 30, Center-46-N.Moore, out of bounds."
+2025_03_DET_BAL,3931.0,BAL,20.0,,35.0,kickoff,0.0,,0.0,,"39-J.Bates kicks 65 yards from DET 35 to end zone, Touchback to the BAL 35."
+2025_03_DET_BAL,3948.0,BAL,20.0,1.0,65.0,pass,0.0,,0.0,,(1:42) (Shotgun) 8-L.Jackson pass incomplete deep left to 7-R.Bateman.
+2025_03_DET_BAL,3971.0,BAL,20.0,2.0,65.0,pass,0.0,,0.0,,(1:37) (Shotgun) 8-L.Jackson sacked at BAL 19 for -16 yards (sack split by 34-A.Anzalone and 96-A.Muhammad).
+2025_03_DET_BAL,3991.0,BAL,20.0,3.0,81.0,pass,0.0,,0.0,,"(1:03) (No Huddle, Shotgun) 8-L.Jackson pass short left to 43-J.Hill pushed ob at DET 44 for 37 yards (6-T.Arnold)."
+2025_03_DET_BAL,4021.0,BAL,20.0,1.0,44.0,pass,0.0,,0.0,,(:51) (Shotgun) 8-L.Jackson pass short left to 7-R.Bateman ran ob at DET 30 for 14 yards.
+2025_03_DET_BAL,4051.0,BAL,20.0,1.0,30.0,run,0.0,,0.0,,(:46) (Shotgun) 8-L.Jackson scrambles right end to DET 27 for 3 yards (32-B.Branch).
+2025_03_DET_BAL,4073.0,BAL,20.0,2.0,27.0,pass,1.0,BAL,0.0,,"(:35) (Shotgun) 8-L.Jackson pass short left to 89-M.Andrews for 27 yards, TOUCHDOWN."
+2025_03_DET_BAL,4116.0,BAL,20.0,,2.0,no_play,,,,,"TWO-POINT CONVERSION ATTEMPT. 8-L.Jackson pass to 89-M.Andrews is incomplete. ATTEMPT FAILS. Penalty on DET-32-B.Branch, Defensive Holding, offsetting, enforced at DET 2 - No Play. Penalty on BAL-77-D.Faalele, Ineligible Downfield Pass, offsetting."
+2025_03_DET_BAL,4145.0,BAL,20.0,,2.0,pass,0.0,,1.0,,TWO-POINT CONVERSION ATTEMPT. 8-L.Jackson pass to 4-Z.Flowers is incomplete. ATTEMPT FAILS.
+2026_02_NO_BAL,150.0,NO,2.0,1.0,76.0,run,0.0,,0.0,,(13:25) 3-T.Etienne right guard to NO 27 for 3 yards (91-T.Hendrickson).
+2026_02_NO_BAL,172.0,NO,2.0,2.0,73.0,run,0.0,,0.0,,(12:46) 3-T.Etienne left guard to NO 33 for 6 yards (21-J.Hawkins; 0-R.Smith).
+2026_02_NO_BAL,194.0,NO,2.0,3.0,67.0,run,0.0,,0.0,,(12:10) 43-C.Donaldson up the middle to NO 35 for 2 yards (14-K.Hamilton; 0-R.Smith).
+2026_02_NO_BAL,216.0,NO,2.0,1.0,65.0,pass,0.0,,0.0,,(11:38) 6-T.Shough pass short left to 41-A.Kamara to NO 41 for 6 yards (0-R.Smith; 21-J.Hawkins).
+2026_02_NO_BAL,241.0,NO,2.0,2.0,59.0,run,0.0,,0.0,,(11:01) 41-A.Kamara up the middle to NO 43 for 2 yards (96-B.Washington).
+2026_02_NO_BAL,263.0,NO,2.0,3.0,57.0,pass,0.0,,0.0,,(10:22) (Shotgun) 6-T.Shough sacked at NO 36 for -7 yards (95-T.Robinson).
+2026_02_NO_BAL,283.0,NO,2.0,4.0,64.0,punt,0.0,,0.0,,"(9:55) 17-R.Wright punts 40 yards to BAL 24, Center-46-S.Daly, downed by NO-38-J.Price."
+2026_02_NO_BAL,647.0,NO,4.0,,35.0,kickoff,0.0,,0.0,,"33-T.Loop kicks 65 yards from BAL 35 to end zone, Touchback to the NO 35."
+2026_02_NO_BAL,676.0,NO,4.0,1.0,65.0,no_play,0.0,,0.0,,"(2:52) PENALTY on NO-71-K.Banks, False Start, 5 yards, enforced at NO 35 - No Play."
+2026_02_NO_BAL,700.0,NO,4.0,1.0,70.0,run,0.0,,0.0,,(2:52) (Shotgun) 41-A.Kamara right end to NO 34 for 4 yards (9-Z.Young).
+2026_02_NO_BAL,722.0,NO,4.0,2.0,66.0,pass,0.0,,0.0,,"(2:20) (Shotgun) 6-T.Shough pass deep left to 12-C.Olave to BAL 46 for 20 yards (44-M.Humphrey). PENALTY on NO-12-C.Olave, Unsportsmanlike Conduct, 15 yards, enforced at BAL 46."
+2026_02_NO_BAL,758.0,NO,4.0,1.0,61.0,pass,0.0,,0.0,,(1:53) (Shotgun) 6-T.Shough pass short left to 41-A.Kamara to NO 41 for 2 yards (32-T.Simpson).
+2026_02_NO_BAL,783.0,NO,4.0,2.0,59.0,pass,0.0,,0.0,,(1:24) (No Huddle) 6-T.Shough pass short right to 41-A.Kamara pushed ob at NO 42 for 1 yard (2-N.Wiggins; 14-K.Hamilton).
+2026_02_NO_BAL,808.0,NO,4.0,3.0,58.0,pass,0.0,,0.0,,(:49) (Shotgun) 6-T.Shough pass short left to 14-D.Vele to BAL 47 for 11 yards (14-K.Hamilton).
+2026_02_NO_BAL,833.0,NO,4.0,1.0,47.0,pass,0.0,,0.0,,"(:23) (No Huddle, Shotgun) 6-T.Shough pass short left to 12-C.Olave to BAL 46 for 1 yard (32-T.Simpson)."
+2026_02_NO_BAL,858.0,NO,4.0,,,,,,,,END QUARTER 1
+2026_02_NO_BAL,878.0,NO,4.0,2.0,46.0,run,0.0,,0.0,,"(15:00) 6-T.Shough FUMBLES (Aborted) at NO 47, recovered by NO-3-T.Etienne at NO 47. 3-T.Etienne to NO 47 for no gain (32-T.Simpson)."
+2026_02_NO_BAL,921.0,NO,4.0,3.0,53.0,pass,0.0,,0.0,,(14:20) (Shotgun) 6-T.Shough pass short middle to 83-J.Johnson to BAL 43 for 10 yards (29-C.Rivers).
+2026_02_NO_BAL,946.0,NO,4.0,4.0,43.0,punt,0.0,,0.0,,"(13:38) 17-R.Wright punts 37 yards to BAL 6, Center-46-S.Daly, downed by NO-42-M.Reid."
+2026_02_NO_BAL,1170.0,NO,6.0,1.0,61.0,pass,0.0,,0.0,,(10:10) 6-T.Shough pass incomplete short left to 12-C.Olave (44-M.Humphrey).
+2026_02_NO_BAL,1200.0,NO,6.0,2.0,61.0,no_play,0.0,,0.0,,"(10:04) 6-T.Shough pass short right to 83-J.Johnson to NO 48 for 9 yards (0-R.Smith; 2-N.Wiggins). PENALTY on NO-18-B.Lance, Offensive Offside, 5 yards, enforced at NO 39 - No Play."
+2026_02_NO_BAL,1236.0,NO,6.0,2.0,66.0,pass,0.0,,0.0,,(9:35) (Shotgun) 6-T.Shough pass short right to 41-A.Kamara pushed ob at NO 36 for 2 yards (2-N.Wiggins).
+2026_02_NO_BAL,1271.0,NO,6.0,3.0,64.0,pass,0.0,,0.0,,(8:59) (Shotgun) 6-T.Shough pass deep middle to 14-D.Vele to BAL 35 for 29 yards (21-J.Hawkins).
+2026_02_NO_BAL,1296.0,NO,6.0,1.0,35.0,pass,0.0,,0.0,,"(8:25) (No Huddle, Shotgun) 6-T.Shough pass incomplete short right [15-M.Green]."
+2026_02_NO_BAL,1319.0,NO,6.0,2.0,35.0,run,0.0,,0.0,,(8:17) 41-A.Kamara up the middle to BAL 33 for 2 yards (32-T.Simpson).
+2026_02_NO_BAL,1341.0,NO,6.0,3.0,33.0,pass,0.0,,0.0,,(7:34) (Shotgun) 6-T.Shough pass short middle to 12-C.Olave to BAL 22 for 11 yards (2-N.Wiggins).
+2026_02_NO_BAL,1366.0,NO,6.0,1.0,22.0,run,0.0,,0.0,,(7:01) 41-A.Kamara right tackle to BAL 20 for 2 yards (9-Z.Young; 0-R.Smith).
+2026_02_NO_BAL,1388.0,NO,6.0,2.0,20.0,run,0.0,,0.0,,(6:22) (Shotgun) 6-T.Shough right guard pushed ob at BAL 12 for 8 yards (32-T.Simpson).
+2026_02_NO_BAL,1415.0,NO,6.0,1.0,12.0,run,0.0,,0.0,,(5:53) 41-A.Kamara left tackle to BAL 12 for no gain (98-T.Jones).
+2026_02_NO_BAL,1442.0,NO,6.0,2.0,12.0,pass,0.0,,0.0,,(5:12) (Shotgun) 6-T.Shough pass short right to 41-A.Kamara to BAL 16 for -4 yards (29-C.Rivers).
+2026_02_NO_BAL,1467.0,NO,6.0,3.0,16.0,run,0.0,,0.0,,(4:30) (Shotgun) 6-T.Shough scrambles right end pushed ob at BAL 5 for 11 yards (24-M.Starks).
+2026_02_NO_BAL,1494.0,NO,6.0,4.0,5.0,field_goal,0.0,,0.0,made,"(3:49) 10-D.Carlson 23 yard field goal is GOOD, Center-46-S.Daly, Holder-17-R.Wright."
+2026_02_NO_BAL,1817.0,NO,8.0,,35.0,kickoff,0.0,,0.0,,33-T.Loop kicks 62 yards from BAL 35 to NO 3. 19-B.Brown pushed ob at BAL 44 for 53 yards (33-T.Loop).
+2026_02_NO_BAL,1857.0,NO,8.0,1.0,44.0,run,0.0,,0.0,,(:15) (Shotgun) 6-T.Shough up the middle to BAL 42 for 2 yards (95-T.Robinson).
+2026_02_NO_BAL,1879.0,NO,8.0,2.0,42.0,pass,0.0,,0.0,,(:11) (Shotgun) 6-T.Shough pass short left to 14-D.Vele ran ob at BAL 29 for 13 yards.
+2026_02_NO_BAL,1911.0,NO,8.0,1.0,29.0,pass,0.0,,0.0,,(:06) (Shotgun) 6-T.Shough pass incomplete short left.
+2026_02_NO_BAL,1934.0,NO,8.0,2.0,29.0,field_goal,0.0,,0.0,made,"(:02) 10-D.Carlson 47 yard field goal is GOOD, Center-46-S.Daly, Holder-17-R.Wright."
+2026_02_NO_BAL,1977.0,NO,9.0,,35.0,kickoff,0.0,,0.0,,33-T.Loop kicks 59 yards from BAL 35 to NO 6. 19-B.Brown to NO 26 for 20 yards (39-K.Jackson; 97-E.Burke).
+2026_02_NO_BAL,2000.0,NO,9.0,1.0,74.0,run,0.0,,0.0,,(14:53) 3-T.Etienne up the middle to NO 34 for 8 yards (21-J.Hawkins).
+2026_02_NO_BAL,2022.0,NO,9.0,2.0,66.0,no_play,0.0,,0.0,,"(14:17) (Shotgun) 6-T.Shough pass incomplete short right to 18-B.Lance. PENALTY on BAL-95-T.Robinson, Defensive Offside, 5 yards, enforced at NO 34 - No Play."
+2026_02_NO_BAL,2056.0,NO,9.0,1.0,61.0,run,0.0,,0.0,,(14:13) 3-T.Etienne right end to NO 35 for -4 yards (15-M.Green).
+2026_02_NO_BAL,2078.0,NO,9.0,2.0,65.0,run,0.0,,0.0,,"(13:35) (Shotgun) 6-T.Shough scrambles left end pushed ob at NO 36 for 1 yard (91-T.Hendrickson). Penalty on NO-51-C.Ruiz, Offensive Holding, declined."
+2026_02_NO_BAL,2105.0,NO,9.0,3.0,64.0,pass,0.0,,0.0,,(13:07) (Shotgun) 6-T.Shough pass short right to 83-J.Johnson pushed ob at BAL 39 for 25 yards (2-N.Wiggins).
+2026_02_NO_BAL,2147.0,NO,9.0,1.0,39.0,pass,0.0,,0.0,,(12:25) (Shotgun) 6-T.Shough pass short left to 3-T.Etienne pushed ob at BAL 33 for 6 yards (0-R.Smith).
+2026_02_NO_BAL,2177.0,NO,9.0,2.0,33.0,pass,0.0,,0.0,,(11:57) (Shotgun) 6-T.Shough pass short right to 3-T.Etienne to BAL 33 for no gain (14-K.Hamilton; 2-N.Wiggins).
+2026_02_NO_BAL,2207.0,NO,9.0,3.0,33.0,pass,0.0,,0.0,,(11:10) (Shotgun) 6-T.Shough pass incomplete deep left to 12-C.Olave.
+2026_02_NO_BAL,2230.0,NO,9.0,4.0,33.0,field_goal,0.0,,0.0,made,"(11:05) 10-D.Carlson 51 yard field goal is GOOD, Center-46-S.Daly, Holder-17-R.Wright."
+2026_02_NO_BAL,2726.0,NO,11.0,,35.0,kickoff,0.0,,0.0,,33-T.Loop kicks 57 yards from BAL 35 to NO 8. 38-J.Price to NO 26 for 18 yards (9-Z.Young).
+2026_02_NO_BAL,2761.0,NO,11.0,1.0,74.0,pass,0.0,,0.0,,(3:19) 6-T.Shough sacked at NO 22 for -4 yards (91-T.Hendrickson).
+2026_02_NO_BAL,2781.0,NO,11.0,2.0,78.0,no_play,0.0,,0.0,,"(2:32) (Shotgun) PENALTY on NO-71-K.Banks, False Start, 5 yards, enforced at NO 22 - No Play."
+2026_02_NO_BAL,2805.0,NO,11.0,2.0,83.0,pass,0.0,,0.0,,(2:26) (Shotgun) 6-T.Shough pass incomplete short left to 41-A.Kamara.
+2026_02_NO_BAL,2828.0,NO,11.0,3.0,83.0,pass,0.0,,0.0,,(2:20) (Shotgun) 6-T.Shough sacked at NO 9 for -8 yards (15-M.Green). NO-71-K.Banks was injured during the play.
+2026_02_NO_BAL,2851.0,NO,11.0,4.0,91.0,punt,0.0,,0.0,,"(1:50) 17-R.Wright punts 40 yards to NO 49, Center-46-S.Daly, out of bounds."
+2026_02_NO_BAL,3004.0,NO,,,,,,,,,END QUARTER 3
+2026_02_NO_BAL,3024.0,NO,13.0,1.0,68.0,pass,0.0,,0.0,,(15:00) 6-T.Shough pass short left to 18-B.Lance to NO 40 for 8 yards (44-M.Humphrey).
+2026_02_NO_BAL,3049.0,NO,13.0,2.0,60.0,run,0.0,,0.0,,(14:18) 3-T.Etienne left tackle to NO 42 for 2 yards (94-J.Jenkins; 96-B.Washington).
+2026_02_NO_BAL,3071.0,NO,13.0,1.0,58.0,pass,0.0,,0.0,,(13:38) (Shotgun) 6-T.Shough pass short middle to 4-O.Delp to 50 for 8 yards (24-M.Starks).
+2026_02_NO_BAL,3096.0,NO,13.0,2.0,50.0,run,0.0,,0.0,,(12:54) 41-A.Kamara left guard to BAL 44 for 6 yards (0-R.Smith; 14-K.Hamilton).
+2026_02_NO_BAL,3118.0,NO,13.0,1.0,44.0,run,0.0,,0.0,,(12:17) 41-A.Kamara left tackle to BAL 42 for 2 yards (93-C.Campbell; 32-T.Simpson).
+2026_02_NO_BAL,3145.0,NO,13.0,2.0,42.0,pass,0.0,,0.0,,"(11:39) (Shotgun) 6-T.Shough pass short right to 12-C.Olave to BAL 39 for 3 yards (14-K.Hamilton). Baltimore challenged the pass completion ruling, and the play was Upheld. The ruling on the field stands. (Timeout #1.)"
+2026_02_NO_BAL,3170.0,NO,13.0,3.0,39.0,pass,0.0,,0.0,,(11:06) (Shotgun) 6-T.Shough pass short left to 12-C.Olave to BAL 27 for 12 yards (24-M.Starks).
+2026_02_NO_BAL,3242.0,NO,13.0,1.0,27.0,run,0.0,,0.0,,(10:26) (Shotgun) 3-T.Etienne left guard to BAL 21 for 6 yards (0-R.Smith).
+2026_02_NO_BAL,3264.0,NO,13.0,2.0,21.0,pass,1.0,NO,0.0,,"(9:47) (Shotgun) 6-T.Shough pass deep middle to 12-C.Olave for 21 yards, TOUCHDOWN."
+2026_02_NO_BAL,3290.0,NO,13.0,,2.0,no_play,0.0,,0.0,,"TWO-POINT CONVERSION ATTEMPT. 6-T.Shough is sacked. ATTEMPT FAILS. PENALTY on BAL-21-J.Hawkins, Defensive Holding, 1 yard, enforced at BAL 2 - No Play."
+2026_02_NO_BAL,3315.0,NO,13.0,,1.0,run,0.0,,1.0,,TWO-POINT CONVERSION ATTEMPT. 3-T.Etienne rushes right end. ATTEMPT SUCCEEDS.
+2026_02_NO_BAL,3459.0,NO,15.0,1.0,68.0,run,0.0,,0.0,,(8:06) 3-T.Etienne right tackle to NO 32 for no gain (96-B.Washington; 14-K.Hamilton).
+2026_02_NO_BAL,3495.0,NO,15.0,2.0,68.0,pass,0.0,,0.0,,(7:31) (Shotgun) 6-T.Shough pass short right to 12-C.Olave to NO 47 for 15 yards (14-K.Hamilton; 2-N.Wiggins).
+2026_02_NO_BAL,3520.0,NO,15.0,1.0,53.0,pass,0.0,,0.0,,(6:49) (Shotgun) 6-T.Shough pass incomplete short right to 14-D.Vele (98-T.Jones).
+2026_02_NO_BAL,3543.0,NO,15.0,2.0,53.0,run,0.0,,0.0,,(6:46) (Shotgun) 3-T.Etienne left tackle to BAL 49 for 4 yards (14-K.Hamilton).
+2026_02_NO_BAL,3565.0,NO,15.0,3.0,49.0,pass,0.0,,0.0,,(6:06) (Shotgun) 6-T.Shough pass short middle to 14-D.Vele to BAL 44 for 5 yards (14-K.Hamilton).
+2026_02_NO_BAL,3590.0,NO,15.0,4.0,44.0,run,0.0,,0.0,,(5:41) (No Huddle) 6-T.Shough up the middle to BAL 43 for 1 yard (14-K.Hamilton).
+2026_02_NO_BAL,3612.0,NO,15.0,1.0,43.0,pass,0.0,,0.0,,(4:55) (Shotgun) 6-T.Shough pass short right to 81-K.Austin ran ob at BAL 36 for 7 yards.
+2026_02_NO_BAL,3637.0,NO,15.0,2.0,36.0,run,0.0,,0.0,,(4:50) 41-A.Kamara right tackle to BAL 35 for 1 yard (94-J.Jenkins).
+2026_02_NO_BAL,3659.0,NO,15.0,3.0,35.0,pass,0.0,,0.0,,(4:13) (Shotgun) 6-T.Shough pass short left to 12-C.Olave to BAL 32 for 3 yards (44-M.Humphrey).
+2026_02_NO_BAL,3684.0,NO,15.0,1.0,32.0,run,0.0,,0.0,,(3:29) 41-A.Kamara right tackle to BAL 36 for -4 yards (14-K.Hamilton).
+2026_02_NO_BAL,3706.0,NO,15.0,2.0,36.0,pass,0.0,,0.0,,(2:48) (Shotgun) 6-T.Shough pass short left to 14-D.Vele to BAL 30 for 6 yards (44-M.Humphrey).
+2026_02_NO_BAL,3731.0,NO,15.0,3.0,30.0,pass,0.0,,0.0,,"(2:03) (Shotgun) 6-T.Shough pass short right to 83-J.Johnson to BAL 5 for 25 yards (21-J.Hawkins). PENALTY on BAL-91-T.Hendrickson, Roughing the Passer, 3 yards, enforced at BAL 5."
+2026_02_NO_BAL,3772.0,NO,15.0,1.0,2.0,no_play,0.0,,0.0,,"(1:54) (Shotgun) PENALTY on NO-87-N.Fant, False Start, 5 yards, enforced at BAL 2 - No Play."
+2026_02_NO_BAL,3813.0,NO,15.0,1.0,7.0,pass,0.0,,0.0,,(1:54) (Shotgun) 6-T.Shough pass incomplete short left to 14-D.Vele.
+2026_02_NO_BAL,3836.0,NO,15.0,2.0,7.0,pass,0.0,,0.0,,"(1:50) (Shotgun) 6-T.Shough pass short left to 83-J.Johnson to BAL 1 for 6 yards (24-M.Starks; 0-R.Smith). The Replay Official reviewed the short of the goal line ruling, and the play was Upheld. The ruling on the field stands."
+2026_02_NO_BAL,3862.0,NO,15.0,3.0,1.0,run,0.0,,0.0,,(1:40) 6-T.Shough up the middle to BAL 1 for no gain (14-K.Hamilton).
+2026_02_NO_BAL,3928.0,NO,15.0,4.0,1.0,run,1.0,NO,0.0,,"(1:32) 6-T.Shough up the middle for 1 yard, TOUCHDOWN. The Replay Official reviewed the runner broke the plane ruling, and the play was Upheld. The ruling on the field stands."
+2026_02_NO_BAL,3985.0,NO,15.0,,15.0,extra_point,0.0,,0.0,,"10-D.Carlson extra point is GOOD, Center-46-S.Daly, Holder-17-R.Wright."
+2026_02_NO_BAL,4168.0,NO,17.0,1.0,91.0,qb_kneel,0.0,,0.0,,(:13) 6-T.Shough kneels to NO 8 for -1 yards.
+2026_02_NO_BAL,4190.0,NO,17.0,,,,,,,,END GAME

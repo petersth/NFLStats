@@ -34,6 +34,13 @@ def get_team_display_name(team_code: str, year: int = None) -> str:
         # LAC Chargers -> San Diego Chargers (1960-2016)
         if team_code == 'LAC' and year <= 2016:
             return 'San Diego Chargers'
+
+        # Washington adopted its current name for the 2022 season.
+        if team_code == 'WAS':
+            if year < 2020:
+                return 'Washington Redskins'
+            if year <= 2021:
+                return 'Washington Football Team'
     
     # Otherwise use the current team data
     from ..config.nfl_constants import TEAM_DATA

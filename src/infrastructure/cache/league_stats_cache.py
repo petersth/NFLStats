@@ -2,6 +2,7 @@
 
 import logging
 import time
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Dict, Tuple, Optional
 import pandas as pd
@@ -17,6 +18,21 @@ from ...utils.season_utils import get_current_nfl_season_info
 from .simple_cache import SimpleCache
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class LeagueAnalysisSnapshot:
+    """One calculation's source data and derived results, cached as a unit.
+
+    The repository frame is shared, not copied for each configuration. Consumers
+    must treat it as read-only and filter/copy before applying configuration.
+    """
+
+    team_stats: Dict
+    league_averages: Dict
+    data_timestamp: datetime
+    complete_pbp_data: pd.DataFrame
+    game_results: Dict
 
 
 class LeagueStatsCache:
@@ -41,11 +57,6 @@ class LeagueStatsCache:
         self._rankings_cache = SimpleCache(
             default_ttl=1800,   # 30 minutesfor rankings (reduced from 1 day)
             max_size=50         # More rankings entries (reduced from 500)
-        )
-
-        self._game_results_cache = SimpleCache(
-            default_ttl=1800,
-            max_size=10,
         )
 
         logger.info("Initialized LeagueStatsCache with 30-minute statistics caches")
@@ -97,9 +108,10 @@ class LeagueStatsCache:
     def get_cached_game_results(
         self, season_year: int, season_type: str, config_hash: str
     ) -> Optional[Dict]:
-        """Return game results created with the same filters as league statistics."""
+        """Return game results from the currently cached aggregate snapshot."""
         cache_key = self.get_cache_key(season_year, season_type, config_hash)
-        return self._game_results_cache.get(cache_key, validator=lambda value: isinstance(value, dict))
+        snapshot = self._memory_cache.get(cache_key)
+        return snapshot.game_results if snapshot is not None else None
     
     # === Main Interface Methods ===
     
@@ -111,7 +123,21 @@ class LeagueStatsCache:
         configuration: Dict,
         progress_callback=None,
     ) -> Tuple[Dict, Dict, datetime]:
-        """Get or compute league statistics with simplified logic."""
+        """Return the aggregate view of a consistently cached analysis."""
+        snapshot = self.get_or_compute_analysis_snapshot(
+            season_year, season_type, config_hash, configuration, progress_callback
+        )
+        return snapshot.team_stats, snapshot.league_averages, snapshot.data_timestamp
+
+    def get_or_compute_analysis_snapshot(
+        self,
+        season_year: int,
+        season_type: str,
+        config_hash: str,
+        configuration: Dict,
+        progress_callback=None,
+    ) -> LeagueAnalysisSnapshot:
+        """Load all inputs/results for an analysis with one TTL and eviction policy."""
         cache_key = self.get_cache_key(season_year, season_type, config_hash)
         
         try:
@@ -125,10 +151,16 @@ class LeagueStatsCache:
                 raise CacheError("No NFL data repository available", cache_key, "compute_stats")
             
             def validate_stats(result):
-                """Validate computed statistics."""
-                team_stats, league_averages, timestamp = result
-                return (isinstance(team_stats, dict) and len(team_stats) > 0 and
-                       isinstance(league_averages, dict) and timestamp is not None)
+                """Reject incomplete snapshots instead of mixing cache entries."""
+                return (
+                    isinstance(result, LeagueAnalysisSnapshot)
+                    and isinstance(result.team_stats, dict) and bool(result.team_stats)
+                    and isinstance(result.league_averages, dict)
+                    and result.data_timestamp is not None
+                    and isinstance(result.complete_pbp_data, pd.DataFrame)
+                    and not result.complete_pbp_data.empty
+                    and isinstance(result.game_results, dict) and bool(result.game_results)
+                )
             
             # Use adaptive TTL based on season with memory optimization
             season_info = get_current_nfl_season_info()
@@ -148,13 +180,11 @@ class LeagueStatsCache:
                 ttl=ttl
             )
             
-            team_stats_dict, league_averages, data_timestamp = result
-            
             # Ensure rankings are cached
-            self._ensure_rankings_cached(cache_key, team_stats_dict)
+            self._ensure_rankings_cached(cache_key, result.team_stats)
             
-            logger.info(f"Retrieved statistics for {len(team_stats_dict)} teams (cached: {was_cached})")
-            return team_stats_dict, league_averages, data_timestamp
+            logger.info(f"Retrieved statistics for {len(result.team_stats)} teams (cached: {was_cached})")
+            return result
             
         except (CacheError, DataNotFoundError):
             raise
@@ -163,17 +193,15 @@ class LeagueStatsCache:
             raise CacheError(
                 f"League stats computation failed: {e}",
                 cache_key,
-                "get_or_compute_league_stats",
+                "get_or_compute_analysis_snapshot",
                 e,
             ) from e
     
     def get_team_rankings(self, team_abbr: str, team_stats_dict: Dict, cache_key: str = None) -> Dict:
-        """Get pre-computed rankings for a specific team from cache."""
+        """Return rankings belonging to the supplied aggregate snapshot."""
         if cache_key:
-            all_rankings = self._rankings_cache.get(cache_key)
-            if all_rankings and team_abbr in all_rankings:
-                logger.debug(f"Retrieved cached rankings for {team_abbr}")
-                return all_rankings[team_abbr]
+            all_rankings = self._ensure_rankings_cached(cache_key, team_stats_dict)
+            return all_rankings.get(team_abbr, {})
 
         logger.info(f"Calculating fresh rankings for {team_abbr} (not found in cache)")
         return calculate_team_rankings(team_abbr, team_stats_dict)
@@ -185,11 +213,9 @@ class LeagueStatsCache:
             'description': 'League statistics cache with TTL and validation',
             'memory_cache': self._memory_cache.get_stats(),
             'rankings_cache': self._rankings_cache.get_stats(),
-            'game_results_cache': self._game_results_cache.get_stats(),
             'data_source': 'nflverse',
             'total_entries': (self._memory_cache.get_stats()['size'] + 
-                            self._rankings_cache.get_stats()['size'] + 
-                            self._game_results_cache.get_stats()['size'])
+                            self._rankings_cache.get_stats()['size'])
         }
     
     # === Utility Methods (formerly in base class) ===
@@ -234,12 +260,10 @@ class LeagueStatsCache:
                 pattern = f"league_stats:{season_year}:"
                 cleared_stats['memory'] = self._memory_cache.clear(pattern)
                 cleared_stats['rankings'] = self._rankings_cache.clear(pattern)
-                cleared_stats['game_results'] = self._game_results_cache.clear(pattern)
                 logger.info(f"Cleared cache for season {season_year}: {cleared_stats}")
             else:
                 cleared_stats['memory'] = self._memory_cache.clear()
                 cleared_stats['rankings'] = self._rankings_cache.clear()
-                cleared_stats['game_results'] = self._game_results_cache.clear()
                 logger.info(f"Cleared all cached league statistics: {cleared_stats}")
                 
             return cleared_stats
@@ -277,7 +301,6 @@ class LeagueStatsCache:
             cleanup_stats = {
                 'memory': self._memory_cache.force_cleanup(),
                 'rankings': self._rankings_cache.force_cleanup(),
-                'game_results': self._game_results_cache.force_cleanup(),
             }
             
             total_cleaned = sum(cleanup_stats.values())
@@ -299,7 +322,7 @@ class LeagueStatsCache:
         configuration: Dict,
         cache_key: str,
         progress_callback=None,
-    ) -> Tuple[Dict, Dict, datetime]:
+    ) -> LeagueAnalysisSnapshot:
         """Use raw data when aggregates unavailable."""
         if not self._nfl_data_repo:
             raise CacheError("No NFL data repository available", cache_key, "raw_data")
@@ -379,8 +402,13 @@ class LeagueStatsCache:
             progress_callback.update(0.95, "Computing league averages...")
 
         league_averages = calculate_league_averages(all_stats_for_averaging)
-        self._game_results_cache.set(cache_key, game_results_by_team)
-        return team_stats_dict, league_averages, data_timestamp
+        return LeagueAnalysisSnapshot(
+            team_stats=team_stats_dict,
+            league_averages=league_averages,
+            data_timestamp=data_timestamp,
+            complete_pbp_data=pbp_data,
+            game_results=game_results_by_team,
+        )
 
     @staticmethod
     def _group_team_data(filtered_data: pd.DataFrame) -> Dict[str, pd.DataFrame]:
@@ -431,25 +459,33 @@ class LeagueStatsCache:
         )
         return team_abbr, season_stats, extract_stats_for_averaging(season_stats)
     
-    def _ensure_rankings_cached(self, cache_key: str, team_stats_dict: Dict) -> None:
-        """Ensure rankings are computed and cached."""
+    def _ensure_rankings_cached(self, cache_key: str, team_stats_dict: Dict) -> Dict:
+        """Cache rankings together with the aggregate snapshot they describe.
+
+        Aggregate refreshes replace the statistics dictionary. A longer ranking
+        TTL or a different eviction policy must not reuse an earlier snapshot.
+        Keep the snapshot reference so even callers holding older statistics get
+        matching ranks rather than whichever ranks were cached most recently.
+        """
         if not team_stats_dict:
-            return
+            return {}
             
         def compute_rankings():
             """Compute rankings for all teams."""
             logger.info(f"Computing rankings for all {len(team_stats_dict)} teams...")
             all_rankings = calculate_all_rankings(team_stats_dict)
             logger.info(f"Pre-computed rankings for {len(all_rankings)} teams")
-            return all_rankings
+            return team_stats_dict, all_rankings
         
-        def validate_rankings(rankings):
-            """Validate computed rankings."""
-            return (isinstance(rankings, dict) and len(rankings) > 0 and 
-                   all(isinstance(team_ranking, dict) for team_ranking in rankings.values()))
+        def validate_rankings(result):
+            snapshot, rankings = result
+            return (snapshot is team_stats_dict and isinstance(rankings, dict)
+                    and len(rankings) > 0
+                    and all(isinstance(rank, dict) for rank in rankings.values()))
         
-        self._rankings_cache.get_or_compute(
+        _, rankings = self._rankings_cache.get_or_compute(
             key=cache_key,
             compute_func=compute_rankings,
             validator=validate_rankings
         )
+        return rankings

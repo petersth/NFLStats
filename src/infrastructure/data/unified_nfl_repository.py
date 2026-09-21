@@ -44,6 +44,9 @@ class UnifiedNFLRepository:
         # Turnovers and outcomes
         'interception', 'fumble_lost', 'first_down', 
         'first_down_rush', 'first_down_pass', 'first_down_penalty',
+        'third_down_converted', 'third_down_failed',
+        'fumbled_1_team', 'fumbled_2_team',
+        'fumble_recovery_1_team', 'fumble_recovery_2_team', 'touchback',
         
         # Penalties
         'penalty_team', 'penalty_yards',

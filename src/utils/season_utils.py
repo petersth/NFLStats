@@ -10,7 +10,12 @@ logger = logging.getLogger(__name__)
 
 
 def get_current_nfl_season_info() -> Dict:
-    """Get comprehensive current NFL season information."""
+    """Get current season information using a conservative calendar cutoff.
+
+    Without a completed-game schedule, keep the season live through February
+    to cover the Super Bowl and subsequent data updates. March 1 is the fallback
+    completion boundary, not a claim about the exact final game date.
+    """
     now = datetime.now()
     current_month = now.month
     current_year = now.year
@@ -20,7 +25,7 @@ def get_current_nfl_season_info() -> Dict:
         season_status = "in_progress"
     elif current_month <= 2:  # January-February (playoffs/Super Bowl)
         current_season = current_year - 1
-        season_status = "playoffs" if current_month == 1 else "completed"
+        season_status = "playoffs"
     else:  # March-August (offseason)
         current_season = current_year - 1
         season_status = "completed"

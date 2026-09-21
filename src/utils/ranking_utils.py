@@ -2,6 +2,7 @@
 
 from typing import Dict, List, Tuple
 import logging
+from math import ceil
 from ..domain.entities import PerformanceRank
 from .nfl_metrics import LOWER_IS_BETTER_METRICS, RANKING_METRICS
 
@@ -148,34 +149,40 @@ def _calculate_metric_rank(team_abbr: str, team_value: float,
 
 def calculate_performance_rank(rank: int, total_teams: int) -> PerformanceRank:
     """Convert a raw rank to a PerformanceRank object with context."""
-    # Calculate percentile (higher percentile = better performance)
-    percentile = ((total_teams - rank + 1) / total_teams) * 100
+    if total_teams < 1 or rank < 1 or rank > total_teams:
+        raise ValueError("Rank must be between 1 and the number of ranked teams")
+    rank_fraction = rank / total_teams
+    cohort_name = "NFL" if total_teams == 32 else "cohort"
     
     # Determine description and color based on rank
     if rank == 1:
-        description = "Best in NFL"
+        description = f"Best in {cohort_name}"
         color = "gold"
         percentile_str = "1st"
-    elif rank <= 3:
+    elif rank == total_teams:
+        description = f"Worst in {cohort_name}"
+        color = "red"
+        percentile_str = f"Bottom {ceil(100 / total_teams)}%"
+    elif rank_fraction <= 3 / 32:
         description = "Elite"
         color = "green"
-        percentile_str = f"Top {int(percentile)}%"
-    elif rank <= 8:
+        percentile_str = f"Top {ceil(rank_fraction * 100)}%"
+    elif rank_fraction <= 0.25:
         description = "Excellent"
         color = "lightgreen"
-        percentile_str = f"Top {int(percentile)}%"
-    elif rank <= 16:
+        percentile_str = f"Top {ceil(rank_fraction * 100)}%"
+    elif rank_fraction <= 0.5:
         description = "Above Average"
         color = "yellow"
-        percentile_str = f"Top {int(percentile)}%"
-    elif rank <= 24:
+        percentile_str = f"Top {ceil(rank_fraction * 100)}%"
+    elif rank_fraction <= 0.75:
         description = "Below Average"
         color = "orange"
-        percentile_str = f"Bottom {int(100 - percentile)}%"
+        percentile_str = f"Bottom {ceil((total_teams - rank + 1) / total_teams * 100)}%"
     else:
         description = "Poor"
         color = "red"
-        percentile_str = f"Bottom {int(100 - percentile)}%"
+        percentile_str = f"Bottom {ceil((total_teams - rank + 1) / total_teams * 100)}%"
     
     return PerformanceRank(
         rank=rank,

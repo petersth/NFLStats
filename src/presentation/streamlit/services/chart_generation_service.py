@@ -132,7 +132,7 @@ class ChartGenerationService:
         ]
         
         for attr, name, color, line_style in metrics_config:
-            values = [getattr(game_stat, attr) for game_stat in analysis_response.game_stats]
+            values = [getattr(game_stat.offensive_stats, attr) for game_stat in analysis_response.game_stats]
             
             fig.add_trace(go.Scatter(
                 x=games,
@@ -148,7 +148,7 @@ class ChartGenerationService:
         fig.update_layout(
             template=self.plot_template,
             title=dict(
-                text=f"{analysis_response.team.name} - Season Trends",
+                text=f"{analysis_response.team_display_name} - Season Trends",
                 x=0.5,
                 xanchor='center',
                 font=dict(size=18)
@@ -209,7 +209,7 @@ class ChartGenerationService:
         fig.update_layout(
             template=self.plot_template,
             title=dict(
-                text=f"{analysis_response.team.name} - Performance Distribution",
+                text=f"{analysis_response.team_display_name} - Performance Distribution",
                 x=0.5,
                 xanchor='center',
                 font=dict(size=18)
@@ -256,7 +256,7 @@ class ChartGenerationService:
         fig.update_layout(
             template=self.plot_template,
             title=dict(
-                text=f"{analysis_response.team.name} - Performance vs Opponents",
+                text=f"{analysis_response.team_display_name} - Performance vs Opponents",
                 x=0.5,
                 xanchor='center',
                 font=dict(size=18)
@@ -290,9 +290,10 @@ class ChartGenerationService:
         
         for metric_key, display_name in ranking_metrics:
             if metric_key in analysis_response.rankings:
-                rank = analysis_response.rankings[metric_key].rank
+                performance_rank = analysis_response.rankings[metric_key]
+                rank = performance_rank.rank
                 # Convert rank to percentile (lower rank = higher percentile)
-                percentile = ((32 - rank) / 32) * 100
+                percentile = ((performance_rank.total_teams - rank + 1) / performance_rank.total_teams) * 100
                 categories.append(display_name)
                 values.append(percentile)
         
@@ -309,7 +310,7 @@ class ChartGenerationService:
             r=values,
             theta=categories,
             fill='toself',
-            name=analysis_response.team.name,
+            name=analysis_response.team_display_name,
             line_color='#1f77b4',
             fillcolor='rgba(31, 119, 180, 0.3)'
         ))
@@ -324,7 +325,7 @@ class ChartGenerationService:
                 )
             ),
             title=dict(
-                text=f"{analysis_response.team.name} - League Ranking Percentiles",
+                text=f"{analysis_response.team_display_name} - League Ranking Percentiles",
                 x=0.5,
                 xanchor='center',
                 font=dict(size=18)

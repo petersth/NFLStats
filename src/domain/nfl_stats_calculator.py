@@ -350,7 +350,12 @@ class NFLStatsCalculator:
         rushing_plays = self._play_filter.get_rushing_plays(data)
         
         # Calculate success-eligible plays
-        success_eligible_plays = offensive_plays[offensive_plays['ydstogo'].notna()].copy()
+        # Success-rate settings are independent of rushing/completion settings.
+        success_eligible_plays = self._play_filter.get_unfiltered_offensive_plays(data)
+        success_eligible_plays = success_eligible_plays[
+            success_eligible_plays['ydstogo'].notna()
+            & success_eligible_plays['down'].isin([1, 2, 3, 4])
+        ].copy()
         success_eligible_plays = self._play_filter.apply_success_rate_exclusions(success_eligible_plays)
         
         return {
@@ -358,8 +363,8 @@ class NFLStatsCalculator:
             'total_yards': self._safe_sum(offensive_plays['yards_gained']),
             'avg_yards_per_play': self._safe_mean(offensive_plays['yards_gained']),
             **self._calculate_passing_rushing_stats_optimized(passing_plays, rushing_plays),
-            **self._calculate_turnover_stats(data),
-            **self._calculate_down_stats(data),  # Use original method to get first downs
+            **self._calculate_turnover_stats(data, team_abbr),
+            **self._calculate_down_stats(data, team_abbr),
             **self._calculate_success_stats_optimized(success_eligible_plays),
             **self._calculate_team_specific_stats(data, team_abbr)
         }
@@ -385,7 +390,8 @@ class NFLStatsCalculator:
                 'success_rate': 0.0,
                 'first_down_successful': 0, 'first_down_total': 0,
                 'second_down_successful': 0, 'second_down_total': 0,
-                'third_down_successful': 0, 'third_down_total': 0
+                'third_down_successful': 0, 'third_down_total': 0,
+                'fourth_down_successful': 0, 'fourth_down_total': 0
             }
         
         # Calculate success for each play
@@ -400,6 +406,7 @@ class NFLStatsCalculator:
         first_downs = success_eligible_plays[success_eligible_plays['down'] == 1]
         second_downs = success_eligible_plays[success_eligible_plays['down'] == 2]
         third_downs = success_eligible_plays[success_eligible_plays['down'] == 3]
+        fourth_downs = success_eligible_plays[success_eligible_plays['down'] == 4]
         
         return {
             'success_rate': success_rate,
@@ -408,22 +415,31 @@ class NFLStatsCalculator:
             'second_down_successful': self._safe_sum(second_downs['success']),
             'second_down_total': len(second_downs),
             'third_down_successful': self._safe_sum(third_downs['success']),
-            'third_down_total': len(third_downs)
+            'third_down_total': len(third_downs),
+            'fourth_down_successful': self._safe_sum(fourth_downs['success']),
+            'fourth_down_total': len(fourth_downs)
         }
 
-    def _calculate_down_stats(self, data: pd.DataFrame) -> Dict:
+    def _calculate_down_stats(self, data: pd.DataFrame, team_abbr: str) -> Dict:
         """Calculate down-specific statistics."""
         third_downs = self._play_filter.get_third_down_attempts(data)
-        required_cols = ['first_down', 'touchdown']
-        
-        if not all(col in third_downs.columns for col in required_cols):
-            third_down_conversions = 0
-            third_down_pct = 0.0
+        third_downs = third_downs.copy()
+        if 'third_down_converted' in third_downs.columns:
+            converted = third_downs['third_down_converted'].eq(1)
         else:
-            third_down_conversions = self._safe_sum(
-                (third_downs['first_down'] == 1) | (third_downs['touchdown'] == 1)
-            )
-            third_down_pct = self._safe_percentage(third_down_conversions, len(third_downs))
+            # Compatibility for callers supplying minimal play frames. The
+            # repository requires official flags for downloaded datasets.
+            converted = pd.Series(False, index=third_downs.index)
+            if {'first_down_rush', 'first_down_pass'}.issubset(third_downs.columns):
+                converted |= third_downs['first_down_rush'].eq(1) | third_downs['first_down_pass'].eq(1)
+            elif 'first_down' in third_downs.columns:
+                converted |= third_downs['first_down'].eq(1)
+                if 'first_down_penalty' in third_downs.columns:
+                    converted &= ~third_downs['first_down_penalty'].eq(1)
+            if {'touchdown', 'td_team'}.issubset(third_downs.columns):
+                converted |= third_downs['touchdown'].eq(1) & third_downs['td_team'].eq(team_abbr)
+        third_down_conversions = self._safe_sum(converted)
+        third_down_pct = self._safe_percentage(third_down_conversions, len(third_downs))
         
         # First downs - apply exclusion filtering for accuracy
         first_down_cols = ['first_down_rush', 'first_down_pass', 'first_down_penalty']
@@ -434,11 +450,9 @@ class NFLStatsCalculator:
             first_downs_rush = self._safe_sum(filtered_first_downs_data['first_down_rush'] == 1)
             first_downs_pass = self._safe_sum(filtered_first_downs_data['first_down_pass'] == 1)
             first_downs_penalty = self._safe_sum(filtered_first_downs_data['first_down_penalty'] == 1)
-            first_downs_total = self._safe_sum(
-                (filtered_first_downs_data['first_down_rush'] == 1) | 
-                (filtered_first_downs_data['first_down_pass'] == 1) | 
-                (filtered_first_downs_data['first_down_penalty'] == 1)
-            )
+            # A scrimmage first down plus an enforced automatic-first-down
+            # penalty can award two first downs on the same play.
+            first_downs_total = first_downs_rush + first_downs_pass + first_downs_penalty
         else:
             first_downs_rush = first_downs_pass = first_downs_penalty = first_downs_total = 0
         
@@ -446,18 +460,12 @@ class NFLStatsCalculator:
         third_down_rush_conversions = 0
         third_down_pass_conversions = 0
         
-        if len(third_downs) > 0 and all(col in third_downs.columns for col in ['rush_attempt', 'pass_attempt', 'first_down', 'touchdown']):
+        if len(third_downs) > 0 and all(col in third_downs.columns for col in ['rush_attempt', 'pass_attempt']):
             # Third down conversions on rushing plays
-            third_down_rush_plays = third_downs[third_downs['rush_attempt'] == 1]
-            third_down_rush_conversions = self._safe_sum(
-                (third_down_rush_plays['first_down'] == 1) | (third_down_rush_plays['touchdown'] == 1)
-            )
+            third_down_rush_conversions = self._safe_sum(converted & third_downs['rush_attempt'].eq(1))
             
             # Third down conversions on passing plays
-            third_down_pass_plays = third_downs[third_downs['pass_attempt'] == 1]
-            third_down_pass_conversions = self._safe_sum(
-                (third_down_pass_plays['first_down'] == 1) | (third_down_pass_plays['touchdown'] == 1)
-            )
+            third_down_pass_conversions = self._safe_sum(converted & third_downs['pass_attempt'].eq(1))
         
         return {
             'third_down_attempts': len(third_downs),
@@ -515,18 +523,46 @@ class NFLStatsCalculator:
         # compact set of valid drive plays rather than constructing and filtering
         # a new DataFrame for every drive.
         scoring_plays = drives_data[drives_data['game_id'].notna()]
-        drive_count = scoring_plays.groupby(
+        drive_plays = scoring_plays
+        if 'play_type' in drive_plays.columns:
+            # Kickoff-only possessions can end with an END GAME row or a
+            # no_play kickoff penalty. Those rows do not establish an offensive
+            # drive. A scrimmage event or offensive down does, including a
+            # penalty-only possession that ends in a safety or runs out the clock.
+            drive_mask = drive_plays['play_type'].isin([
+                'run', 'pass', 'qb_kneel', 'qb_spike', 'punt', 'field_goal',
+            ])
+            if 'down' in drive_plays.columns:
+                drive_mask |= drive_plays['down'].isin([1, 2, 3, 4])
+            drive_plays = drive_plays[
+                drive_mask
+                & ~drive_plays['play_type'].isin(['kickoff', 'extra_point'])
+                & ~(
+                    drive_plays['play_type'].isin(['punt', 'field_goal'])
+                    & drive_plays['touchdown'].eq(1)
+                    & drive_plays['td_team'].eq(team_abbr)
+                )
+            ]
+        if 'two_point_attempt' in drive_plays.columns:
+            drive_plays = drive_plays[~drive_plays['two_point_attempt'].eq(1)]
+        drive_count = drive_plays.groupby(
             ['game_id', 'drive'], sort=False, observed=True
         ).ngroups
-        total_touchdowns = len(
-            self._play_filter.get_offensive_touchdowns(scoring_plays, team_abbr)
+        offensive_touchdowns = self._play_filter.get_offensive_touchdowns(scoring_plays, team_abbr)
+        total_touchdowns = len(offensive_touchdowns)
+        # Only conversions following an offensive TD belong in offensive points.
+        td_drives = pd.MultiIndex.from_frame(
+            offensive_touchdowns[['game_id', 'drive']].drop_duplicates()
         )
+        conversion_plays = scoring_plays[
+            pd.MultiIndex.from_frame(scoring_plays[['game_id', 'drive']]).isin(td_drives)
+        ]
         total_extra_points = (
-            self._safe_sum(scoring_plays['extra_point_result'] == 'good')
+            self._safe_sum(conversion_plays['extra_point_result'] == 'good')
             if 'extra_point_result' in scoring_plays.columns else 0
         )
         total_two_point_conversions = (
-            self._safe_sum(scoring_plays['two_point_conv_result'] == 'success')
+            self._safe_sum(conversion_plays['two_point_conv_result'] == 'success')
             if 'two_point_conv_result' in scoring_plays.columns else 0
         )
         total_field_goals = (
@@ -564,22 +600,43 @@ class NFLStatsCalculator:
                 + ", ".join(sorted(missing_cols))
             )
         
-        rz_plays = data[(data['yardline_100'] <= self._constants.RED_ZONE_YARDLINE) & (data['yardline_100'] > 0)]
+        rz_mask = (
+            (data['yardline_100'] <= self._constants.RED_ZONE_YARDLINE)
+            & (data['yardline_100'] > 0)
+        )
+        # Conversion attempts are spotted inside the 20 even after long TDs.
+        # They must not create a red-zone trip for the preceding scoring drive.
+        if 'play_type' in data.columns:
+            rz_mask &= ~data['play_type'].isin(['extra_point', 'kickoff'])
+        if 'two_point_attempt' in data.columns:
+            rz_mask &= ~data['two_point_attempt'].eq(1)
+        if 'down' in data.columns:
+            # Conversion penalties/timeouts can be no_play with neither try
+            # flag set. They have no offensive down and cannot establish a trip.
+            # Keep genuine first-through-fourth-down offensive penalties.
+            rz_mask &= data['down'].isin([1, 2, 3, 4])
+        rz_plays = data[rz_mask]
         if len(rz_plays) == 0:
             return {'redzone_trips': 0, 'redzone_touchdowns': 0, 'redzone_field_goals': 0, 'redzone_failed': 0, 'redzone_td_pct': 0.0}
         
+        # Establish which drives reached the red zone, then inspect the entire
+        # drive: a sack or penalty can move the eventual scoring snap outside it.
+        rz_keys = pd.MultiIndex.from_frame(rz_plays[['game_id', 'drive']].drop_duplicates())
+        drive_plays = data[
+            pd.MultiIndex.from_frame(data[['game_id', 'drive']]).isin(rz_keys)
+        ]
+        td_keys = pd.MultiIndex.from_frame(
+            self._play_filter.get_offensive_touchdowns(drive_plays, team_abbr)[['game_id', 'drive']]
+        )
         redzone_outcomes = pd.DataFrame({
-            'game_id': rz_plays['game_id'],
-            'drive': rz_plays['drive'],
-            'touchdown': (
-                (rz_plays['touchdown'] == 1)
-                & (rz_plays['td_team'] == team_abbr)
-            ),
+            'game_id': drive_plays['game_id'],
+            'drive': drive_plays['drive'],
+            'touchdown': pd.MultiIndex.from_frame(drive_plays[['game_id', 'drive']]).isin(td_keys),
         })
         aggregations = {'touchdown': 'max'}
         if 'field_goal_result' in rz_plays.columns:
             redzone_outcomes['field_goal_made'] = (
-                rz_plays['field_goal_result'] == 'made'
+                drive_plays['field_goal_result'] == 'made'
             )
             aggregations['field_goal_made'] = 'max'
 
@@ -660,6 +717,8 @@ class NFLStatsCalculator:
             second_down_total_plays=stats.get('second_down_total', 0),
             third_down_successful_plays=stats.get('third_down_successful', 0),
             third_down_total_plays=stats.get('third_down_total', 0),
+            fourth_down_successful_plays=stats.get('fourth_down_successful', 0),
+            fourth_down_total_plays=stats.get('fourth_down_total', 0),
             total_third_down_rush_conversions=stats.get('third_down_rush_conversions', 0),
             total_third_down_pass_conversions=stats.get('third_down_pass_conversions', 0)
         )
@@ -674,17 +733,52 @@ class NFLStatsCalculator:
         return len(data['game_id'].unique())
     
     
-    def _calculate_turnover_stats(self, data: pd.DataFrame) -> Dict:
-        """Calculate turnover statistics using original logic."""
+    def _calculate_turnover_stats(self, data: pd.DataFrame, team_abbr: Optional[str] = None) -> Dict:
+        """Count giveaways by the original possession team, not returners.
+
+        Team inputs contain that team's possessions. A punt/interception return
+        can include the opponent's lost fumble on the same source row; recovery
+        context is needed to avoid charging that loss to the original offense.
+        """
+        if 'two_point_attempt' in data.columns:
+            data = data[~data['two_point_attempt'].eq(1)]
+        if 'play_type' in data.columns:
+            data = data[~data['play_type'].eq('extra_point')]
         interceptions = self._safe_sum(data.get('interception', pd.Series(dtype='int64')) == 1)
-        fumbles_lost = self._safe_sum(data.get('fumble_lost', pd.Series(dtype='int64')) == 1)
-        
-        # Calculate total using logical OR to avoid double-counting
-        required_cols = ['interception', 'fumble_lost']
-        if all(col in data.columns for col in required_cols):
-            total_turnovers = self._safe_sum((data['interception'] == 1) | (data['fumble_lost'] == 1))
+        fumble_context = {
+            'fumble_lost', 'fumbled_1_team', 'fumbled_2_team',
+            'fumble_recovery_1_team', 'fumble_recovery_2_team',
+        }
+        if fumble_context.issubset(data.columns) and (team_abbr or 'posteam' in data.columns):
+            lost_plays = data[data['fumble_lost'].eq(1)]
+            target = team_abbr if team_abbr else lost_plays['posteam'].astype(object)
+            owner = lost_plays['fumbled_1_team'].astype(object)
+            recovery = lost_plays['fumble_recovery_1_team'].astype(object)
+            first_loss = owner.eq(target) & recovery.notna() & ~recovery.eq(owner)
+            # After the first recovery, that team owns the ball. Following the
+            # ownership sequence also handles an interception, return fumble,
+            # recovery by the offense, and another fumble on the same play.
+            second_owner = recovery.where(recovery.notna(), lost_plays['fumbled_2_team'].astype(object))
+            second_recovery = lost_plays['fumble_recovery_2_team'].astype(object)
+            second_loss = (
+                second_owner.eq(target) & second_recovery.notna()
+                & ~second_recovery.eq(second_owner)
+            )
+            # A fumble through the opposing end zone can be lost without a
+            # recorded recovery. Count it only for the owner of the final fumble.
+            touchback = lost_plays.get('touchback', pd.Series(False, index=lost_plays.index)).eq(1)
+            first_loss |= owner.eq(target) & recovery.isna() & touchback
+            second_loss |= (
+                second_owner.eq(target) & lost_plays['fumbled_2_team'].notna()
+                & second_recovery.isna() & touchback
+            )
+            fumbles_lost = self._safe_sum(first_loss) + self._safe_sum(second_loss)
         else:
-            total_turnovers = interceptions + fumbles_lost
+            # Compatibility for small caller-provided frames; the repository
+            # requires attribution fields in real nflverse data.
+            fumbles_lost = self._safe_sum(data.get('fumble_lost', pd.Series(dtype='int64')) == 1)
+        # Independently charged giveaways can occur twice on one play.
+        total_turnovers = interceptions + fumbles_lost
         
         return {
             'interceptions': interceptions,

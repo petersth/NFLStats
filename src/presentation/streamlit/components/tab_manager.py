@@ -135,13 +135,10 @@ class TabManager:
         regular_season_weeks_cutoff = get_regular_season_weeks(analysis_response.season.year)
         regular_weeks = [w for w in weeks_with_games if w <= regular_season_weeks_cutoff]
         
-        # Determine expected regular season weeks based on season year
-        expected_weeks = regular_season_weeks_cutoff + 1  # Account for bye week
-        
         game_data = []
         
         # Add regular season games and detect missing weeks
-        for week in range(1, min(expected_weeks, regular_season_weeks_cutoff + 1)):
+        for week in self._regular_weeks_to_display(analysis_response):
             if week in regular_weeks:
                 # Find the game for this week
                 game_stat = next(g for g in analysis_response.game_stats if g.game.week == week)
@@ -271,8 +268,8 @@ class TabManager:
                 
                 rank_display = "N/A"
                 if stat_key in rankings:
-                    rank = rankings[stat_key].rank
-                    rank_display = f"{rank}/32"
+                    performance_rank = rankings[stat_key]
+                    rank_display = f"{performance_rank.rank}/{performance_rank.total_teams}"
                 
                 comparison_data.append({
                     'Metric': display_name,
@@ -360,7 +357,7 @@ class TabManager:
                         metric_display = metric.replace('_', ' ').title()
                         
                         if rank == 1:
-                            st.success(f"**{metric_display}**: #{rank} (Best in NFL)")
+                            st.success(f"**{metric_display}**: #{rank}/{perf_rank.total_teams} ({perf_rank.description})")
                         elif perf_rank.description in ['Elite', 'Excellent']:
                             st.success(f"**{metric_display}**: #{rank} ({perf_rank.description})")
                         elif perf_rank.description == 'Good':
@@ -378,8 +375,8 @@ class TabManager:
                         perf_rank = rankings[metric]
                         metric_display = metric.replace('_', ' ').title()
                         
-                        if rank == 32:
-                            st.error(f"**{metric_display}**: #{rank} (Worst in NFL)")
+                        if rank == perf_rank.total_teams:
+                            st.error(f"**{metric_display}**: #{rank}/{perf_rank.total_teams} ({perf_rank.description})")
                         elif perf_rank.description == 'Poor':
                             st.error(f"**{metric_display}**: #{rank} ({perf_rank.description})")
                         elif perf_rank.description == 'Below Average':
@@ -548,11 +545,8 @@ class TabManager:
         regular_season_weeks_cutoff = get_regular_season_weeks(analysis_response.season.year)
         regular_weeks = [w for w in weeks_with_games if w <= regular_season_weeks_cutoff]
         
-        # Determine expected regular season weeks
-        expected_weeks = regular_season_weeks_cutoff + 1  # Account for bye week
-        
         # Add regular season games and detect missing weeks
-        for week in range(1, min(expected_weeks, regular_season_weeks_cutoff + 1)):
+        for week in self._regular_weeks_to_display(analysis_response):
             if week in regular_weeks:
                 # Find the game for this week
                 game_stat = next(g for g in analysis_response.game_stats if g.game.week == week)
@@ -787,3 +781,10 @@ class TabManager:
     def _render_methodology_tab(self, analysis_response: TeamAnalysisResponse):
         """Render the methodology documentation tab."""
         self._methodology_renderer.render_methodology_page(analysis_response)
+
+    @staticmethod
+    def _regular_weeks_to_display(analysis_response: TeamAnalysisResponse):
+        """Filtered-out regular-season games are not missing playoff data."""
+        if analysis_response.season_type_filter == "POST":
+            return range(0)
+        return range(1, get_regular_season_weeks(analysis_response.season.year) + 1)

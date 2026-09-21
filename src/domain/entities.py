@@ -162,6 +162,8 @@ class SeasonStats:
     second_down_total_plays: int = 0
     third_down_successful_plays: int = 0
     third_down_total_plays: int = 0
+    fourth_down_successful_plays: int = 0
+    fourth_down_total_plays: int = 0
     
     # Scoring breakdown for Points Per Drive
     total_touchdowns: int = 0
@@ -213,8 +215,8 @@ class PerformanceRank:
     
     @property
     def is_elite(self) -> bool:
-        return self.rank <= 3
+        return self.rank == 1 or self.rank / self.total_teams <= 3 / 32
     
     @property
     def is_above_average(self) -> bool:
-        return self.rank <= 16
+        return self.rank == 1 or self.rank / self.total_teams <= 0.5

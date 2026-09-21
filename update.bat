@@ -53,6 +53,10 @@ REM Check if virtual environment exists
 if not exist venv (
     echo Virtual environment not found. Running install.bat...
     call install.bat
+    if errorlevel 1 (
+        echo ERROR: Installation failed. Update did not complete.
+        exit /b 1
+    )
 ) else (
     echo Activating virtual environment...
     call venv\Scripts\activate.bat

@@ -4,6 +4,7 @@ import pandas as pd
 import json
 from typing import Dict, Any, List
 from io import BytesIO
+from dataclasses import asdict
 
 try:
     import openpyxl
@@ -12,11 +13,16 @@ except ImportError:
     EXCEL_AVAILABLE = False
 from ....application import TeamAnalysisResponse
 from ....domain import GameStats, SeasonStats, NFLMetrics
-from ....utils.season_utils import is_playoff_week, get_regular_season_weeks
+from ....utils.season_utils import get_regular_season_weeks
 
 
 class ExportService:
-    """Service for exporting analysis data to various formats."""
+    """Export contract: preserve game identity, selected settings, and both TOERs.
+
+    CSV repeats analysis metadata on every game row. Excel additionally includes
+    season totals and rankings. JSON keeps all raw season inputs and each game's
+    offensive and opponent-offensive metrics for reproducible comparisons.
+    """
     
     def export_to_csv(self, analysis_response: TeamAnalysisResponse) -> bytes:
         """Export analysis data to CSV format."""
@@ -43,6 +49,12 @@ class ExportService:
             # Season summary
             season_data = self._prepare_season_summary(analysis_response)
             season_data.to_excel(writer, sheet_name='Season_Summary', index=False)
+
+            metadata = self._analysis_metadata(analysis_response)
+            pd.DataFrame([{
+                'Field': key,
+                'Value': json.dumps(value, sort_keys=True) if isinstance(value, dict) else value,
+            } for key, value in metadata.items()]).to_excel(writer, sheet_name='Analysis_Settings', index=False)
             
             # Rankings if available
             if analysis_response.rankings:
@@ -56,11 +68,12 @@ class ExportService:
         export_dict = {
             'team': {
                 'abbreviation': analysis_response.team.abbreviation,
-                'name': analysis_response.team.name
+                'name': analysis_response.team_display_name
             },
             'season': {
                 'year': analysis_response.season.year
             },
+            'analysis': self._analysis_metadata(analysis_response),
             'season_stats': self._season_stats_to_dict(analysis_response.season_stats),
             'game_stats': [self._game_stats_to_dict(game) for game in analysis_response.game_stats],
             'rankings': self._rankings_to_dict(analysis_response.rankings) if analysis_response.rankings else None,
@@ -90,6 +103,14 @@ class ExportService:
             else:
                 week_display = str(i)  # Fallback to game number
             game_data.append({
+                'Team': analysis_response.team_display_name,
+                'Team_Code': analysis_response.team.abbreviation,
+                'Season': season_year,
+                'Season_Type_Filter': analysis_response.season_type_filter,
+                'Configuration': json.dumps(analysis_response.configuration, sort_keys=True),
+                'Game_ID': game_stat.game.game_id if game_stat.game else None,
+                'Game_Date': str(game_stat.game.game_date) if game_stat.game else None,
+                'Game_Type': game_stat.game.game_type.value if game_stat.game else None,
                 'Week': week_display,
                 'Opponent': game_stat.opponent.abbreviation,
                 'Location': game_stat.location.value,
@@ -105,7 +126,9 @@ class ExportService:
                 'First_Downs': game_stat.offensive_stats.first_downs,
                 'Points_Per_Drive': game_stat.offensive_stats.points_per_drive,
                 'Redzone_TD_Pct': game_stat.offensive_stats.redzone_td_pct,
-                'Penalty_Yards': game_stat.offensive_stats.penalty_yards
+                'Penalty_Yards': game_stat.offensive_stats.penalty_yards,
+                'TOER': game_stat.offensive_stats.toer,
+                'TOER_Allowed': game_stat.defensive_stats.toer,
             })
         
         return pd.DataFrame(game_data)
@@ -128,8 +151,11 @@ class ExportService:
         
         # Build summary data using centralized metric definitions
         summary_row = {
-            'Team': analysis_response.team.name,
+            'Team': analysis_response.team_display_name,
             'Season': analysis_response.season.year,
+            'Season_Type_Filter': analysis_response.season_type_filter,
+            'Configuration': json.dumps(analysis_response.configuration, sort_keys=True),
+            'TOER_Allowed': season_stats.toer_allowed,
         }
         
         # Add all metrics dynamically using centralized export names
@@ -155,50 +181,34 @@ class ExportService:
             rankings_data.append({
                 'Metric': metric.replace('_', ' ').title(),
                 'Rank': performance_rank.rank,
+                'Total_Teams': performance_rank.total_teams,
                 'Description': performance_rank.description
             })
         
         return pd.DataFrame(rankings_data)
     
     def _season_stats_to_dict(self, season_stats: SeasonStats) -> Dict[str, Any]:
-        """Convert SeasonStats to dictionary."""
-        return {
-            'games_played': season_stats.games_played,
-            'avg_yards_per_play': season_stats.avg_yards_per_play,
-            'total_yards': season_stats.total_yards,
-            'total_plays': season_stats.total_plays,
-            'turnovers_per_game': season_stats.turnovers_per_game,
-            'completion_pct': season_stats.completion_pct,
-            'rush_ypc': season_stats.rush_ypc,
-            'sacks_per_game': season_stats.sacks_per_game,
-            'third_down_pct': season_stats.third_down_pct,
-            'success_rate': season_stats.success_rate,
-            'first_downs_per_game': season_stats.first_downs_per_game,
-            'points_per_drive': season_stats.points_per_drive,
-            'redzone_td_pct': season_stats.redzone_td_pct,
-            'penalty_yards_per_game': season_stats.penalty_yards_per_game,
-            'toer': season_stats.toer
-        }
+        """Retain aggregates and the raw counts used by methodology formulas."""
+        result = asdict(season_stats)
+        result.pop('team')
+        result.pop('season')
+        return result
     
     def _game_stats_to_dict(self, game_stats: GameStats) -> Dict[str, Any]:
         """Convert GameStats to dictionary."""
+        game = game_stats.game
         return {
+            'game_id': game.game_id if game else None,
+            'week': game.week if game else None,
+            'game_date': str(game.game_date) if game else None,
+            'season_type': game.game_type.value if game else None,
+            'team': game_stats.team.abbreviation,
             'opponent': game_stats.opponent.abbreviation,
             'location': game_stats.location.value,
-            'yards_per_play': game_stats.offensive_stats.yards_per_play,
-            'total_yards': game_stats.offensive_stats.total_yards,
-            'total_plays': game_stats.offensive_stats.total_plays,
-            'turnovers': game_stats.offensive_stats.turnovers,
-            'completion_pct': game_stats.offensive_stats.completion_pct,
-            'rush_ypc': game_stats.offensive_stats.rush_ypc,
-            'sacks': game_stats.offensive_stats.sacks,
-            'third_down_pct': game_stats.offensive_stats.third_down_pct,
-            'success_rate': game_stats.offensive_stats.success_rate,
-            'first_downs': game_stats.offensive_stats.first_downs,
-            'points_per_drive': game_stats.offensive_stats.points_per_drive,
-            'redzone_td_pct': game_stats.offensive_stats.redzone_td_pct,
-            'penalty_yards': game_stats.offensive_stats.penalty_yards,
-            'toer': game_stats.offensive_stats.toer
+            # Keep the existing flat offensive keys for export consumers.
+            **asdict(game_stats.offensive_stats),
+            'toer_allowed': game_stats.defensive_stats.toer,
+            'defensive_stats': asdict(game_stats.defensive_stats),
         }
     
     def _rankings_to_dict(self, rankings: Dict) -> Dict[str, Any]:
@@ -210,7 +220,20 @@ class ExportService:
         for metric, performance_rank in rankings.items():
             rankings_dict[metric] = {
                 'rank': performance_rank.rank,
+                'total_teams': performance_rank.total_teams,
                 'description': performance_rank.description
             }
         
         return rankings_dict
+
+    @staticmethod
+    def _analysis_metadata(analysis_response: TeamAnalysisResponse) -> Dict[str, Any]:
+        return {
+            'export_schema_version': 2,
+            'team': analysis_response.team.abbreviation,
+            'team_name': analysis_response.team_display_name,
+            'season': analysis_response.season.year,
+            'season_type_filter': analysis_response.season_type_filter,
+            'configuration': analysis_response.configuration,
+            'turnover_scope': 'offensive possessions',
+        }

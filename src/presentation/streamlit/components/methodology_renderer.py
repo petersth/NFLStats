@@ -15,6 +15,7 @@ class MethodologyRenderer:
         self.analysis_response = analysis_response
         st.header("Statistical Methodology")
         st.markdown("This page documents how each statistic is calculated, including data sources, filters, and formulas.")
+        self._render_selected_settings()
         
         # Create tabs for different sections
         tab1, tab2, tab3, tab4 = st.tabs(["Core Metrics", "Efficiency Metrics", "Situational Stats", "Data Sources"])
@@ -30,13 +31,41 @@ class MethodologyRenderer:
         
         with tab4:
             self._render_data_sources()
+
+    def _includes(self, key):
+        configuration = self.analysis_response.configuration if self.analysis_response else {}
+        return configuration.get(key, True)
+
+    def _play_inclusion(self, label, *keys):
+        action = "Includes" if all(self._includes(key) for key in keys) else "Excludes"
+        return f"{action} {label}."
+
+    def _render_selected_settings(self):
+        """Describe the configuration preserved with the calculated response."""
+        if self.analysis_response:
+            season_type = {"REG": "Regular season", "POST": "Playoffs", "ALL": "Regular season and playoffs"}
+            st.markdown(f"**Selected games:** {season_type.get(self.analysis_response.season_type_filter, 'Regular season and playoffs')}")
+        st.markdown(
+            "**Selected exclusions:** "
+            + self._play_inclusion("QB kneels in rushing", "include_qb_kneels_rushing") + " "
+            + self._play_inclusion("QB kneels in success rate", "include_qb_kneels_success_rate") + " "
+            + self._play_inclusion("spikes in completion percentage", "include_spikes_completion") + " "
+            + self._play_inclusion("spikes in success rate", "include_spikes_success_rate")
+        )
+        st.markdown(
+            "Yards per play, total offensive plays, and first downs exclude a kneel or spike "
+            "when either of its settings excludes it. Third-down rate uses the success-rate settings. "
+            "When both kneel settings exclude kneels, those plays are removed before drive and red-zone "
+            "aggregation; kneel-only possessions and red-zone entries established only by kneels may disappear. "
+            "Spikes remain available for drive and red-zone aggregation."
+        )
     
     def _render_core_metrics(self):
         """Render core offensive metrics methodology."""
         st.subheader("Core Offensive Metrics")
         
         # Get actual team data if available
-        team_name = self.analysis_response.team.name if self.analysis_response else "Example Team"
+        team_name = self.analysis_response.team_display_name if self.analysis_response else "Example Team"
         season_year = self.analysis_response.season.year if self.analysis_response else 2024
         
         # Yards Per Play
@@ -48,7 +77,7 @@ class MethodologyRenderer:
             self._render_stat_card(
                 "Yards Per Play",
                 "Average yards gained per offensive play",
-                f"**What's Included:** Every offensive snap - all rushes, passes, and sacks. Excludes punts, kicks, penalties with no play, and two-point conversions (scoring plays, not offensive plays).",
+                "**What's Included:** Eligible rushes, passes, and sacks. Excludes punts, kicks, penalties with no play, and two-point conversions. " + self._play_inclusion("QB kneels", "include_qb_kneels_rushing", "include_qb_kneels_success_rate") + " " + self._play_inclusion("spikes", "include_spikes_completion", "include_spikes_success_rate"),
                 f"**Formula:** Total Yards ÷ Total Plays",
                 f"**{team_name} {season_year}:** {total_yards:,} yards ÷ {total_plays:,} plays = **{ypp_value:.2f} YPP**"
             )
@@ -56,7 +85,7 @@ class MethodologyRenderer:
             self._render_stat_card(
                 "Yards Per Play",
                 "Average yards gained per offensive play",
-                "**What's Included:** Every offensive snap - all rushes, passes, and sacks. Excludes punts, kicks, penalties with no play, and two-point conversions (scoring plays, not offensive plays).",
+                "**What's Included:** Eligible rushes, passes, and sacks. Excludes punts, kicks, penalties with no play, and two-point conversions. " + self._play_inclusion("QB kneels", "include_qb_kneels_rushing", "include_qb_kneels_success_rate") + " " + self._play_inclusion("spikes", "include_spikes_completion", "include_spikes_success_rate"),
                 "**Formula:** Total Yards ÷ Total Plays",
                 "**Example:** 6,218 yards ÷ 1,120 plays = 5.55 YPP"
             )
@@ -71,7 +100,7 @@ class MethodologyRenderer:
             self._render_stat_card(
                 "Completion Percentage",
                 "Percentage of pass attempts that were completed",
-                f"**What's Included:** Forward pass attempts only - completions, incompletions, and spikes. Excludes sacks (not pass attempts).",
+                "**What's Included:** Forward pass attempts: completions and incompletions. Excludes sacks (not pass attempts). " + self._play_inclusion("spikes", "include_spikes_completion"),
                 f"**Formula:** Completions ÷ Pass Attempts × 100",
                 f"**{team_name} {season_year}:** {completions:,} completions ÷ {attempts:,} attempts × 100 = **{comp_pct:.2f}%**"
             )
@@ -79,7 +108,7 @@ class MethodologyRenderer:
             self._render_stat_card(
                 "Completion Percentage",
                 "Percentage of pass attempts that were completed",
-                "**What's Included:** Forward pass attempts only - completions, incompletions, and spikes. Excludes sacks (not pass attempts).",
+                "**What's Included:** Forward pass attempts: completions and incompletions. Excludes sacks (not pass attempts). " + self._play_inclusion("spikes", "include_spikes_completion"),
                 "**Formula:** Completions ÷ Pass Attempts × 100",
                 "**Example:** 399 completions ÷ 552 attempts × 100 = 72.28%"
             )
@@ -94,7 +123,7 @@ class MethodologyRenderer:
             self._render_stat_card(
                 "Rushing Yards Per Carry",
                 "Average yards gained per rushing attempt",
-                f"**What's Included:** Any play where a player carries the ball - handoffs, QB runs, scrambles, kneels. Excludes sacks (pass plays).",
+                "**What's Included:** Handoffs, QB runs, and scrambles. Excludes sacks (pass plays). " + self._play_inclusion("QB kneels", "include_qb_kneels_rushing"),
                 f"**Formula:** Total Rushing Yards ÷ Total Rush Attempts",
                 f"**{team_name} {season_year}:** {rush_yards:,} yards ÷ {rush_attempts:,} attempts = **{rush_ypc:.2f} YPC**"
             )
@@ -102,7 +131,7 @@ class MethodologyRenderer:
             self._render_stat_card(
                 "Rushing Yards Per Carry",
                 "Average yards gained per rushing attempt",
-                "**What's Included:** Any play where a player carries the ball - handoffs, QB runs, scrambles, kneels. Excludes sacks (pass plays).",
+                "**What's Included:** Handoffs, QB runs, and scrambles. Excludes sacks (pass plays). " + self._play_inclusion("QB kneels", "include_qb_kneels_rushing"),
                 "**Formula:** Total Rushing Yards ÷ Total Rush Attempts",
                 "**Example:** 2,500 yards ÷ 520 attempts = 4.81 YPC"
             )
@@ -144,12 +173,14 @@ class MethodologyRenderer:
         if self.analysis_response:
             stats = self.analysis_response.season_stats
             success_rate = stats.success_rate
-            total_plays = stats.total_plays
+            total_plays = (stats.first_down_total_plays + stats.second_down_total_plays
+                           + stats.third_down_total_plays + stats.fourth_down_total_plays)
             # Calculate actual successful plays from breakdown
             successful_plays = (stats.first_down_successful_plays + 
                               stats.second_down_successful_plays + 
-                              stats.third_down_successful_plays)
-            team_name = self.analysis_response.team.name
+                              stats.third_down_successful_plays +
+                              stats.fourth_down_successful_plays)
+            team_name = self.analysis_response.team_display_name
             season_year = self.analysis_response.season.year
             
             # Get breakdown by down
@@ -157,13 +188,13 @@ class MethodologyRenderer:
             first_total = stats.first_down_total_plays
             second_success = stats.second_down_successful_plays  
             second_total = stats.second_down_total_plays
-            third_success = stats.third_down_successful_plays
-            third_total = stats.third_down_total_plays
+            third_success = stats.third_down_successful_plays + stats.fourth_down_successful_plays
+            third_total = stats.third_down_total_plays + stats.fourth_down_total_plays
             
             self._render_stat_card(
                 "Play Success Rate", 
                 "Percentage of plays that gained 'enough' yards based on down and distance",
-                f"**Success Criteria:** 1st down (≥40% of yards needed), 2nd down (≥60% of yards needed), 3rd/4th down (must gain all yards needed).",
+                "**Success Criteria:** 1st down (≥40% of yards needed), 2nd down (≥60% of yards needed), 3rd/4th down (must gain all yards needed)." + " " + self._play_inclusion("QB kneels", "include_qb_kneels_success_rate") + " " + self._play_inclusion("spikes", "include_spikes_success_rate"),
                 f"**Formula:** Successful Plays ÷ Total Plays × 100",
                 f"**{team_name} {season_year}:** 1st down: {first_success}/{first_total} successful, 2nd down: {second_success}/{second_total} successful, 3rd/4th down: {third_success}/{third_total} successful. Total: {successful_plays:,} ÷ {total_plays:,} × 100 = **{success_rate:.2f}%**"
             )
@@ -171,10 +202,9 @@ class MethodologyRenderer:
             self._render_stat_card(
                 "Play Success Rate",
                 "Percentage of plays that gained 'enough' yards based on down and distance", 
-                "**Success Criteria:** 1st down (≥40% of yards needed), 2nd down (≥60% of yards needed), 3rd/4th down (must gain all yards needed).",
+                "**Success Criteria:** 1st down (≥40% of yards needed), 2nd down (≥60% of yards needed), 3rd/4th down (must gain all yards needed)." + " " + self._play_inclusion("QB kneels", "include_qb_kneels_success_rate") + " " + self._play_inclusion("spikes", "include_spikes_success_rate"),
                 "**Formula:** Successful Plays ÷ Total Plays × 100",
                 "**Example:** 53.76% means 53.76% of plays gained enough yards to stay 'on schedule'",
-                "Each play judged by different standards based on down and distance"
             )
         
         # Third Down Conversion
@@ -183,7 +213,7 @@ class MethodologyRenderer:
             third_down_pct = stats.third_down_pct
             total_third_downs = stats.total_third_downs
             total_conversions = stats.total_third_down_conversions
-            team_name = self.analysis_response.team.name
+            team_name = self.analysis_response.team_display_name
             season_year = self.analysis_response.season.year
             
             # Get conversion breakdown
@@ -193,16 +223,16 @@ class MethodologyRenderer:
             self._render_stat_card(
                 "Third Down Conversion Rate",
                 "Percentage of 3rd down attempts that resulted in a first down or touchdown",
-                f"**What's Included:** 3rd down offensive plays only. Success = achieving first down or touchdown.",
-                f"**Formula:** (First Downs + Touchdowns) ÷ 3rd Down Attempts × 100",
+                f"**What's Included:** Source-recorded third-down attempts and conversions. Penalty-only first downs and replayed downs follow the source conversion/failed flags. Uses the selected success-rate exclusions.",
+                f"**Formula:** Third-Down Conversions ÷ Third-Down Attempts × 100",
                 f"**{team_name} {season_year}:** Rushing conversions: {rush_conversions}, Passing conversions: {pass_conversions}. Total: {total_conversions:,} conversions ÷ {total_third_downs:,} attempts × 100 = **{third_down_pct:.2f}%**"
             )
         else:
             self._render_stat_card(
                 "Third Down Conversion Rate",
                 "Percentage of 3rd down attempts that resulted in a first down or touchdown",
-                "**What's Included:** 3rd down offensive plays only. Success = achieving first down or touchdown.",
-                "**Formula:** (First Downs + Touchdowns) ÷ 3rd Down Attempts × 100",
+                "**What's Included:** Source-recorded third-down attempts and conversions. Penalty-only first downs and replayed downs follow the source conversion/failed flags. Uses the selected success-rate exclusions.",
+                "**Formula:** Third-Down Conversions ÷ Third-Down Attempts × 100",
                 "**Example:** 48.06% means the offense converted 48.06% of their 3rd down attempts"
             )
         
@@ -212,7 +242,7 @@ class MethodologyRenderer:
             redzone_td_pct = stats.redzone_td_pct
             total_rz_trips = stats.total_redzone_trips
             total_rz_tds = stats.total_redzone_tds
-            team_name = self.analysis_response.team.name
+            team_name = self.analysis_response.team_display_name
             season_year = self.analysis_response.season.year
             
             # Get red zone outcome breakdown
@@ -245,7 +275,7 @@ class MethodologyRenderer:
             turnovers_per_game = stats.turnovers_per_game
             total_turnovers = stats.total_turnovers
             games_played = stats.games_played
-            team_name = self.analysis_response.team.name
+            team_name = self.analysis_response.team_display_name
             season_year = self.analysis_response.season.year
             
             # Get turnover breakdown
@@ -255,7 +285,7 @@ class MethodologyRenderer:
             self._render_stat_card(
                 "Turnovers Per Game",
                 "Average turnovers committed per game",
-                f"**What's Included:** Possessions lost to defense - interceptions thrown and fumbles lost. Excludes fumbles recovered by offense.",
+                "**What's Included:** Offensive-possession giveaways by this team: interceptions thrown plus independently lost fumbles. Excludes conversion attempts, fumbles recovered by this team, and opposing return-team fumbles.",
                 f"**Formula:** Total Turnovers ÷ Games Played",
                 f"**{team_name} {season_year}:** Interceptions: {interceptions}, Fumbles Lost: {fumbles_lost}. Total: {total_turnovers:,} turnovers ÷ {games_played:,} games = **{turnovers_per_game:.2f}** per game"
             )
@@ -263,7 +293,7 @@ class MethodologyRenderer:
             self._render_stat_card(
                 "Turnovers Per Game",
                 "Average turnovers committed per game",
-                "**What's Included:** Possessions lost to defense - interceptions thrown and fumbles lost. Excludes fumbles recovered by offense.",
+                "**What's Included:** Offensive-possession giveaways by this team: interceptions thrown plus independently lost fumbles. Excludes conversion attempts, fumbles recovered by this team, and opposing return-team fumbles.",
                 "**Formula:** Total Turnovers ÷ Games Played",
                 "**Example:** 0.71 means the offense turns the ball over 0.71 times per game"
             )
@@ -274,7 +304,7 @@ class MethodologyRenderer:
             sacks_per_game = stats.sacks_per_game
             total_sacks = stats.total_sacks
             games_played = stats.games_played
-            team_name = self.analysis_response.team.name
+            team_name = self.analysis_response.team_display_name
             season_year = self.analysis_response.season.year
             
             self._render_stat_card(
@@ -299,7 +329,7 @@ class MethodologyRenderer:
             first_downs_per_game = stats.first_downs_per_game
             total_first_downs = stats.total_first_downs
             games_played = stats.games_played
-            team_name = self.analysis_response.team.name
+            team_name = self.analysis_response.team_display_name
             season_year = self.analysis_response.season.year
             
             # Get first down breakdown
@@ -310,7 +340,7 @@ class MethodologyRenderer:
             self._render_stat_card(
                 "First Downs Per Game",
                 "Average first downs gained per game",
-                f"**What's Included:** New sets of downs earned - by rush, pass, or defensive penalty. Excludes touchdowns.",
+                "**What's Included:** First downs awarded by rush, pass, or penalty, including qualifying touchdown plays. A play can earn both a rushing/passing first down and a penalty first down; both awards count.",
                 f"**Formula:** Total First Downs ÷ Games Played",
                 f"**{team_name} {season_year}:** Rushing: {rush_first_downs}, Passing: {pass_first_downs}, Penalty: {penalty_first_downs}. Total: {total_first_downs:,} first downs ÷ {games_played:,} games = **{first_downs_per_game:.2f}** per game"
             )
@@ -318,7 +348,7 @@ class MethodologyRenderer:
             self._render_stat_card(
                 "First Downs Per Game",
                 "Average first downs gained per game",
-                "**What's Included:** New sets of downs earned - by rush, pass, or defensive penalty. Excludes touchdowns.",
+                "**What's Included:** First downs awarded by rush, pass, or penalty, including qualifying touchdown plays. A play can earn both a rushing/passing first down and a penalty first down; both awards count.",
                 "**Formula:** Total First Downs ÷ Games Played",
                 "**Example:** 18.35 means the offense earns 18.35 first downs per game"
             )
@@ -329,7 +359,7 @@ class MethodologyRenderer:
             penalty_yards_per_game = stats.penalty_yards_per_game
             total_penalty_yards = stats.total_penalty_yards
             games_played = stats.games_played
-            team_name = self.analysis_response.team.name
+            team_name = self.analysis_response.team_display_name
             season_year = self.analysis_response.season.year
             
             penalty_metric = NFLMetrics.PENALTY_YARDS_PER_GAME
@@ -370,10 +400,10 @@ class MethodologyRenderer:
         - **Playoffs:** `season_type = 'POST'` (varies by team)
         - **Combined:** Both regular season and playoffs
         
-        **Play Exclusions:**
-        - Special teams plays (kickoffs, punts, etc.)
-        - No-play situations (some penalties)
-        - Kneel downs in victory formation (included in rushing stats per NFL standard)
+        **Metric-Specific Filtering:**
+        - Offensive play and yardage metrics exclude kickoffs, punts, and conversion attempts.
+        - No-play penalties may still affect first downs, penalty yards, and red-zone possession.
+        - Kneel and spike exclusions follow the selected settings above.
         """)
         
         st.markdown("### Technical Implementation")
@@ -392,16 +422,17 @@ class MethodologyRenderer:
         
         st.markdown("### Accuracy & Validation")
         st.markdown("""
-        **Validation Sources:**
-        - NFL.com official statistics
-        - Pro Football Reference
-        - ESPN Stats & Info
+        Calculations are tested against selected NFL gamebooks and nflverse source fields.
+        These checks do not independently reconcile every metric for every historical game.
+        Source corrections can change results, and custom exclusions intentionally differ from official totals.
         """)
         
         st.markdown("### Updates & Methodology Changes")
         st.markdown("""
-        **Recent Improvements:**
-        - None
+        **Calculation Conventions:**
+        - First-down totals sum rushing, passing, and penalty awards.
+        - Red-zone trip outcomes follow the whole offensive drive, including scores after backing outside the 20.
+        - Conversion attempts and penalties during conversions do not establish red-zone trips.
         """)
     
     def _render_stat_card(self, title, description, input_data, formula, example):

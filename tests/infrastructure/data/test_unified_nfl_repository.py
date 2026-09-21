@@ -36,6 +36,28 @@ def _required_pbp_frame(**extra_columns) -> pl.DataFrame:
 
 class TestUnifiedNFLRepositoryDataLoading:
     @patch("src.infrastructure.data.unified_nfl_repository.nfl.load_pbp")
+    def test_retains_official_down_and_fumble_context(self, load_pbp):
+        context = {
+            "third_down_converted": [0], "third_down_failed": [1],
+            "fumbled_1_team": ["CIN"], "fumbled_2_team": [None],
+            "fumble_recovery_1_team": ["NE"], "fumble_recovery_2_team": [None],
+            "touchback": [0],
+        }
+        load_pbp.return_value = _required_pbp_frame(**context)
+        data = UnifiedNFLRepository()._load_play_by_play_data(2024)
+        assert set(context).issubset(data.columns)
+        assert data.loc[0, "fumbled_1_team"] == "CIN"
+        assert data.loc[0, "fumble_recovery_1_team"] == "NE"
+        assert data.loc[0, "third_down_failed"] == 1
+
+    @pytest.mark.parametrize("column", ["third_down_converted", "fumble_recovery_1_team"])
+    @patch("src.infrastructure.data.unified_nfl_repository.nfl.load_pbp")
+    def test_rejects_missing_attribution_context(self, load_pbp, column):
+        load_pbp.return_value = _required_pbp_frame().drop(column)
+        with pytest.raises(DataNotFoundError, match=column):
+            UnifiedNFLRepository()._load_play_by_play_data(2024)
+
+    @patch("src.infrastructure.data.unified_nfl_repository.nfl.load_pbp")
     def test_loads_requested_season_as_a_trimmed_pandas_frame(self, load_pbp):
         load_pbp.return_value = _required_pbp_frame(unused_column=["discard me"])
         repository = UnifiedNFLRepository()

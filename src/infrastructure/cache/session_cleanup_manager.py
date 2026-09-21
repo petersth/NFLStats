@@ -115,7 +115,7 @@ class SessionCleanupManager:
             
             # Clean up orchestrator if it still exists
             orchestrator_ref = session_data.get('orchestrator_ref')
-            cleanup_stats = {'memory': 0, 'rankings': 0, 'game_results': 0}
+            cleanup_stats = {'memory': 0, 'rankings': 0}
             
             if orchestrator_ref:
                 orchestrator = orchestrator_ref()
@@ -295,7 +295,6 @@ def register_orchestrator_for_cleanup(orchestrator):
             cache_stats = {
                 'memory': orchestrator.league_cache._memory_cache.get_stats()['size'],
                 'rankings': orchestrator.league_cache._rankings_cache.get_stats()['size'],
-                'game_results': orchestrator.league_cache._game_results_cache.get_stats()['size']
             }
             total_entries = sum(cache_stats.values())
             session_id = st.session_state.session_cleanup_manager.session_id

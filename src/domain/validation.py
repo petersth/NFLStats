@@ -7,6 +7,21 @@ from ..config import NFL_TEAMS, VALID_TEAMS, NFL_DATA_START_YEAR, SEASON_TYPES
 from .exceptions import DataValidationError
 
 
+def _validate_integer(value: Any, field_name: str) -> int:
+    """Convert integer representations without silently discarding fractions."""
+    try:
+        if isinstance(value, bool):
+            raise ValueError
+        integer = int(value)
+        if not isinstance(value, str) and value != integer:
+            raise ValueError
+    except (ValueError, TypeError, OverflowError):
+        raise DataValidationError(
+            f"{field_name} must be a valid integer", field_name, value
+        ) from None
+    return integer
+
+
 class NFLValidator:
     """Domain validator for NFL-specific business rules."""
     
@@ -21,10 +36,7 @@ class NFLValidator:
         if season_year is None:
             raise DataValidationError(f"{field_name} cannot be None", field_name, season_year)
         
-        try:
-            year = int(season_year)
-        except (ValueError, TypeError):
-            raise DataValidationError(f"{field_name} must be a valid integer", field_name, season_year)
+        year = _validate_integer(season_year, field_name)
         
         current_year = datetime.now().year
         
@@ -143,10 +155,7 @@ def validate_positive_integer(value: Any, field_name: str) -> int:
     if value is None:
         raise DataValidationError(f"{field_name} cannot be None", field_name, value)
     
-    try:
-        int_value = int(value)
-    except (ValueError, TypeError):
-        raise DataValidationError(f"{field_name} must be a valid integer", field_name, value)
+    int_value = _validate_integer(value, field_name)
     
     if int_value <= 0:
         raise DataValidationError(f"{field_name} must be positive", field_name, int_value)

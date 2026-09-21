@@ -6,6 +6,7 @@ Calculates a composite offensive efficiency score from 0-100 based on 11 key met
 """
 
 import logging
+import math
 import yaml
 import re
 import threading
@@ -193,23 +194,49 @@ class TOERCalculator:
                 logger.debug("Cleared TOER cache")
     
     @staticmethod
-    def _validate_non_negative(value: float, param_name: str, max_reasonable: Optional[float] = None) -> None:
+    def _validate_finite_number(value: float, param_name: str) -> None:
+        """Reject missing/non-numeric inputs before threshold comparisons."""
+        try:
+            valid = not isinstance(value, bool) and math.isfinite(value)
+        except (TypeError, ValueError, OverflowError):
+            valid = False
+        if not valid:
+            raise TOERValidationError(f"{param_name} must be a finite number: {value}")
+
+    @classmethod
+    def _validate_non_negative(cls, value: float, param_name: str, max_reasonable: Optional[float] = None) -> None:
         """Validate that a value is non-negative and within reasonable bounds."""
+        cls._validate_finite_number(value, param_name)
         if value < 0:
             raise TOERValidationError(f"{param_name} cannot be negative: {value}")
         if max_reasonable is not None and value > max_reasonable:
             raise TOERValidationError(f"{param_name} seems unrealistic: {value} (max reasonable: {max_reasonable})")
     
-    @staticmethod
-    def _validate_percentage(value: float, param_name: str) -> None:
+    @classmethod
+    def _validate_percentage(cls, value: float, param_name: str) -> None:
         """Validate that a percentage value is between 0 and 100."""
+        cls._validate_finite_number(value, param_name)
         if value < 0 or value > 100:
             raise TOERValidationError(f"{param_name} must be between 0 and 100: {value}")
+
+    @classmethod
+    def _validate_yardage_rate(cls, value: float, param_name: str, max_reasonable: float) -> None:
+        """Yardage averages may legitimately be negative after net losses."""
+        cls._validate_finite_number(value, param_name)
+        if value > max_reasonable:
+            raise TOERValidationError(f"{param_name} seems unrealistic: {value} (max reasonable: {max_reasonable})")
+
+    @classmethod
+    def _validate_count(cls, value: int, param_name: str, max_reasonable: int) -> None:
+        """Accept whole-valued numeric counts, including display-layer floats."""
+        cls._validate_non_negative(value, param_name, max_reasonable)
+        if value != int(value):
+            raise TOERValidationError(f"{param_name} must be a whole number: {value}")
     
     @classmethod
     def calculate_yards_per_play_score(cls, ypp: float) -> int:
         """Calculate YPP component score (0-10 points)."""
-        cls._validate_non_negative(ypp, "yards_per_play", 20.0)
+        cls._validate_yardage_rate(ypp, "yards_per_play", 20.0)
         # Round to display precision to ensure consistency between displayed and scored values
         rounded_ypp = round(ypp, 2)
         scorers = cls._build_scorers()
@@ -218,10 +245,7 @@ class TOERCalculator:
     @classmethod
     def calculate_turnovers_score(cls, turnovers: int) -> int:
         """Calculate turnovers component score (-5 to 10 points)."""
-        if turnovers < 0:
-            raise TOERValidationError(f"turnovers cannot be negative: {turnovers}")
-        if turnovers > 10:
-            raise TOERValidationError(f"turnovers seems unrealistic: {turnovers} (max reasonable: 10)")
+        cls._validate_count(turnovers, "turnovers", 10)
         scorers = cls._build_scorers()
         return scorers['turnovers'](turnovers)
     
@@ -237,7 +261,7 @@ class TOERCalculator:
     @classmethod
     def calculate_rush_ypc_score(cls, ypc: float) -> int:
         """Calculate rushing YPC component score (0-10 points)."""
-        cls._validate_non_negative(ypc, "rush_yards_per_carry", 15.0)
+        cls._validate_yardage_rate(ypc, "rush_yards_per_carry", 15.0)
         # Round to display precision to ensure consistency
         rounded_ypc = round(ypc, 2)
         scorers = cls._build_scorers()
@@ -246,10 +270,7 @@ class TOERCalculator:
     @classmethod
     def calculate_sacks_score(cls, sacks: int) -> int:
         """Calculate sacks allowed component score (-3 to 10 points)."""
-        if sacks < 0:
-            raise TOERValidationError(f"sacks cannot be negative: {sacks}")
-        if sacks > 15:
-            raise TOERValidationError(f"sacks seems unrealistic: {sacks} (max reasonable: 15)")
+        cls._validate_count(sacks, "sacks", 15)
         scorers = cls._build_scorers()
         return scorers['sacks'](sacks)
     
@@ -301,10 +322,7 @@ class TOERCalculator:
     @classmethod
     def calculate_penalty_yards_adjustment(cls, penalty_yards: int) -> int:
         """Calculate penalty yards adjustment (-10 to +5 points)."""
-        if penalty_yards < 0:
-            raise TOERValidationError(f"penalty_yards cannot be negative: {penalty_yards}")
-        if penalty_yards > 300:
-            raise TOERValidationError(f"penalty_yards seems unrealistic: {penalty_yards} (max reasonable: 300)")
+        cls._validate_count(penalty_yards, "penalty_yards", 300)
         scorers = cls._build_scorers()
         return scorers['penalty_yards'](penalty_yards)
     

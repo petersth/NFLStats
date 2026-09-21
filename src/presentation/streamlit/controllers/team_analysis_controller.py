@@ -1,6 +1,7 @@
 # src/presentation/streamlit/controllers/team_analysis_controller.py - Team analysis controller
 
 import logging
+from copy import deepcopy
 from typing import Optional, Dict
 
 from ....domain.entities import Team, Season
@@ -79,7 +80,9 @@ class TeamAnalysisController:
                 game_stats=analysis.game_stats,
                 team_record=analysis.team_record,
                 rankings=rankings,
-                league_averages=analysis.league_averages
+                league_averages=analysis.league_averages,
+                configuration=deepcopy(request.configuration),
+                season_type_filter=request.season_type_filter,
             )
             
         except (DataNotFoundError, DataValidationError, UseCaseError):

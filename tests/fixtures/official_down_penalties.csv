@@ -1,0 +1,230 @@
+game_id,play_id,posteam,down,rush_attempt,pass_attempt,two_point_attempt,touchdown,td_team,first_down,first_down_rush,first_down_pass,first_down_penalty,third_down_converted,third_down_failed,desc
+2024_01_LA_DET,155.0,DET,1.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(13:26) 5-D.Montgomery up the middle to DET 38 for 2 yards (56-C.Rozeboom; 8-J.Verse).
+2024_01_LA_DET,177.0,DET,2.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(12:55) (Shotgun) 16-J.Goff pass short middle to 14-A.St. Brown to DET 42 for 4 yards (56-C.Rozeboom).
+2024_01_LA_DET,202.0,DET,3.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,1.0,(12:10) (Shotgun) 16-J.Goff sacked at DET 33 for -9 yards (0-B.Young).
+2024_01_LA_DET,222.0,DET,4.0,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(11:29) 3-J.Fox punts 67 yards to end zone, Center-49-H.Hatten, Touchback. PENALTY on LA-56-C.Rozeboom, Offensive Holding, 10 yards, enforced at LA 20."
+2024_01_LA_DET,602.0,DET,,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"42-E.Evans kicks 65 yards from LA 35 to end zone, Touchback to the DET 30."
+2024_01_LA_DET,626.0,DET,1.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(4:50) 5-D.Montgomery right tackle to DET 33 for 3 yards (55-B.Fiske; 91-K.Turner).
+2024_01_LA_DET,648.0,DET,2.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(4:10) (Shotgun) 26-J.Gibbs right end pushed ob at DET 39 for 6 yards (3-K.Curl).
+2024_01_LA_DET,675.0,DET,3.0,1.0,0.0,0.0,0.0,,1.0,1.0,0.0,0.0,1.0,0.0,(3:35) 70-D.Skipper reported in as eligible. 5-D.Montgomery left tackle to DET 41 for 2 yards (51-T.Reeder).
+2024_01_LA_DET,699.0,DET,1.0,1.0,0.0,0.0,0.0,,1.0,0.0,0.0,1.0,0.0,0.0,"(2:55) 5-D.Montgomery left end to DET 46 for 5 yards (51-T.Reeder; 56-C.Rozeboom). PENALTY on LA-0-B.Young, Illegal Use of Hands, 5 yards, enforced at DET 46."
+2024_01_LA_DET,732.0,DET,1.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(2:34) (Shotgun) 5-D.Montgomery left end to LA 41 for 8 yards (51-T.Reeder, 43-J.Johnson)."
+2024_01_LA_DET,754.0,DET,2.0,1.0,0.0,0.0,0.0,,1.0,1.0,0.0,0.0,0.0,0.0,"(1:51) 5-D.Montgomery left end to LA 35 for 6 yards (37-Q.Lake, 8-J.Verse)."
+2024_01_LA_DET,776.0,DET,1.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(1:13) (Shotgun) 5-D.Montgomery left tackle to LA 28 for 7 yards (51-T.Reeder; 27-T.White).
+2024_01_LA_DET,798.0,DET,2.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(:33) (Shotgun) 16-J.Goff pass short left to 9-J.Williams to LA 27 for 1 yard (37-Q.Lake; 43-J.Johnson).
+2024_01_LA_DET,823.0,DET,,,,,,,,,,,,,END QUARTER 1
+2024_01_LA_DET,843.0,DET,3.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,1.0,(15:00) (Shotgun) 16-J.Goff pass incomplete short middle to 14-A.St. Brown.
+2024_01_LA_DET,866.0,DET,4.0,1.0,0.0,0.0,0.0,,1.0,1.0,0.0,0.0,0.0,0.0,(14:56) (Shotgun) 5-D.Montgomery up the middle to LA 24 for 3 yards (95-B.Brown).
+2024_01_LA_DET,888.0,DET,1.0,0.0,1.0,0.0,0.0,,1.0,0.0,1.0,0.0,0.0,0.0,(14:26) (Shotgun) 16-J.Goff pass short left to 87-S.LaPorta to LA 10 for 14 yards (43-J.Johnson).
+2024_01_LA_DET,913.0,DET,1.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(13:44) 16-J.Goff pass short left to 14-A.St. Brown to LA 6 for 4 yards (51-T.Reeder).
+2024_01_LA_DET,938.0,DET,2.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(13:00) 5-D.Montgomery left tackle to LA 7 for -1 yards (97-M.Hoecht, 37-Q.Lake)."
+2024_01_LA_DET,960.0,DET,3.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,1.0,(12:25) (Shotgun) 16-J.Goff pass incomplete short middle to 87-S.LaPorta.
+2024_01_LA_DET,983.0,DET,4.0,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(12:20) 39-J.Bates 25 yard field goal is GOOD, Center-49-H.Hatten, Holder-3-J.Fox."
+2024_01_LA_DET,1345.0,DET,1.0,0.0,1.0,0.0,0.0,,1.0,0.0,1.0,0.0,0.0,0.0,(6:31) 16-J.Goff pass short middle to 9-J.Williams pushed ob at LA 41 for 36 yards (43-J.Johnson).
+2024_01_LA_DET,1385.0,DET,1.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(5:56) 16-J.Goff pass incomplete deep left to 9-J.Williams.
+2024_01_LA_DET,1408.0,DET,2.0,0.0,1.0,0.0,0.0,,1.0,0.0,1.0,0.0,0.0,0.0,(5:49) (Shotgun) 16-J.Goff pass short left to 26-J.Gibbs to LA 27 for 14 yards (37-Q.Lake).
+2024_01_LA_DET,1433.0,DET,1.0,1.0,0.0,0.0,0.0,,1.0,1.0,0.0,0.0,0.0,0.0,(5:08) 9-J.Williams right end to LA 14 for 13 yards (56-C.Rozeboom; 14-C.Durant). DET-9-J.Williams was injured during the play.
+2024_01_LA_DET,1458.0,DET,1.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(4:33) (Shotgun) 26-J.Gibbs up the middle to LA 6 for 8 yards (90-T.Davis).
+2024_01_LA_DET,1497.0,DET,2.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(3:54) 26-J.Gibbs left tackle to LA 5 for 1 yard (55-B.Fiske, 95-B.Brown). ** Injury Update: DET-9-J.Williams has returned to the game."
+2024_01_LA_DET,1519.0,DET,3.0,1.0,0.0,0.0,0.0,,1.0,1.0,0.0,0.0,1.0,0.0,(3:09) 70-D.Skipper reported in as eligible. 26-J.Gibbs right end to LA 3 for 2 yards (0-B.Young; 37-Q.Lake).
+2024_01_LA_DET,1546.0,DET,1.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(2:28) 16-J.Goff pass short left to 89-B.Wright to LA 1 for 2 yards (3-K.Curl).
+2024_01_LA_DET,1571.0,DET,2.0,1.0,0.0,0.0,1.0,DET,1.0,1.0,0.0,0.0,0.0,0.0,"(2:00) 26-J.Gibbs left tackle to LA 1 for no gain (3-K.Curl, 51-T.Reeder). The Replay Official reviewed the short of the goal line ruling, and the play was REVERSED. 26-J.Gibbs left tackle for 1 yard, TOUCHDOWN."
+2024_01_LA_DET,1600.0,DET,,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"39-J.Bates extra point is GOOD, Center-49-H.Hatten, Holder-3-J.Fox."
+2024_01_LA_DET,1956.0,DET,1.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(:15) (Shotgun) 16-J.Goff sacked at DET 12 for -8 yards (8-J.Verse).
+2024_01_LA_DET,2006.0,DET,,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"42-E.Evans kicks 65 yards from LA 35 to end zone, Touchback to the DET 30."
+2024_01_LA_DET,2023.0,DET,1.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(15:00) 5-D.Montgomery right tackle to DET 32 for 2 yards (51-T.Reeder).
+2024_01_LA_DET,2045.0,DET,2.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(14:30) (Shotgun) 5-D.Montgomery up the middle to DET 36 for 4 yards (3-K.Curl; 51-T.Reeder).
+2024_01_LA_DET,2067.0,DET,3.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,1.0,(13:52) (Shotgun) 16-J.Goff pass incomplete short middle to 9-J.Williams (51-T.Reeder).
+2024_01_LA_DET,2090.0,DET,4.0,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(13:46) 3-J.Fox punts 64 yards to end zone, Center-49-H.Hatten, Touchback."
+2024_01_LA_DET,2221.0,DET,1.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(12:01) 5-D.Montgomery up the middle to DET 46 for 5 yards (0-B.Young).
+2024_01_LA_DET,2243.0,DET,2.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(11:24) (Shotgun) 16-J.Goff pass short middle to 5-D.Montgomery to DET 48 for 2 yards (56-C.Rozeboom) [8-J.Verse].
+2024_01_LA_DET,2268.0,DET,3.0,0.0,1.0,0.0,1.0,DET,1.0,0.0,1.0,0.0,1.0,0.0,"(10:37) (Shotgun) 16-J.Goff pass deep left to 9-J.Williams for 52 yards, TOUCHDOWN. Penalty on LA-27-T.White, Illegal Contact, declined."
+2024_01_LA_DET,2305.0,DET,,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"39-J.Bates extra point is GOOD, Center-49-H.Hatten, Holder-3-J.Fox."
+2024_01_LA_DET,2675.0,DET,,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"42-E.Evans kicks 65 yards from LA 35 to end zone, Touchback to the DET 30."
+2024_01_LA_DET,2699.0,DET,1.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(3:33) 16-J.Goff pass short right to 26-J.Gibbs to DET 32 for 2 yards (3-K.Curl).
+2024_01_LA_DET,2724.0,DET,2.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(3:01) 26-J.Gibbs left end pushed ob at DET 35 for 3 yards (37-Q.Lake).
+2024_01_LA_DET,2756.0,DET,3.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,1.0,(2:20) (Shotgun) 16-J.Goff pass short middle to 87-S.LaPorta to DET 39 for 4 yards (43-J.Johnson; 37-Q.Lake).
+2024_01_LA_DET,2786.0,DET,4.0,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(1:42) 3-J.Fox punts 45 yards to LA 16, Center-49-H.Hatten. 23-K.Williams to LA 16 for no gain."
+2024_01_LA_DET,3088.0,DET,,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"42-E.Evans kicks 65 yards from LA 35 to end zone, Touchback to the DET 30."
+2024_01_LA_DET,3112.0,DET,1.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(12:32) 26-J.Gibbs right end to DET 30 for no gain (55-B.Fiske, 92-N.Gallimore). ** Injury Update: LA-14-C.Durant has returned to the game."
+2024_01_LA_DET,3134.0,DET,2.0,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(11:52) (Shotgun) PENALTY on DET-60-G.Glasgow, False Start, 5 yards, enforced at DET 30 - No Play."
+2024_01_LA_DET,3158.0,DET,2.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(11:52) (Shotgun) 16-J.Goff pass short left to 87-S.LaPorta to DET 34 for 9 yards (56-C.Rozeboom; 14-C.Durant).
+2024_01_LA_DET,3183.0,DET,3.0,1.0,0.0,0.0,0.0,,1.0,1.0,0.0,0.0,1.0,0.0,(11:21) (Shotgun) 16-J.Goff scrambles up the middle to DET 41 for 7 yards (37-Q.Lake).
+2024_01_LA_DET,3208.0,DET,1.0,0.0,1.0,0.0,0.0,,1.0,0.0,1.0,0.0,0.0,0.0,(10:39) 16-J.Goff pass short left to 9-J.Williams ran ob at LA 32 for 27 yards (27-T.White) [37-Q.Lake].
+2024_01_LA_DET,3238.0,DET,1.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(9:59) 26-J.Gibbs right tackle to LA 25 for 7 yards (92-N.Gallimore; 0-B.Young).
+2024_01_LA_DET,3260.0,DET,2.0,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(9:15) (Shotgun) PENALTY on DET-77-F.Ragnow, False Start, 5 yards, enforced at LA 25 - No Play."
+2024_01_LA_DET,3284.0,DET,2.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(9:15) (Shotgun) 16-J.Goff pass short middle intended for 14-A.St. Brown INTERCEPTED by 43-J.Johnson at LA 20. 43-J.Johnson to LA 20 for no gain (14-A.St. Brown).
+2024_01_LA_DET,3586.0,DET,,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"42-E.Evans kicks 65 yards from LA 35 to end zone, Touchback to the DET 30."
+2024_01_LA_DET,3620.0,DET,1.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(4:30) (Shotgun) 16-J.Goff pass short right to 14-A.St. Brown pushed ob at DET 35 for 5 yards (14-C.Durant).
+2024_01_LA_DET,3650.0,DET,2.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(4:26) 16-J.Goff pass incomplete short right to 9-J.Williams [14-C.Durant].
+2024_01_LA_DET,3673.0,DET,3.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,1.0,(4:22) (Shotgun) 16-J.Goff pass incomplete deep left to 9-J.Williams (14-C.Durant).
+2024_01_LA_DET,3696.0,DET,4.0,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(4:17) 3-J.Fox punts 54 yards to LA 11, Center-49-H.Hatten, fair catch by 23-K.Williams."
+2024_01_LA_DET,3925.0,DET,1.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(2:11) (Shotgun) 26-J.Gibbs up the middle to DET 36 for 5 yards (55-B.Fiske; 27-T.White).
+2024_01_LA_DET,3947.0,DET,2.0,0.0,1.0,0.0,0.0,,1.0,0.0,1.0,1.0,0.0,0.0,"(2:00) (Shotgun) 16-J.Goff pass short middle to 87-S.LaPorta to LA 46 for 18 yards (26-K.Kinchens). PENALTY on LA-26-K.Kinchens, Unnecessary Roughness, 15 yards, enforced at LA 46."
+2024_01_LA_DET,3990.0,DET,1.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(1:53) (Shotgun) 16-J.Goff pass short right to 26-J.Gibbs to LA 23 for 8 yards (56-C.Rozeboom).
+2024_01_LA_DET,4015.0,DET,2.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(1:11) (Shotgun) 16-J.Goff pass incomplete deep left to 26-J.Gibbs.
+2024_01_LA_DET,4038.0,DET,3.0,1.0,0.0,0.0,0.0,,1.0,1.0,0.0,0.0,1.0,0.0,"(1:06) (Shotgun) 26-J.Gibbs right end pushed ob at LA 19 for 4 yards (3-K.Curl). The Replay Official reviewed the runner was out of bounds ruling, and the play was REVERSED. (Shotgun) 26-J.Gibbs right end to LA 19 for 4 yards (3-K.Curl)."
+2024_01_LA_DET,4065.0,DET,1.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(:41) (Shotgun) 16-J.Goff pass incomplete short middle to 14-A.St. Brown.
+2024_01_LA_DET,4120.0,DET,2.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(:38) (Shotgun) 16-J.Goff pass short middle to 9-J.Williams to LA 14 for 5 yards (37-Q.Lake).
+2024_01_LA_DET,4145.0,DET,3.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,1.0,(:24) (Shotgun) 16-J.Goff pass incomplete short right to 26-J.Gibbs.
+2024_01_LA_DET,4175.0,DET,4.0,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(:20) 39-J.Bates 32 yard field goal is GOOD, Center-49-H.Hatten, Holder-3-J.Fox."
+2024_01_LA_DET,4285.0,DET,,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"42-E.Evans kicks 65 yards from LA 35 to end zone, Touchback to the DET 30."
+2024_01_LA_DET,4302.0,DET,1.0,1.0,0.0,0.0,0.0,,1.0,1.0,0.0,0.0,0.0,0.0,(10:00) 11-K.Raymond left end to DET 42 for 12 yards (56-C.Rozeboom).
+2024_01_LA_DET,4324.0,DET,1.0,1.0,0.0,0.0,0.0,,1.0,1.0,0.0,0.0,0.0,0.0,(9:23) 5-D.Montgomery right end to LA 37 for 21 yards (27-T.White).
+2024_01_LA_DET,4346.0,DET,1.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(8:43) 5-D.Montgomery left tackle to LA 28 for 9 yards (8-J.Verse).
+2024_01_LA_DET,4368.0,DET,2.0,0.0,1.0,0.0,0.0,,1.0,0.0,1.0,0.0,0.0,0.0,(8:02) 16-J.Goff pass short right to 26-J.Gibbs pushed ob at LA 18 for 10 yards (27-T.White).
+2024_01_LA_DET,4398.0,DET,1.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(7:22) 26-J.Gibbs left tackle to LA 15 for 3 yards (51-T.Reeder, 37-Q.Lake)."
+2024_01_LA_DET,4420.0,DET,2.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(6:43) (Shotgun) 5-D.Montgomery up the middle to LA 9 for 6 yards (91-K.Turner; 55-B.Fiske).
+2024_01_LA_DET,4442.0,DET,3.0,1.0,0.0,0.0,0.0,,1.0,1.0,0.0,0.0,1.0,0.0,(6:03) 5-D.Montgomery up the middle to LA 1 for 8 yards (95-B.Brown; 43-J.Johnson).
+2024_01_LA_DET,4464.0,DET,1.0,1.0,0.0,0.0,1.0,DET,1.0,1.0,0.0,0.0,0.0,0.0,"(5:24) 5-D.Montgomery right tackle for 1 yard, TOUCHDOWN."
+2024_01_LA_DET,4494.0,DET,,,,,,,,,,,,,END GAME
+2024_01_ARI_BUF,40.0,ARI,,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"2-T.Bass kicks 65 yards from BUF 35 to end zone, Touchback to the ARI 30. Kick through end zone."
+2024_01_ARI_BUF,61.0,ARI,1.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(15:00) 6-J.Conner up the middle to ARI 33 for 3 yards (43-T.Bernard, 7-Ta.Johnson)."
+2024_01_ARI_BUF,83.0,ARI,2.0,0.0,1.0,0.0,0.0,,1.0,0.0,1.0,0.0,0.0,0.0,"(14:27) 1-K.Murray pass short left to 6-J.Conner to BUF 45 for 22 yards (3-D.Hamlin, 31-R.Douglas)."
+2024_01_ARI_BUF,108.0,ARI,1.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(13:43) (Shotgun) 1-K.Murray pass short middle to 6-J.Conner to BUF 36 for 9 yards (9-T.Rapp; 42-Do.Williams).
+2024_01_ARI_BUF,133.0,ARI,2.0,1.0,0.0,0.0,0.0,,1.0,1.0,0.0,0.0,0.0,0.0,(13:02) 6-J.Conner up the middle to BUF 34 for 2 yards (43-T.Bernard).
+2024_01_ARI_BUF,155.0,ARI,1.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(12:26) (Shotgun) 6-J.Conner left guard to BUF 32 for 2 yards (98-A.Johnson, 42-Do.Williams)."
+2024_01_ARI_BUF,177.0,ARI,2.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(11:51) 6-J.Conner left end to BUF 30 for 2 yards (43-T.Bernard).
+2024_01_ARI_BUF,199.0,ARI,3.0,0.0,1.0,0.0,0.0,,1.0,0.0,1.0,0.0,1.0,0.0,"(11:08) (Shotgun) 1-K.Murray pass short middle to 4-G.Dortch to BUF 22 for 8 yards (43-T.Bernard, 9-T.Rapp). BUF-7-Ta.Johnson was injured during the play. T.Johnson walks off."
+2024_01_ARI_BUF,224.0,ARI,1.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(10:32) (Shotgun) 1-K.Murray pass incomplete short right to 18-M.Harrison. Thrown wide of receiver, along sideline at BUF 10."
+2024_01_ARI_BUF,265.0,ARI,2.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(10:28) (Shotgun) 6-J.Conner left tackle to BUF 25 for -3 yards (50-G.Rousseau).
+2024_01_ARI_BUF,287.0,ARI,3.0,1.0,0.0,0.0,0.0,,1.0,0.0,0.0,1.0,0.0,1.0,"(9:48) (Shotgun) 1-K.Murray scrambles right end to BUF 19 for 6 yards (46-J.Ingram). PENALTY on BUF-46-J.Ingram, Unnecessary Roughness, 10 yards, enforced at BUF 19."
+2024_01_ARI_BUF,320.0,ARI,1.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(9:15) (Shotgun) 6-J.Conner left end pushed ob at BUF 5 for 4 yards (43-T.Bernard).
+2024_01_ARI_BUF,347.0,ARI,2.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(8:34) (Shotgun) 1-K.Murray sacked ob at BUF 5 for 0 yards (50-G.Rousseau).
+2024_01_ARI_BUF,381.0,ARI,3.0,0.0,1.0,0.0,1.0,ARI,1.0,0.0,1.0,0.0,1.0,0.0,"(7:54) (Shotgun) 1-K.Murray pass short left to 14-Mi.Wilson for 5 yards, TOUCHDOWN."
+2024_01_ARI_BUF,407.0,ARI,,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"5-M.Prater extra point is GOOD, Center-46-A.Brewer, Holder-12-B.Gillikin."
+2024_01_ARI_BUF,565.0,ARI,1.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(5:24) 6-J.Conner left end to ARI 33 for 4 yards (40-V.Miller).
+2024_01_ARI_BUF,587.0,ARI,2.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(4:46) (Shotgun) 1-K.Murray pass short left to 6-J.Conner pushed ob at ARI 35 for 2 yards (50-G.Rousseau).
+2024_01_ARI_BUF,622.0,ARI,3.0,0.0,1.0,0.0,0.0,,1.0,0.0,1.0,0.0,1.0,0.0,(4:11) (Shotgun) 1-K.Murray pass short right to 31-E.Demercado to BUF 41 for 24 yards (47-C.Benford).
+2024_01_ARI_BUF,652.0,ARI,1.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(3:27) (Shotgun) 1-K.Murray pass short left to 85-T.McBride to BUF 35 for 6 yards (39-C.Lewis) [57-A.Epenesa].
+2024_01_ARI_BUF,677.0,ARI,2.0,0.0,1.0,0.0,0.0,,1.0,0.0,1.0,0.0,0.0,0.0,(2:44) 1-K.Murray pass short right to 84-E.Higgins pushed ob at BUF 28 for 7 yards (43-T.Bernard).
+2024_01_ARI_BUF,707.0,ARI,1.0,1.0,0.0,0.0,0.0,,1.0,1.0,0.0,0.0,0.0,0.0,(2:07) (Shotgun) 1-K.Murray right end pushed ob at BUF 17 for 11 yards (9-T.Rapp).
+2024_01_ARI_BUF,734.0,ARI,1.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(1:28) (Shotgun) 1-K.Murray pass short middle to 4-G.Dortch to BUF 14 for 3 yards (43-T.Bernard).
+2024_01_ARI_BUF,759.0,ARI,2.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(:49) (Shotgun) 6-J.Conner right guard to BUF 13 for 1 yard (50-G.Rousseau).
+2024_01_ARI_BUF,781.0,ARI,3.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,1.0,(:08) (Shotgun) 1-K.Murray pass short right to 31-E.Demercado to BUF 11 for 2 yards (31-R.Douglas). ARI-73-J.Williams was injured during the play. J.Williams assisted off.
+2024_01_ARI_BUF,809.0,ARI,,,,,,,,,,,,,END QUARTER 1
+2024_01_ARI_BUF,823.0,ARI,4.0,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(15:00) 5-M.Prater 29 yard field goal is GOOD, Center-46-A.Brewer, Holder-12-B.Gillikin."
+2024_01_ARI_BUF,1140.0,ARI,,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,2-T.Bass kicks 61 yards from BUF 35 to ARI 4. 20-D.Dallas to ARI 29 for 25 yards (26-Ty.Johnson).
+2024_01_ARI_BUF,1170.0,ARI,1.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(9:42) 1-K.Murray pass short right to 33-T.Benson to ARI 34 for 5 yards (3-D.Hamlin).
+2024_01_ARI_BUF,1195.0,ARI,2.0,1.0,0.0,0.0,0.0,,1.0,1.0,0.0,0.0,0.0,0.0,(9:02) (Shotgun) 33-T.Benson left end to ARI 40 for 6 yards (9-T.Rapp).
+2024_01_ARI_BUF,1217.0,ARI,1.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(8:25) (Shotgun) 1-K.Murray pass incomplete short left to 18-M.Harrison. Dropped, receiver at BUF 45, slanting to middle."
+2024_01_ARI_BUF,1244.0,ARI,2.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(8:19) (Shotgun) 1-K.Murray pass short left to 18-M.Harrison to ARI 44 for 4 yards (42-Do.Williams).
+2024_01_ARI_BUF,1269.0,ARI,3.0,1.0,0.0,0.0,0.0,,1.0,1.0,0.0,0.0,1.0,0.0,(7:39) (Shotgun) 1-K.Murray scrambles left tackle ran ob at BUF 44 for 12 yards (42-Do.Williams).
+2024_01_ARI_BUF,1296.0,ARI,1.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(7:05) 1-K.Murray pass short right to 84-E.Higgins ran ob at BUF 39 for 5 yards (39-C.Lewis).
+2024_01_ARI_BUF,1326.0,ARI,2.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(6:24) (Shotgun) 1-K.Murray pass incomplete deep left to 85-T.McBride.
+2024_01_ARI_BUF,1349.0,ARI,3.0,0.0,1.0,0.0,0.0,,1.0,0.0,1.0,0.0,1.0,0.0,"(6:16) (Shotgun) 1-K.Murray pass short left to 4-G.Dortch to BUF 25 for 14 yards (47-C.Benford, 46-J.Ingram)."
+2024_01_ARI_BUF,1374.0,ARI,1.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(5:38) (Shotgun) 33-T.Benson right end to BUF 21 for 4 yards (9-T.Rapp).
+2024_01_ARI_BUF,1396.0,ARI,2.0,0.0,1.0,0.0,0.0,,1.0,0.0,1.0,0.0,0.0,0.0,(4:53) (Shotgun) 1-K.Murray pass short right to 85-T.McBride to BUF 13 for 8 yards (43-T.Bernard).
+2024_01_ARI_BUF,1429.0,ARI,1.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(4:09) (Shotgun) 33-T.Benson right end to BUF 10 for 3 yards (99-C.Toohill, 42-Do.Williams)."
+2024_01_ARI_BUF,1451.0,ARI,2.0,0.0,1.0,0.0,0.0,,1.0,0.0,1.0,0.0,0.0,0.0,(3:25) (Shotgun) 1-K.Murray pass short left to 85-T.McBride to BUF 3 for 7 yards (3-D.Hamlin; 39-C.Lewis).
+2024_01_ARI_BUF,1476.0,ARI,1.0,1.0,0.0,0.0,1.0,ARI,1.0,1.0,0.0,0.0,0.0,0.0,"(2:44) (Shotgun) 6-J.Conner right guard for 3 yards, TOUCHDOWN."
+2024_01_ARI_BUF,1499.0,ARI,,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"5-M.Prater extra point is GOOD, Center-46-A.Brewer, Holder-12-B.Gillikin."
+2024_01_ARI_BUF,1863.0,ARI,,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"2-T.Bass kicks 61 yards from BUF 35 to ARI 4. 20-D.Dallas MUFFS catch, and recovers at ARI 2. 20-D.Dallas to ARI 4 for 2 yards (99-C.Toohill)."
+2024_01_ARI_BUF,1886.0,ARI,1.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(:11) 1-K.Murray kneels to ARI 3 for -1 yards.
+2024_01_ARI_BUF,2257.0,ARI,,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"2-T.Bass kicks 65 yards from BUF 35 to end zone, Touchback to the ARI 30. Kick through end zone."
+2024_01_ARI_BUF,2291.0,ARI,1.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(9:51) (Shotgun) 6-J.Conner left end pushed ob at ARI 32 for 2 yards (43-T.Bernard).
+2024_01_ARI_BUF,2318.0,ARI,2.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(9:20) (Shotgun) 6-J.Conner right end to ARI 34 for 2 yards (39-C.Lewis).
+2024_01_ARI_BUF,2340.0,ARI,3.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,1.0,(8:41) (Shotgun) 1-K.Murray sacked at ARI 26 for -8 yards (50-G.Rousseau).
+2024_01_ARI_BUF,2360.0,ARI,4.0,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(8:03) 12-B.Gillikin punts 50 yards to BUF 24, Center-46-A.Brewer. 29-B.Codrington to BUF 31 for 7 yards (16-M.Melton)."
+2024_01_ARI_BUF,2494.0,ARI,1.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(6:16) (Shotgun) 1-K.Murray pass short right to 4-G.Dortch to ARI 24 for 3 yards (39-C.Lewis) [92-Da.Jones].
+2024_01_ARI_BUF,2527.0,ARI,2.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(5:32) (No Huddle, Shotgun) 1-K.Murray sacked at ARI 19 for -5 yards (50-G.Rousseau). FUMBLES (50-G.Rousseau) [50-G.Rousseau], RECOVERED by BUF-42-Do.Williams at ARI 21."
+2024_01_ARI_BUF,2699.0,ARI,,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"2-T.Bass kicks 65 yards from BUF 35 to end zone, Touchback to the ARI 30. Kick through end zone."
+2024_01_ARI_BUF,2727.0,ARI,1.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(2:37) (Shotgun) 6-J.Conner up the middle to ARI 33 for 3 yards (39-C.Lewis, 43-T.Bernard)."
+2024_01_ARI_BUF,2749.0,ARI,2.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(1:59) (Shotgun) 1-K.Murray pass incomplete deep right to 85-T.McBride (9-T.Rapp). Thrown behind receiver at BUF 46.
+2024_01_ARI_BUF,2776.0,ARI,3.0,1.0,0.0,0.0,0.0,,1.0,1.0,0.0,0.0,1.0,0.0,(1:53) (Shotgun) 1-K.Murray scrambles left end ran ob at BUF 38 for 29 yards (47-C.Benford).
+2024_01_ARI_BUF,2808.0,ARI,1.0,1.0,0.0,0.0,0.0,,1.0,1.0,0.0,0.0,0.0,0.0,(1:11) (Shotgun) 6-J.Conner up the middle to BUF 18 for 20 yards (57-A.Epenesa; 3-D.Hamlin).
+2024_01_ARI_BUF,2830.0,ARI,1.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(:28) (Shotgun) 4-G.Dortch left end pushed ob at BUF 14 for 4 yards (42-Do.Williams).
+2024_01_ARI_BUF,2857.0,ARI,,,,,,,,,,,,,END QUARTER 3
+2024_01_ARI_BUF,2877.0,ARI,2.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(15:00) (Shotgun) 6-J.Conner right tackle to BUF 12 for 2 yards (92-Da.Jones; 39-C.Lewis).
+2024_01_ARI_BUF,2899.0,ARI,3.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,1.0,(14:18) (Shotgun) 6-J.Conner left end to BUF 12 for no gain (39-C.Lewis).
+2024_01_ARI_BUF,2921.0,ARI,4.0,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(13:35) 5-M.Prater 31 yard field goal is GOOD, Center-46-A.Brewer, Holder-12-B.Gillikin. ** Injury Update: ARI-74-I.Adams has returned to the game."
+2024_01_ARI_BUF,3273.0,ARI,,0.0,0.0,0.0,1.0,ARI,0.0,0.0,0.0,0.0,0.0,0.0,"2-T.Bass kicks 61 yards from BUF 35 to ARI 4. 20-D.Dallas for 96 yards, TOUCHDOWN."
+2024_01_ARI_BUF,3304.0,ARI,,1.0,0.0,1.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,TWO-POINT CONVERSION ATTEMPT. 6-J.Conner rushes right guard. ATTEMPT SUCCEEDS.
+2024_01_ARI_BUF,3541.0,ARI,1.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(5:17) (Shotgun) 1-K.Murray pass incomplete short left to 85-T.McBride.
+2024_01_ARI_BUF,3581.0,ARI,2.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(5:13) (Shotgun) 1-K.Murray pass incomplete short right to 6-J.Conner (92-Da.Jones). Pass batted at line.
+2024_01_ARI_BUF,3608.0,ARI,3.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,1.0,(5:08) (Shotgun) 1-K.Murray sacked at ARI 14 for -5 yards (40-V.Miller).
+2024_01_ARI_BUF,3628.0,ARI,4.0,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(4:36) 12-B.Gillikin punts 28 yards to ARI 42, Center-46-A.Brewer, out of bounds."
+2024_01_ARI_BUF,3790.0,ARI,,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"2-T.Bass kicks 61 yards from BUF 35 to ARI 4, out of bounds. PENALTY on BUF-2-T.Bass, Kickoff Out of Bounds, placed at ARI 40."
+2024_01_ARI_BUF,3806.0,ARI,1.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(1:56) (Shotgun) 1-K.Murray pass incomplete deep right to 14-Mi.Wilson.
+2024_01_ARI_BUF,3845.0,ARI,2.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(1:51) (Shotgun) 1-K.Murray pass short right to 85-T.McBride to ARI 45 for 5 yards (43-T.Bernard).
+2024_01_ARI_BUF,3870.0,ARI,3.0,0.0,1.0,0.0,0.0,,1.0,0.0,1.0,0.0,1.0,0.0,"(1:33) (No Huddle, Shotgun) 1-K.Murray pass short left to 4-G.Dortch pushed ob at BUF 43 for 12 yards (39-C.Lewis)."
+2024_01_ARI_BUF,3900.0,ARI,1.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(1:28) (Shotgun) 1-K.Murray pass short left to 85-T.McBride to BUF 39 for 4 yards (42-Do.Williams).
+2024_01_ARI_BUF,3925.0,ARI,2.0,0.0,1.0,0.0,0.0,,1.0,0.0,1.0,0.0,0.0,0.0,"(1:10) (No Huddle, Shotgun) 1-K.Murray pass short right to 4-G.Dortch pushed ob at BUF 32 for 7 yards (42-Do.Williams)."
+2024_01_ARI_BUF,3955.0,ARI,1.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(:44) (No Huddle, Shotgun) 1-K.Murray pass incomplete short left to 85-T.McBride."
+2024_01_ARI_BUF,4001.0,ARI,2.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(:40) (Shotgun) 1-K.Murray pass incomplete short middle to 4-G.Dortch. Receiver fell during route.
+2024_01_ARI_BUF,4033.0,ARI,3.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,1.0,(:36) (Shotgun) 6-J.Conner right guard to BUF 29 for 3 yards (42-Do.Williams).
+2024_01_ARI_BUF,4062.0,ARI,4.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(:32) (Shotgun) 1-K.Murray pass incomplete deep left to 4-G.Dortch (46-J.Ingram). Receiver and coverage along sideline at BUF 2.
+2024_01_WAS_TB,259.0,WAS,,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"5-J.Camarda kicks 65 yards from TB 35 to end zone, Touchback to the WAS 30."
+2024_01_WAS_TB,283.0,WAS,1.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(11:34) (Shotgun) 5-J.Daniels FUMBLES (Aborted) at WAS 21, touched at WAS 19, ball out of bounds at WAS 15."
+2024_01_WAS_TB,315.0,WAS,2.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(10:57) (Shotgun) 5-J.Daniels pass short left to 8-B.Robinson to WAS 19 for 4 yards (35-J.Dean; 23-T.Smith).
+2024_01_WAS_TB,340.0,WAS,3.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,1.0,"(10:17) (No Huddle, Shotgun) 5-J.Daniels scrambles left end pushed ob at WAS 23 for 4 yards (35-J.Dean)."
+2024_01_WAS_TB,367.0,WAS,4.0,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(9:41) 10-T.Way punts 54 yards to TB 23, Center-69-T.Ott. 10-T.Palmer pushed ob at TB 38 for 15 yards (26-J.McNichols)."
+2024_01_WAS_TB,661.0,WAS,,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"5-J.Camarda kicks 65 yards from TB 35 to end zone, Touchback to the WAS 30."
+2024_01_WAS_TB,685.0,WAS,1.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(5:08) (Shotgun) 8-B.Robinson up the middle to WAS 32 for 2 yards (96-G.Gaines; 31-A.Winfield).
+2024_01_WAS_TB,707.0,WAS,2.0,1.0,0.0,0.0,0.0,,1.0,1.0,0.0,0.0,0.0,0.0,"(4:41) (No Huddle, Shotgun) 5-J.Daniels scrambles right end to WAS 41 for 9 yards (31-A.Winfield)."
+2024_01_WAS_TB,729.0,WAS,1.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(3:56) 8-B.Robinson left tackle to WAS 40 for -1 yards (50-V.Vea, 92-W.Gholston)."
+2024_01_WAS_TB,751.0,WAS,2.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(3:20) (No Huddle, Shotgun) 5-J.Daniels pass short right to 86-Z.Ertz to WAS 47 for 7 yards (54-L.David)."
+2024_01_WAS_TB,776.0,WAS,3.0,1.0,0.0,0.0,0.0,,1.0,1.0,0.0,0.0,1.0,0.0,"(2:40) (No Huddle, Shotgun) 5-J.Daniels scrambles left end ran ob at TB 36 for 17 yards."
+2024_01_WAS_TB,803.0,WAS,1.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(2:03) (No Huddle, Shotgun) 5-J.Daniels pass short right to 12-L.McCaffrey to TB 36 for no gain (27-Z.McCollum)."
+2024_01_WAS_TB,828.0,WAS,2.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(1:21) (No Huddle, Shotgun) 8-B.Robinson right end to TB 32 for 4 yards (54-L.David; 3-J.Whitehead)."
+2024_01_WAS_TB,850.0,WAS,3.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(:45) (Shotgun) 5-J.Daniels pass short right to 8-B.Robinson to TB 11 for 21 yards (8-S.Dennis). PENALTY on WAS-14-O.Zaccheaus, Illegal Block Above the Waist, 10 yards, enforced at TB 19."
+2024_01_WAS_TB,886.0,WAS,3.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,1.0,(:24) (Shotgun) 5-J.Daniels pass incomplete short right to 14-O.Zaccheaus.
+2024_01_WAS_TB,909.0,WAS,4.0,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(:21) 3-C.York 47 yard field goal is No Good, Wide Right, Center-69-T.Ott, Holder-10-T.Way."
+2024_01_WAS_TB,1210.0,WAS,,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,5-J.Camarda kicks 63 yards from TB 35 to WAS 2. 30-A.Ekeler to WAS 26 for 24 yards (8-S.Dennis).
+2024_01_WAS_TB,1245.0,WAS,1.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(10:47) (Shotgun) 8-B.Robinson left guard to WAS 28 for 2 yards (54-L.David; 43-C.Braswell).
+2024_01_WAS_TB,1267.0,WAS,2.0,1.0,0.0,0.0,0.0,,1.0,1.0,0.0,0.0,0.0,0.0,"(10:10) (No Huddle, Shotgun) 5-J.Daniels scrambles left end to WAS 44 for 16 yards (3-J.Whitehead)."
+2024_01_WAS_TB,1289.0,WAS,1.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(9:29) (No Huddle) 5-J.Daniels pass incomplete short middle to 87-J.Bates. Penalty on WAS-71-A.Wylie, Ineligible Downfield Pass, declined."
+2024_01_WAS_TB,1323.0,WAS,2.0,0.0,1.0,0.0,0.0,,1.0,0.0,1.0,0.0,0.0,0.0,"(9:24) (No Huddle, Shotgun) 5-J.Daniels pass short middle to 30-A.Ekeler to TB 34 for 22 yards (3-J.Whitehead)."
+2024_01_WAS_TB,1348.0,WAS,1.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(8:35) (Shotgun) 5-J.Daniels pass incomplete deep left to 17-T.McLaurin.
+2024_01_WAS_TB,1371.0,WAS,2.0,1.0,0.0,0.0,0.0,,1.0,1.0,0.0,1.0,0.0,0.0,"(8:29) (Shotgun) 5-J.Daniels scrambles right guard to TB 22 for 12 yards (31-A.Winfield). PENALTY on TB-31-A.Winfield, Unnecessary Roughness, 11 yards, enforced at TB 22."
+2024_01_WAS_TB,1411.0,WAS,1.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(8:01) (Shotgun) 30-A.Ekeler left guard to TB 7 for 4 yards (52-K.Britt; 50-V.Vea).
+2024_01_WAS_TB,1433.0,WAS,2.0,1.0,0.0,0.0,1.0,WAS,1.0,1.0,0.0,0.0,0.0,0.0,"(7:23) (Shotgun) 8-B.Robinson left tackle for 7 yards, TOUCHDOWN."
+2024_01_WAS_TB,1456.0,WAS,,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"3-C.York extra point is GOOD, Center-69-T.Ott, Holder-10-T.Way."
+2024_01_WAS_TB,1856.0,WAS,,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,5-J.Camarda kicks 61 yards from TB 35 to WAS 4. 30-A.Ekeler to WAS 28 for 24 yards (51-J.Russell).
+2024_01_WAS_TB,1886.0,WAS,1.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(:11) 5-J.Daniels kneels to WAS 26 for -2 yards.
+2024_01_WAS_TB,1928.0,WAS,,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"5-J.Camarda kicks 65 yards from TB 35 to end zone, Touchback to the WAS 30."
+2024_01_WAS_TB,1945.0,WAS,1.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(15:00) (Shotgun) 5-J.Daniels pass incomplete deep left to 17-T.McLaurin.
+2024_01_WAS_TB,1968.0,WAS,2.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(14:55) (Shotgun) 5-J.Daniels pass incomplete short middle to 86-Z.Ertz (3-J.Whitehead).
+2024_01_WAS_TB,1991.0,WAS,3.0,0.0,0.0,0.0,0.0,,1.0,0.0,0.0,1.0,0.0,0.0,"(14:51) (Shotgun) 5-J.Daniels sacked ob at WAS 28 for -2 yards (9-J.Tryon). PENALTY on TB-23-T.Smith, Defensive Holding, 5 yards, enforced at WAS 30 - No Play."
+2024_01_WAS_TB,2041.0,WAS,1.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(14:38) (Shotgun) 5-J.Daniels pass short right to 80-J.Crowder pushed ob at WAS 40 for 5 yards (52-K.Britt).
+2024_01_WAS_TB,2082.0,WAS,2.0,1.0,0.0,0.0,0.0,,1.0,1.0,0.0,0.0,0.0,0.0,(14:15) (Shotgun) 5-J.Daniels scrambles right tackle to TB 49 for 11 yards (3-J.Whitehead).
+2024_01_WAS_TB,2104.0,WAS,1.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(13:31) (No Huddle, Shotgun) 8-B.Robinson up the middle to TB 46 for 3 yards (3-J.Whitehead)."
+2024_01_WAS_TB,2126.0,WAS,2.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(13:06) (No Huddle, Shotgun) Direct snap to 8-B.Robinson. 8-B.Robinson right guard to TB 40 for 6 yards (52-K.Britt; 95-C.Brewer). TB-34-B.Hall was injured during the play."
+2024_01_WAS_TB,2155.0,WAS,3.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,1.0,"(12:37) 73-T.Scott reported in as eligible. 8-B.Robinson up the middle to TB 40 for no gain (52-K.Britt, 31-A.Winfield)."
+2024_01_WAS_TB,2189.0,WAS,4.0,1.0,0.0,0.0,0.0,,1.0,1.0,0.0,0.0,0.0,0.0,(11:51) 73-T.Scott reported in as eligible. 5-J.Daniels left end pushed ob at TB 38 for 2 yards (54-L.David).
+2024_01_WAS_TB,2229.0,WAS,1.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(11:31) (Shotgun) 5-J.Daniels left guard to TB 36 for 2 yards (50-V.Vea).
+2024_01_WAS_TB,2251.0,WAS,2.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(10:51) (No Huddle, Shotgun) 5-J.Daniels sacked at TB 45 for -9 yards (9-J.Tryon). FUMBLES (9-J.Tryon) [9-J.Tryon], recovered by WAS-63-T.Biadasz at TB 46. TB-54-L.David was injured during the play."
+2024_01_WAS_TB,2281.0,WAS,3.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,1.0,(10:15) (Shotgun) 5-J.Daniels pass short left to 12-L.McCaffrey to TB 38 for 8 yards (3-J.Whitehead; 8-S.Dennis).
+2024_01_WAS_TB,2321.0,WAS,4.0,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(9:26) 3-C.York 56 yard field goal is No Good, Wide Right, Center-69-T.Ott, Holder-10-T.Way."
+2024_01_WAS_TB,2528.0,WAS,,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"5-J.Camarda kicks 65 yards from TB 35 to end zone, Touchback to the WAS 30."
+2024_01_WAS_TB,2552.0,WAS,1.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(7:11) (Shotgun) 8-B.Robinson up the middle to WAS 35 for 5 yards (54-L.David). ** Injury Update: TB-54-L.David has returned to the game.
+2024_01_WAS_TB,2574.0,WAS,2.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(6:36) (No Huddle, Shotgun) 5-J.Daniels pass incomplete short right to 8-B.Robinson."
+2024_01_WAS_TB,2597.0,WAS,3.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,1.0,"(6:33) (No Huddle, Shotgun) 5-J.Daniels pass incomplete short right to 14-O.Zaccheaus (29-C.Izien)."
+2024_01_WAS_TB,2623.0,WAS,4.0,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(6:29) 10-T.Way punts 41 yards to TB 24, Center-69-T.Ott, downed by WAS-32-M.Walker."
+2024_01_WAS_TB,2735.0,WAS,1.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(4:48) (Shotgun) 5-J.Daniels pass short middle to 86-Z.Ertz to WAS 49 for 9 yards (54-L.David).
+2024_01_WAS_TB,2767.0,WAS,2.0,1.0,0.0,0.0,0.0,,1.0,1.0,0.0,0.0,0.0,0.0,"(4:15) (No Huddle, Shotgun) 8-B.Robinson right guard to TB 45 for 6 yards (52-K.Britt)."
+2024_01_WAS_TB,2789.0,WAS,1.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(3:35) (Shotgun) 5-J.Daniels pass short left to 17-T.McLaurin to TB 39 for 6 yards (98-A.Nelson).
+2024_01_WAS_TB,2814.0,WAS,2.0,1.0,0.0,0.0,0.0,,1.0,1.0,0.0,0.0,0.0,0.0,"(2:54) (No Huddle, Shotgun) 8-B.Robinson up the middle to TB 33 for 6 yards (31-A.Winfield)."
+2024_01_WAS_TB,2836.0,WAS,1.0,0.0,1.0,0.0,0.0,,1.0,0.0,1.0,0.0,0.0,0.0,"(2:34) (No Huddle, Shotgun) 5-J.Daniels pass short right to 8-B.Robinson to TB 1 for 32 yards (31-A.Winfield)."
+2024_01_WAS_TB,2868.0,WAS,1.0,1.0,0.0,0.0,1.0,WAS,1.0,1.0,0.0,0.0,0.0,0.0,"(1:55) (No Huddle, Shotgun) 5-J.Daniels right tackle for 1 yard, TOUCHDOWN."
+2024_01_WAS_TB,2891.0,WAS,,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"3-C.York extra point is GOOD, Center-69-T.Ott, Holder-10-T.Way."
+2024_01_WAS_TB,3114.0,WAS,,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"5-J.Camarda kicks 65 yards from TB 35 to end zone, Touchback to the WAS 30. PENALTY on WAS-86-Z.Ertz, Illegal Formation, 5 yards, enforced at WAS 30."
+2024_01_WAS_TB,3142.0,WAS,1.0,0.0,1.0,0.0,0.0,,1.0,0.0,1.0,0.0,0.0,0.0,(14:55) (Shotgun) 5-J.Daniels pass short left to 30-A.Ekeler to WAS 36 for 11 yards (35-J.Dean).
+2024_01_WAS_TB,3168.0,WAS,1.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(14:14) (No Huddle, Shotgun) 5-J.Daniels left end to WAS 40 for 4 yards (9-J.Tryon)."
+2024_01_WAS_TB,3190.0,WAS,2.0,0.0,0.0,0.0,0.0,,1.0,0.0,0.0,1.0,0.0,0.0,"(13:34) (No Huddle, Shotgun) 5-J.Daniels pass incomplete short right to 12-L.McCaffrey. PENALTY on TB-8-S.Dennis, Defensive Pass Interference, 5 yards, enforced at WAS 40 - No Play."
+2024_01_WAS_TB,3224.0,WAS,1.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(13:30) (No Huddle, Shotgun) 5-J.Daniels right end to WAS 48 for 3 yards (29-C.Izien). FUMBLES (29-C.Izien), ball out of bounds at WAS 48."
+2024_01_WAS_TB,3251.0,WAS,2.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(12:41) (No Huddle, Shotgun) 5-J.Daniels sacked at WAS 35 for -13 yards (8-S.Dennis)."
+2024_01_WAS_TB,3271.0,WAS,3.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,1.0,"(11:57) (No Huddle, Shotgun) 5-J.Daniels pass short left to 30-A.Ekeler to WAS 47 for 12 yards (8-S.Dennis)."
+2024_01_WAS_TB,3296.0,WAS,4.0,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(11:15) 10-T.Way punts 44 yards to TB 9, Center-69-T.Ott, out of bounds."
+2024_01_WAS_TB,3644.0,WAS,,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"5-J.Camarda kicks 65 yards from TB 35 to end zone, Touchback to the WAS 30."
+2024_01_WAS_TB,3661.0,WAS,1.0,0.0,1.0,0.0,0.0,,1.0,0.0,1.0,0.0,0.0,0.0,(3:29) (Shotgun) 5-J.Daniels pass short left to 17-T.McLaurin to WAS 41 for 11 yards (35-J.Dean).
+2024_01_WAS_TB,3686.0,WAS,1.0,0.0,1.0,0.0,0.0,,1.0,0.0,1.0,0.0,0.0,0.0,"(3:09) (No Huddle, Shotgun) 5-J.Daniels pass short right to 14-O.Zaccheaus pushed ob at TB 44 for 15 yards (29-C.Izien)."
+2024_01_WAS_TB,3716.0,WAS,1.0,0.0,1.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(3:04) (No Huddle, Shotgun) 5-J.Daniels pass short right to 30-A.Ekeler to TB 37 for 7 yards (95-C.Brewer)."
+2024_01_WAS_TB,3741.0,WAS,2.0,1.0,0.0,0.0,0.0,,1.0,1.0,0.0,0.0,0.0,0.0,"(2:32) (No Huddle, Shotgun) 30-A.Ekeler right guard to TB 31 for 6 yards (31-A.Winfield; 8-S.Dennis)."
+2024_01_WAS_TB,3763.0,WAS,1.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(2:09) (No Huddle, Shotgun) 5-J.Daniels scrambles left end ran ob at TB 23 for 8 yards (8-S.Dennis)."
+2024_01_WAS_TB,3790.0,WAS,2.0,0.0,1.0,0.0,0.0,,1.0,0.0,1.0,0.0,0.0,0.0,"(2:01) (No Huddle, Shotgun) 5-J.Daniels pass short left to 86-Z.Ertz pushed ob at TB 11 for 12 yards (35-J.Dean)."
+2024_01_WAS_TB,3820.0,WAS,1.0,0.0,1.0,0.0,0.0,,1.0,0.0,1.0,0.0,0.0,0.0,(1:56) (Shotgun) 5-J.Daniels pass short middle to 12-L.McCaffrey to TB 1 for 10 yards (23-T.Smith; 3-J.Whitehead).
+2024_01_WAS_TB,3862.0,WAS,1.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,"(1:38) (No Huddle, Shotgun) 5-J.Daniels left guard for 1 yard, TOUCHDOWN. The Replay Official reviewed the runner broke the plane ruling, and the play was REVERSED. (No Huddle, Shotgun) 5-J.Daniels left guard to TB 1 for no gain (3-J.Whitehead; 98-A.Nelson)."
+2024_01_WAS_TB,3917.0,WAS,2.0,1.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,(1:24) (Shotgun) 8-B.Robinson left guard to TB 1 for no gain (91-M.Greene; 56-B.Stille).
+2024_01_WAS_TB,3939.0,WAS,3.0,1.0,0.0,0.0,1.0,WAS,1.0,1.0,0.0,0.0,1.0,0.0,"(1:16) (Shotgun) 5-J.Daniels right tackle for 1 yard, TOUCHDOWN."
+2024_01_WAS_TB,3969.0,WAS,,0.0,1.0,1.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,TWO-POINT CONVERSION ATTEMPT. 5-J.Daniels pass to 12-L.McCaffrey is incomplete. ATTEMPT FAILS.

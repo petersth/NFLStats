@@ -5,12 +5,13 @@ import pytest
 
 from src.domain.entities import Season, Team
 from src.domain.orchestration.calculation_orchestrator import CalculationOrchestrator
+from src.infrastructure.cache.league_stats_cache import LeagueAnalysisSnapshot
 
 
 def test_league_failures_propagate_instead_of_returning_zero_stats():
     league_cache = SimpleNamespace(
         get_config_hash=lambda configuration: "config",
-        get_or_compute_league_stats=lambda *args, **kwargs: (_ for _ in ()).throw(
+        get_or_compute_analysis_snapshot=lambda *args, **kwargs: (_ for _ in ()).throw(
             RuntimeError("schema changed")
         ),
     )
@@ -30,22 +31,22 @@ def test_league_failures_propagate_instead_of_returning_zero_stats():
 
 def test_analysis_reuses_the_single_league_result_for_rankings_and_averages():
     season_stats = object()
+    source_data = pd.DataFrame([{"posteam": "DET", "season_type": "REG"}])
+    game_results = {"DET": []}
     league_cache = SimpleNamespace()
     league_cache.calls = 0
     league_cache.get_config_hash = lambda configuration: "config"
 
     def get_league_stats(*args, **kwargs):
         league_cache.calls += 1
-        return {"DET": season_stats}, {"toer": 50.0}, pd.Timestamp("2025-09-07")
+        return LeagueAnalysisSnapshot(
+            {"DET": season_stats}, {"toer": 50.0}, pd.Timestamp("2025-09-07"),
+            source_data, game_results,
+        )
 
-    league_cache.get_or_compute_league_stats = get_league_stats
+    league_cache.get_or_compute_analysis_snapshot = get_league_stats
     league_cache.get_cache_key = lambda *args: "league-key"
     league_cache.get_team_rankings = lambda *args: {"toer": 1}
-    league_cache.get_play_data = lambda *args: pd.DataFrame([{
-        "posteam": "DET",
-        "season_type": "REG",
-    }])
-    league_cache.get_cached_game_results = lambda *args: {}
 
     calculator = SimpleNamespace(
         calculate_team_record=lambda *args: None,

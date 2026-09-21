@@ -11,6 +11,12 @@ class PlayFilter:
     """Handles filtering of plays for different calculation contexts."""
     
     def get_offensive_plays(self, data: pd.DataFrame) -> pd.DataFrame:
+        """Get offensive plays with exclusions for volume and yardage metrics."""
+        return self._apply_offensive_play_exclusions(
+            self.get_unfiltered_offensive_plays(data)
+        )
+
+    def get_unfiltered_offensive_plays(self, data: pd.DataFrame) -> pd.DataFrame:
         """Get official offensive plays using consistent NFL methodology.
         
         Returns plays that count toward official offensive statistics:
@@ -40,9 +46,6 @@ class PlayFilter:
         offensive_mask &= data['yards_gained'].notna()
         
         offensive_plays = data[offensive_mask].copy()
-        
-        # Apply configuration-based exclusions
-        offensive_plays = self._apply_offensive_play_exclusions(offensive_plays)
         
         return offensive_plays
     
@@ -141,10 +144,14 @@ class PlayFilter:
             logger.warning("Missing required columns for third down filter")
             return pd.DataFrame()
         
+        if {'third_down_converted', 'third_down_failed'}.issubset(data.columns):
+            # The official flags account for accepted penalties that preserve
+            # yardage but replay the down, and penalty-only first downs.
+            attempted = data['third_down_converted'].eq(1) | data['third_down_failed'].eq(1)
+        else:
+            attempted = data['rush_attempt'].eq(1) | data['pass_attempt'].eq(1)
         third_downs = data[
-            (data['down'] == 3) & 
-            ((data['rush_attempt'] == 1) | (data['pass_attempt'] == 1)) &
-            (data['two_point_attempt'] != 1)
+            data['down'].eq(3) & attempted & ~data['two_point_attempt'].eq(1)
         ].copy()
         
         # Apply QB kneel context filtering for efficiency metrics
@@ -176,10 +183,15 @@ class PlayFilter:
         # Use td_team to identify who actually scored the TD
         # This excludes pick-6s and fumble returns by opponents
         if 'td_team' in data.columns and team_abbr:
-            return data[
+            mask = (
                 (data['touchdown'] == 1) & 
                 (data['td_team'] == team_abbr)
-            ].copy()
+            )
+            if 'play_type' in data.columns:
+                mask &= ~data['play_type'].isin(['kickoff', 'punt', 'field_goal', 'extra_point'])
+            if 'two_point_attempt' in data.columns:
+                mask &= ~data['two_point_attempt'].eq(1)
+            return data[mask].copy()
         if not team_abbr:
             raise ValueError("team_abbr is required to attribute offensive touchdowns")
         raise ValueError("Play data is missing required 'td_team' touchdown attribution")

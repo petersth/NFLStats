@@ -8,6 +8,7 @@ from ....application import TeamAnalysisResponse
 from ....domain import Team, Season, SeasonStats, PerformanceRank, TeamRecord, NFLMetrics
 from ....utils import ranking_utils
 from ....utils.season_utils import get_regular_season_games
+from ....utils.team_code_mapper import get_team_display_name
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +75,7 @@ class MetricsRenderer:
         
         # Sanitize all user-controlled content
         safe_logo = html.escape(str(team.logo))
-        safe_name = html.escape(str(team.name))
+        safe_name = html.escape(get_team_display_name(team.abbreviation, season.year))
         safe_season_text = html.escape(str(season_type_text))
         
         # Add TOER display if available
@@ -276,8 +277,8 @@ class MetricsRenderer:
         """Render a metric with optional performance ranking."""
         if performance_rank:
             # Determine color based on performance
-            good_descriptions = ['Best in NFL', 'Elite', 'Excellent', 'Above Average']
-            bad_descriptions = ['Below Average', 'Poor', 'Worst in NFL']
+            good_descriptions = ['Best in NFL', 'Best in cohort', 'Elite', 'Excellent', 'Above Average']
+            bad_descriptions = ['Below Average', 'Poor', 'Worst in NFL', 'Worst in cohort']
             
             if performance_rank.description in good_descriptions:
                 color = '#28a745'  # Green
@@ -291,13 +292,14 @@ class MetricsRenderer:
             safe_value = html.escape(str(value))
             safe_description = html.escape(str(performance_rank.description))
             safe_rank = html.escape(str(performance_rank.rank))
+            safe_total = html.escape(str(performance_rank.total_teams))
             
             st.markdown(f"""
             <div style="margin-bottom: 1rem;">
                 <div style="font-size: 0.8em; color: #666; margin-bottom: 0.2rem;">{safe_label}</div>
                 <div style="font-size: 1.5em; font-weight: bold; line-height: 1;">{safe_value}</div>
                 <div style="font-size: 0.75em; color: {color}; margin-top: 0.2rem;">
-                    #{safe_rank} - {safe_description}
+                    #{safe_rank}/{safe_total} - {safe_description}
                 </div>
             </div>
             """, unsafe_allow_html=True)

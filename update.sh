@@ -51,6 +51,10 @@ fi
 if [ ! -d "venv" ]; then
     echo "Virtual environment not found. Running install.sh..."
     ./install.sh
+    if [ $? -ne 0 ]; then
+        echo "ERROR: Installation failed. Update did not complete."
+        exit 1
+    fi
 else
     echo "Activating virtual environment..."
     source venv/bin/activate
